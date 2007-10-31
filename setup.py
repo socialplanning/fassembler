@@ -21,6 +21,7 @@ setup(name='fassembler',
           'CmdUtils',
           'ScriptTest',
           'PasteScript',
+          'Tempita',
       ],
       dependency_links=[
           'http://svn.pythonpaste.org/CmdUtils/trunk#egg=CmdUtils-dev',
