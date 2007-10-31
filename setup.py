@@ -18,8 +18,12 @@ setup(name='fassembler',
       include_package_data=True,
       zip_safe=False,
       install_requires=[
-        'ScriptTest',
-        'PasteScript',
+          'CmdUtils',
+          'ScriptTest',
+          'PasteScript',
+      ],
+      dependency_links=[
+          'http://svn.pythonpaste.org/CmdUtils/trunk#egg=CmdUtils-dev',
       ],
       entry_points="""
       [console_scripts]
