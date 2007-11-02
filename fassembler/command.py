@@ -2,6 +2,7 @@ import sys
 from cmdutils import OptionParser, CommandError, main_func
 import pkg_resources
 from fassembler.filemaker import Maker
+from fassembler.config import ConfigParser
 
 ## The long description of how this command works:
 description = """\
@@ -77,9 +78,16 @@ def main(options, args):
     logger.notify('Installation successful.')
 
 def find_project_class(project_name, logger):
+    if ':' in project_name:
+        project_name, ep_name = project_name.split(':', 1)
+    else:
+        ep_name = 'main'
     try:
         dist = pkg_resources.get_distribution(project_name)
     except pkg_resources.DistributionNotFound, e:
+        if ep_name != 'main':
+            ## FIXME: log something?
+            return None
         logger.debug('Could not get distribution %s: %s' % (project_name, e))
         options = pkg_resources.iter_entry_points('fassembler.project', project_name)
         if not options:
@@ -91,10 +99,47 @@ def find_project_class(project_name, logger):
             return None
         return options[0].load()
     else:
-        ep = dist.get_entry_point('fassembler.project', 'main')
+        ep = dist.get_entry_info('fassembler.project', ep_name)
         logger.debug('Found entry point %s:main = %s' % (dist, ep))
         return ep.load()
 
+def load_configs(configs):
+    conf = ConfigParser()
+    ## FIXME: test that all configs exist
+    conf.read(configs)
+    return conf
+
+############################################################
+## Project listing
+############################################################
+
+def list_projects(options):
+    import textwrap
+    import traceback
+    from cStringIO import StringIO
+    for ep in pkg_resources.iter_entry_points('fassembler.project'):
+        print '%s (from %s:%s)' % (ep_name(ep), ep.module_name, '.'.join(ep.attrs))
+        try:
+            obj = ep.load()
+        except:
+            out = StringIO()
+            out.write('Exception loading entry point:\n')
+            traceback.print_exc(file=out)
+            desc = out.getvalue()
+        else:
+            desc = obj.__doc__
+        desc = textwrap.dedent(desc).strip()
+        if not desc:
+            desc = '(undocumented)'
+        desc = ''.join(['  %s' % line for line in desc.splitlines(True)])
+        print desc
+        print
+
+def ep_name(ep):
+    if ep.name == 'main':
+        return str(ep.dist.project_name)
+    else:
+        return '%s:%s' % (ep.dist.project_name, ep.name)
 
 if __name__ == '__main__':
     main()

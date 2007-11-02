@@ -3,6 +3,7 @@
 import os
 import glob
 import subprocess
+import re
 from difflib import unified_diff, context_diff
 
 class Maker(object):
@@ -11,18 +12,18 @@ class Maker(object):
     project
     """
     
-    def __init__(self, base_dir, logger,
+    def __init__(self, base_path, logger,
                  simulate=False, 
                  interactive=True):
         """
-        Initialize the Maker.  Files go under base_dir.
+        Initialize the Maker.  Files go under base_path.
         """
-        self.base_dir = self._normpath(base_dir)
+        self.base_path = self._normpath(base_path)
         self.logger = logger
         self.simulate = simulate
         self.interactive = interactive
     
-    def copy_file(self, src, dest=None, dest_dir=None, template_vars=None):
+    def copy_file(self, src, dest=None, dest_dir=None, template_vars=None, overwrite=False):
         """
         Copy a file from the source location to somewhere in the
         destination.
@@ -37,7 +38,7 @@ class Maker(object):
             dest = os.path.join(dest_dir, os.path.basename(src))
             if src.endswith('_tmpl'):
                 dest = dest[:-5]
-        dest = self.path(self.base_dir, dest)
+        dest = self.path(dest)
         self._warn_filename(dest)
         contents, raw_contents = self.get_contents(src, template_vars)
         if os.path.exists(dest):
@@ -58,7 +59,7 @@ class Maker(object):
                         self.logger.notify('Aborting copy')
                         return
 
-        self.ensure_file(dest, content)
+        self.ensure_file(dest, contents, overwrite=overwrite)
         if contents != raw_contents:
             self.ensure_file(dest+'.orig', raw_contents)
 
@@ -87,7 +88,7 @@ class Maker(object):
         f.write(contents)
         f.close()
 
-    def fill(self, contents, template_vars, filename=filename):
+    def fill(self, contents, template_vars, filename=None):
         ## FIXME: catch expected errors here, show available variables
         tmpl = tempita.Template(content, name=filename)
         return tmpl.substitute(template_vars)
@@ -103,10 +104,10 @@ class Maker(object):
 
     def _warn_filename(self, filename):
         """
-        Issues a warning if the filename is outside base_dir
+        Issues a warning if the filename is outside base_path
         """
         filename = self._normpath(filename)
-        if not filename.startswith(self.base_dir):
+        if not filename.startswith(self.base_path):
             self.logger.warn('Writing to file outside base directory: %s' % filename)
 
     def _normpath(self, path):
@@ -119,7 +120,24 @@ class Maker(object):
         """
         if template_vars is None:
             sub_filenames = False
+        skips = []
         for dirpath, dirnames, filenames in os.walk(src):
+            ## FIXME: this doesn't indent or handle recursion as
+            ## cleaning as a trully recursive version would.
+            dirnames.sort()
+            filenames.sort()
+            if not include_hidden and self.is_hidden(dirpath):
+                skips.append(dirpath)
+                continue
+            parent_hidden = False
+            for skip in skips:
+                if dirpath.startswith(skip):
+                    parent_hidden = True
+                    break
+            if parent_hidden:
+                continue
+            assert dirpath.startswith(src)
+            dirpath = dirpath[len(src):].lstrip(os.path.sep)
             for dirname in dirnames:
                 if not include_hidden and self.is_hidden(dirname):
                     self.logger.debug('Skipping hidden directory %s' % dirname)
@@ -143,6 +161,9 @@ class Maker(object):
                         logger.debug('Filling name %s to %s' % (orig_destfn, destfn))
                 self.copy_file(os.path.join(src, dirpath, filename), destfn, template_vars=template_vars)
 
+    def is_hidden(self, filename):
+        return os.path.basename(filename).startswith('.')
+
     _filename_var_re = re.compile(r'[+](.*?)[+]')
 
     def fill_filename(self, filename, template_vars):
@@ -154,7 +175,10 @@ class Maker(object):
                     "Variable +%s+ not in variables, in filename %s"
                     % (name, filename))
             return template_vars[name]
-        return self._filename_var.sub(subber, filename)
+        return self._filename_var_re.sub(subber, filename)
+
+    def exists(self, path):
+        return os.path.exists(self.path(path))
     
     def ensure_dir(self, dir, svn_add=True, package=False):
         """
@@ -179,8 +203,7 @@ class Maker(object):
             return
         if not os.path.exists(dir):
             self.ensure_dir(os.path.dirname(dir), svn_add=svn_add, package=package)
-            if self.verbose:
-                print 'Creating %s' % self.display_path(dir)
+            self.logger.notify('Creating %s' % self.display_path(dir))
             if not self.simulate:
                 os.mkdir(dir)
             if (svn_add and
@@ -191,15 +214,14 @@ class Maker(object):
                 f = open(initfile, 'wb')
                 f.write("#\n")
                 f.close()
-                print 'Creating %s' % self.display_path(initfile)
+                self.logger.notify('Creating %s' % self.display_path(initfile))
                 if (svn_add and
                     os.path.exists(os.path.join(os.path.dirname(dir), '.svn'))):
                     self.svn_command('add', initfile)
         else:
-            if self.verbose > 1:
-                print "Directory already exists: %s" % self.display_path(dir)
+            self.logger.debug("Directory already exists: %s" % self.display_path(dir))
 
-    def ensure_file(self, filename, content, svn_add=True, package=False):
+    def ensure_file(self, filename, content, svn_add=True, package=False, overwrite=False):
         """
         Ensure a file named ``filename`` exists with the given
         content.  If ``--interactive`` has been enabled, this will ask
@@ -208,8 +230,7 @@ class Maker(object):
         global difflib
         self.ensure_dir(os.path.dirname(filename), svn_add=svn_add, package=package)
         if not os.path.exists(filename):
-            if self.verbose:
-                print 'Creating %s' % filename
+            self.logger.info('Creating %s' % filename)
             if not self.simulate:
                 f = open(filename, 'wb')
                 f.write(content)
@@ -221,18 +242,17 @@ class Maker(object):
         old_content = f.read()
         f.close()
         if content == old_content:
-            if self.verbose > 1:
-                print 'File %s matches expected content' % filename
+            self.logger.info('File %s matches expected content' % filename)
             return
-        if not self.options.overwrite:
-            print 'Warning: file %s does not match expected content' % filename
-            if difflib is None:
-                import difflib
-            diff = difflib.context_diff(
+        ## FIXME: use ask_difference
+        if not overwrite:
+            self.logger.notify('Warning: file %s does not match expected content' % filename)
+            diff = context_diff(
                 content.splitlines(),
                 old_content.splitlines(),
                 'expected ' + filename,
                 filename)
+            ## FIXME: replace with ask_difference
             print '\n'.join(diff)
             if self.interactive:
                 while 1:
@@ -248,8 +268,7 @@ class Maker(object):
             else:
                 return
                     
-        if self.verbose:
-            print 'Overwriting %s with new content' % filename
+        self.logger.notify('Overwriting %s with new content' % filename)
         if not self.simulate:
             f = open(filename, 'wb')
             f.write(content)
@@ -265,7 +284,7 @@ class Maker(object):
             return self.run_command('svn', *args, **kw)
         except OSError, e:
             if not self._svn_failed:
-                print 'Unable to run svn command (%s); proceeding anyway' % e
+                self.logger.warn('Unable to run svn command (%s); proceeding anyway' % e)
                 self._svn_failed = True
 
     def run_command(self, cmd, *args, **kw):
@@ -273,16 +292,19 @@ class Maker(object):
         Runs the command, respecting verbosity and simulation.
         Returns stdout, or None if simulating.
         """
-        cwd = popdefault(kw, 'cwd', self.base_dir)
+        cwd = popdefault(kw, 'cwd', self.base_path) or self.base_path
         capture_stderr = popdefault(kw, 'capture_stderr', False)
         expect_returncode = popdefault(kw, 'expect_returncode', False)
+        return_full = popdefault(kw, 'return_full')
         assert not kw, ("Arguments not expected: %s" % kw)
         if capture_stderr:
             stderr_pipe = subprocess.STDOUT
         else:
             stderr_pipe = subprocess.PIPE
+        if args:
+            cmd = [cmd] + list(args)
         try:
-            proc = subprocess.Popen([cmd] + list(args),
+            proc = subprocess.Popen(cmd,
                                     cwd=cwd,
                                     stderr=stderr_pipe,
                                     stdout=subprocess.PIPE)
@@ -293,26 +315,39 @@ class Maker(object):
             raise OSError(
                 "The expected executable %s was not found (%s)"
                 % (cmd, e))
-        if self.verbose:
-            print 'Running %s %s' % (cmd, ' '.join(args))
+        self.logger.info('Running %s' % self._format_command(cmd))
         if self.simulate:
             return None
         stdout, stderr = proc.communicate()
         if proc.returncode and not expect_returncode:
-            if not self.verbose:
-                print 'Running %s %s' % (cmd, ' '.join(args))
-            print 'Error (exit code: %s)' % proc.returncode
+            self.logger.log((self.logger.WARN, self.logger.FATAL),
+                            'Running %s %s' % (cmd, ' '.join(args)))
+            self.logger.warn('Error (exit code: %s)' % proc.returncode)
             if stderr:
-                print stderr
+                self.logger.warn(stderr)
             raise OSError("Error executing command %s" % cmd)
-        if self.verbose > 2:
-            if stderr:
-                print 'Command error output:'
-                print stderr
-            if stdout:
-                print 'Command output:'
-                print stdout
-        return stdout
+        if stderr:
+            self.logger.debug('Command error output:\n%s' % stderr)
+        if stdout:
+            self.logger.debug('Command output:\n%s' % stdout)
+        if return_full:
+            return (stdout, stderr, proc.returncode)
+        else:
+            return stdout
+
+    def _format_command(self, cmd):
+        if not isinstance(cmd, list):
+            return cmd
+        def quote(item):
+            if ' ' in item or '"' in item or "'" in item or '$' in item:
+                item = item.replace('\\', '\\\\')
+                item = item.replace('"', '\\"')
+                item = item.replace('$', '\\$')
+                item = item.replace("'", "\\'")
+                return '"%s"' % item
+            else:
+                return item
+        return ' '.join([quote(item) for item in cmd])
 
     all_answer = None
 
@@ -335,9 +370,10 @@ class Maker(object):
             msg = '; %i lines removed' % (removed-added)
         else:
             msg = ''
-        print 'Replace %i bytes with %i bytes (%i/%i lines changed%s)' % (
+        self.logger.notify(
+            'Replace %i bytes with %i bytes (%i/%i lines changed%s)' % (
             len(cur_content), len(new_content),
-            removed, len(cur_content.splitlines()), msg)
+            removed, len(cur_content.splitlines()), msg))
         prompt = 'Overwrite %s [y/n/d/B/?] ' % dest_fn
         while 1:
             if self.all_answer is None:
@@ -351,7 +387,7 @@ class Maker(object):
                 while os.path.exists(new_dest_fn):
                     n += 1
                     new_dest_fn = dest_fn + '.bak' + str(n)
-                print 'Backing up %s to %s' % (dest_fn, new_dest_fn)
+                self.logger.notify('Backing up %s to %s' % (dest_fn, new_dest_fn))
                 if not self.simulate:
                     shutil.copyfile(dest_fn, new_dest_fn)
                 return True
@@ -383,6 +419,53 @@ Responses:
             (and overwrite)
   Type "all Y/N/B" to use Y/N/B for answer to all future questions
 '''
+
+    def ask(self, message, help=None, responses=['y', 'n'], default=None,
+            first_char=False):
+        """
+        Ask something, using message to say what.
+
+        Responses are a list of the available responses, all lower
+        case.  default, if given, is the default response if the user
+        just presses enter.
+
+        help is text that will be displayed if an erroneous input is given.
+
+        If first_char is true, then only the first character of a
+        response is necessary.  You may use things like
+        ``['(b)ackup']`` in this case (parenthesis will be stripped).
+        """
+        responses = [res.lower() for res in responses]
+        msg_responses = list(responses)
+        if default:
+            msg_responses.remove(default)
+            msg_responses.insert(0, default.upper())
+        if help and '?' not in responses:
+            msg_responses.append('?')
+        msg_responses = '/'.join(msg_responses)
+        full_message = '%s [%s]' % (message, msg_responses)
+        if first_char:
+            responses = [res.strip('()')[0] for res in responses]
+        while 1:
+            response = raw_input(full_message).strip().lower()
+            if not response:
+                if default:
+                    if first_char:
+                        return default.strip('()')[0]
+                    return default
+                else:
+                    print 'Please enter a response (one of %s)' % msg_responses
+                    continue
+            if first_char:
+                response = response[0]
+            if response in responses:
+                return response
+            if response != '?':
+                print 'Invalid response; please enter one of %s' % msg_responses
+            if help:
+                print help
+            
+            
         
 
 def popdefault(dict, name, default=None):

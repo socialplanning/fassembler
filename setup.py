@@ -22,6 +22,7 @@ setup(name='fassembler',
           'ScriptTest',
           'PasteScript',
           'Tempita',
+          'INITools',
       ],
       dependency_links=[
           'http://svn.pythonpaste.org/CmdUtils/trunk#egg=CmdUtils-dev',
@@ -29,5 +30,8 @@ setup(name='fassembler',
       entry_points="""
       [console_scripts]
       fassembler = fassembler.command:main
+
+      [fassembler.project]
+      topp = fassembler.topp:ToppProject
       """,
       )
