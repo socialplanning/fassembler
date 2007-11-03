@@ -60,7 +60,8 @@ class Project(object):
         if not self.config.has_section(self.config_section):
             self.config.add_section(self.config_section)
         for name, value in self.setting_defaults.items():
-            if not self.config.has_option(self.config_section, name):
+            if (not self.config.has_option(self.config_section, name)
+                and not self.config.has_option('DEFAULT', name)):
                 self.config.set(self.config_section, name, value)
 
 class Environment(object):

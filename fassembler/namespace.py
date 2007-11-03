@@ -101,21 +101,27 @@ class SectionNamespace(DictMixin):
         self.name = name
 
     def __getitem__(self, key):
-        if key not in self:
+        if self.config.has_option(self.section, key):
+            return self.config.get(self.section, key)
+        elif key in self.config.defaults():
+            return self.config.defaults()[key]
+        else:
             raise KeyError(key)
-        return self.config.get(self.section, key)
 
     def __setitem__(self, key, value):
         self.config.set(self.section, key, value)
 
     def __delitem__(self, key):
+        ## FIXME: not sure how to handle globals; they shouldn't be
+        ## deletable though.
         self.config.remove_option(self.section, key)
 
     def keys(self):
         return self.config.options(self.section)
 
     def __contains__(self, key):
-        return self.config.has_option(self.section, key)
+        return (self.config.has_option(self.section, key)
+                or key in self.config.defaults())
 
     def __repr__(self):
         return '<%s around %r section [%s]>' % (

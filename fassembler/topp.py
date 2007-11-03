@@ -10,7 +10,7 @@ class ToppProject(Project):
     project_base_dir = os.path.join(os.path.dirname(__file__), 'topp-files')
 
     setting_defaults = dict(
-        etc_svn_repository='http://svn.openplans.org/svn/config/',
+        etc_svn_repository='xhttp://svn.openplans.org/svn/config/',
         etc_svn_subdir='{{env.hostname}}-{{os.path.basename(env.base_path)}}',
         )
 
