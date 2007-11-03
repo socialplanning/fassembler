@@ -11,8 +11,6 @@ class ToppProject(Project):
 
     setting_defaults = dict(
         etc_svn_repository='http://svn.openplans.org/svn/config/',
-        ## FIXME: make this properly settable:
-        #etc_svn_repository='file:///home/ianb/src/fassembler/repo',
         etc_svn_subdir='{{env.hostname}}-{{os.path.basename(env.base_path)}}',
         )
 

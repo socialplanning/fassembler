@@ -1,4 +1,5 @@
 import sys
+import re
 from cmdutils import OptionParser, CommandError, main_func
 import pkg_resources
 from fassembler.filemaker import Maker
@@ -10,10 +11,16 @@ fassembler assembles files.
 
 All files will be installed under BASE_DIR, typically in a
 subdirectory for the project.
+
+To get a list of PROJECTs you can install, use %prog --list-projects
+
+To set a configuration variable, use VARIABLE=VALUE, or
+[SECTION]VARIABLE=VALUE.  If you do not use [SECTION] then the
+variable will be set globally.
 """
 
 parser = OptionParser(
-    usage="%prog [OPTIONS] BASE_DIR PROJECT [PROJECT...]",
+    usage="%prog [OPTIONS] BASE_DIR PROJECT [PROJECT...] VARIABLES",
     version_package='fassembler',
     description=description,
     use_logging=True,
@@ -59,9 +66,14 @@ def main(options, args):
         raise CommandError(
             "You must provide at least a base directory and one project")
     base_dir = args[0]
-    project_names = args[1:]
+    project_names, variables = parse_positional(args[1:])
     logger = options.logger
     config = load_configs(options.configs)
+    for section, name, value in variables:
+        section = section or 'DEFAULT'
+        if not config.has_section(section):
+            config.add_section(section)
+        config.set(section, name, value, filename='<cmdline>')
     maker = Maker(base_dir, simulate=options.simulate,
                   interactive=options.interactive, logger=logger)
     projects = []
@@ -76,6 +88,19 @@ def main(options, args):
         project.run()
         logger.notify('Done with project %s' % project_name)
     logger.notify('Installation successful.')
+
+_var_re = re.compile(r'^(?:\[(\w+)\])?\s*(\w+)=(.*)$')
+
+def parse_positional(args):
+    project_names = []
+    variables = []
+    for arg in args:
+        match = _var_re.search(arg)
+        if match:
+            variables.append((match.group(1), match.group(2), match.group(3)))
+        else:
+            project_names.append(arg)
+    return project_names, variables
 
 def find_project_class(project_name, logger):
     if ':' in project_name:
