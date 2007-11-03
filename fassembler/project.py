@@ -5,7 +5,9 @@ These classes should be listed as the entry point [fassembler.project]
 """
 import os
 import socket
+from cStringIO import StringIO
 from fassembler.namespace import Namespace
+from fassembler.text import indent, underline, dedent
 
 class Project(object):
     """
@@ -18,10 +20,12 @@ class Project(object):
     """
 
     name = None
+    title = None
     actions = None
     setting_defaults = {}
 
-    def __init__(self, maker, logger, config):
+    def __init__(self, project_name, maker, logger, config):
+        self.project_name = project_name
         self.maker = maker
         self.logger = logger
         self.config = config
@@ -39,12 +43,40 @@ class Project(object):
                 "The actions attribute has not been overridden in %r"
                 % self)
         self.setup_config()
+        self.bind_tasks()
+        for task in self.actions:
+            task.run()
+
+    def bind_tasks(self):
         for task in self.actions:
             task.bind(maker=self.maker, logger=self.logger, config=self.config,
                       project=self)
             task.confirm_settings()
+
+    def make_description(self):
+        """
+        Returns the description of this project, in the context of the
+        settings given.
+        """
+        self.setup_config()
+        self.bind_tasks()
+        out = StringIO()
+        title = self.title or self.name
+        title = '%s (%s)' % (title, self.project_name)
+        print >> out, underline(title)
+        doc = self.__doc__
+        if doc == Project.__doc__:
+            doc = '[No project description set]'
+        print >> out, dedent(doc)
+        print >> out
+        print >> out, indent(underline('Tasks', '='), '  ')
+        print >> out
         for task in self.actions:
-            task.run()
+            desc = str(task)
+            print >> out, indent(underline(task.title, '-'), '  ')
+            print >> out, indent(desc, '  ')
+            print >> out
+        return out.getvalue()
 
     def create_namespace(self):
         ns = Namespace(self.config_section)

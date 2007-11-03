@@ -4,6 +4,7 @@ from cmdutils import OptionParser, CommandError, main_func
 import pkg_resources
 from fassembler.filemaker import Maker
 from fassembler.config import ConfigParser
+from fassembler.text import indent
 
 ## The long description of how this command works:
 description = """\
@@ -47,6 +48,12 @@ parser.add_option(
     help='Ask questions interactively')
 
 parser.add_option(
+    '-H', '--project-help',
+    action='store_true',
+    dest='project_help',
+    help='Show information about what the project builders do')
+
+parser.add_option(
     '--list-projects',
     action='store_true',
     dest='list_projects',
@@ -82,11 +89,15 @@ def main(options, args):
         ProjectClass = find_project_class(project_name, logger)
         if ProjectClass is None:
             raise BadCommand('Could not find project %s' % project_name)
-        project = ProjectClass(maker, logger, config)
+        project = ProjectClass(project_name, maker, logger, config)
         projects.append(project)
     for project in projects:
-        project.run()
-        logger.notify('Done with project %s' % project_name)
+        if options.project_help:
+            description = project.make_description()
+            print description
+        else:
+            project.run()
+            logger.notify('Done with project %s' % project_name)
     logger.notify('Installation successful.')
 
 _var_re = re.compile(r'^(?:\[(\w+)\])?\s*(\w+)=(.*)$')
@@ -139,7 +150,6 @@ def load_configs(configs):
 ############################################################
 
 def list_projects(options):
-    import textwrap
     import traceback
     from cStringIO import StringIO
     for ep in pkg_resources.iter_entry_points('fassembler.project'):
@@ -153,10 +163,7 @@ def list_projects(options):
             desc = out.getvalue()
         else:
             desc = obj.__doc__
-        desc = textwrap.dedent(desc).strip()
-        if not desc:
-            desc = '(undocumented)'
-        desc = ''.join(['  %s' % line for line in desc.splitlines(True)])
+        desc = indent(desc, '  ') or '(undocumented)'
         print desc
         print
 

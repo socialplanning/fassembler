@@ -16,6 +16,10 @@ class Task(object):
         self.name = name
         self.position = self._stacklevel_position(stacklevel+1)
 
+    @property
+    def title(self):
+        return '%s  (%s.%s)' % (self.name, self.__class__.__module__, self.__class__.__name__)
+
     def bind(self, maker, logger, config, project):
         self.maker = maker
         self.logger = logger
@@ -122,7 +126,7 @@ class CopyDir(Task):
     """
 
     description = """
-    Copy the files from {{task.source}} to {{task.dest}}.
+    Copy the files from {{task.source}} to {{os.path.join(env.base_path, task.dest)}}
     """
 
     source = interpolated('source')

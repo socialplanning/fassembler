@@ -6,7 +6,9 @@ class ToppProject(Project):
     """
     Create the basic layout used at TOPP for a set of applications.
     """
+
     name = 'topp'
+    title = 'TOPP (openplans.org) Standard File Layout'
     project_base_dir = os.path.join(os.path.dirname(__file__), 'topp-files')
 
     setting_defaults = dict(
