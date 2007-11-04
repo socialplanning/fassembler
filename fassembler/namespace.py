@@ -1,5 +1,7 @@
 from UserDict import DictMixin
 from tempita import Template
+from cmdutils import CommandError
+import sys
 
 class Namespace(DictMixin):
     def __init__(self, name=None):
@@ -58,7 +60,6 @@ class Namespace(DictMixin):
             elif 'self' in self_.dict:
                 del self_.dict['self']
 
-    ## FIXME: this needs to be fixed a bunch:
     def string_repr(self, detail=0):
         lines = []
         if self.name:
@@ -69,28 +70,76 @@ class Namespace(DictMixin):
         keys = []
         for key in sorted(self.keys()):
             value = self[key]
-            if isinstance(value, self.__class__):
+            if isinstance(value, SectionNamespace):
                 namespaces.append((key, value))
             else:
                 keys.append((key, value))
         for key, value in keys:
-            if detail >= 1:
-                loc = ' from %s [%s]' % (self.positions[key], self.sections[key])
-            else:
-                loc = ''
-            lines.append('%s: %s%s', (key, self._quote(value), loc))
+            if key in __builtins__ or key == '__builtins__':
+                continue
+            lines.append('%s: %s' % (key, self._quote(value)))
         if namespaces:
-            lines.append('== Sub-namespaces: ==')
+            lines.append('== Sections: ==')
             for key, value in namespaces:
                 lines.append('%s:' % key)
                 sublines = value.string_repr(detail).splitlines()
                 for subline in sublines:
                     lines.append('  %s' % subline)
-        if detail >= 2 and self.lost:
-            lines.append('== Lost items: ==')
-            for item in lost:
-                lines.append(item)
         return '\n'.join(lines)
+
+    def _quote(self, value):
+        return value
+
+    def __str__(self):
+        return self.string_repr()
+
+    def execute_template(self, tmpl):
+        try:
+            return tmpl.substitute(self.dict)
+        except:
+            import traceback
+            try:
+                # Enable nicer raw_input:
+                import readline
+            except ImportError:
+                pass
+            exc_info = sys.exc_info()
+            print "Error: %s" % exc_info[1]
+            print "Namespace:"
+            print self
+            retry = False
+            while 1:
+                response = raw_input('What to do? [(c)ancel/(t)raceback/(p)db/(e)xecute/(r)etry/(q)uit] ')
+                if not response.strip():
+                    continue
+                char = response.strip().lower()[0]
+                if char == 'c':
+                    break
+                elif char == 'q':
+                    raise CommandError('Aborted')
+                elif char == 't':
+                    traceback.print_exception(*exc_info)
+                elif char == 'p':
+                    import pdb
+                    pdb.set_trace()
+                elif char == 'e':
+                    expr = response[1:].strip()
+                    if not expr:
+                        print 'Use "e express_to_execute"'
+                        continue
+                    try:
+                        exec compile(expr, '<e>', "single") in self.dict
+                    except:
+                        print 'Error in expression %s:' % expr
+                        traceback.print_exc()
+                elif char == 'r':
+                    retry = True
+                    break
+                else:
+                    print 'Invalid input: %r' % char
+            if retry:
+                return self.execute_template(tmpl)
+            raise
 
 class SectionNamespace(DictMixin):
 
@@ -134,3 +183,17 @@ class SectionNamespace(DictMixin):
         if isinstance(value, basestring):
             value = self.ns.interpolate(value, name=self.name, self=self)
         return value
+
+    def string_repr(self, detail=0):
+        lines = ['Section: [%s]' % self.section]
+        options = sorted(self.config.options(self.section))
+        for option in options:
+            raw = self.config.get(self.section, option)
+            lines.append('%s = %s' % (option, raw))
+            try:
+                interpolated = self.ns.interpolate(raw, name=self.name, self=self)
+            except Exception, e:
+                interpolated = 'Error evaluating: %s' % e
+            if interpolated != raw:
+                lines.append('  %s' % interpolated)
+        return '\n'.join(lines)

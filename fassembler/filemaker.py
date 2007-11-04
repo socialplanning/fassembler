@@ -26,7 +26,7 @@ class Maker(object):
         self.simulate = simulate
         self.interactive = interactive
     
-    def copy_file(self, src, dest=None, dest_dir=None, template_vars=None, overwrite=False):
+    def copy_file(self, src, dest=None, dest_dir=None, template_vars=None, interpolater=None, overwrite=False):
         """
         Copy a file from the source location to somewhere in the
         destination.
@@ -43,7 +43,7 @@ class Maker(object):
             dest = dest[:-5]
         dest = self.path(dest)
         self._warn_filename(dest)
-        contents, raw_contents = self.get_contents(src, template_vars)
+        contents, raw_contents = self.get_contents(src, template_vars, interpolater)
         if os.path.exists(dest):
             existing = self.get_raw_contents(dest)
             if existing == contents:
@@ -70,15 +70,18 @@ class Maker(object):
         return os.path.join(os.path.dirname(filename),
                             '.'+os.path.basename(filename)+'.orig')
 
-    def get_contents(self, filename, template_vars=None):
+    def get_contents(self, filename, template_vars=None, interpolater=None):
         is_tmpl = filename.endswith('_tmpl')
-        if is_tmpl and template_vars is None:
+        if is_tmpl and template_vars is None and interpolater is None:
             raise ValueError(
                 "You must provide template_vars to fill a file (filename=%r)"
                 % filename)
         raw_contents = contents = self.get_raw_contents(filename)
         if is_tmpl:
-            contents = self.fill(contents, template_vars, filename=filename)
+            if interpolater is not None:
+                contents = interpolater(contents, template_vars, filename=filename)
+            else:
+                contents = self.fill(contents, template_vars, filename=filename)
         return contents, raw_contents
 
     def get_raw_contents(self, filename):
@@ -122,7 +125,7 @@ class Maker(object):
         assert isinstance(path, basestring), "Bad path: %r" % (path, )
         return os.path.normcase(os.path.abspath(path))
     
-    def copy_dir(self, src, dest, sub_filenames=True, template_vars=None, include_hidden=False):
+    def copy_dir(self, src, dest, sub_filenames=True, template_vars=None, interpolater=None, include_hidden=False):
         """
         Copy a directory recursively, processing any files within it
         that need to be processed (end in _tmpl).
@@ -168,7 +171,7 @@ class Maker(object):
                     destfn = self.fill_filename(destfn, template_vars)
                     if orig_destfn != destfn:
                         logger.debug('Filling name %s to %s' % (orig_destfn, destfn))
-                self.copy_file(os.path.join(src, dirpath, filename), destfn, template_vars=template_vars)
+                self.copy_file(os.path.join(src, dirpath, filename), destfn, template_vars=template_vars, interpolater=interpolater)
 
     def is_hidden(self, filename):
         return os.path.basename(filename).startswith('.')
@@ -237,6 +240,7 @@ class Maker(object):
         the user what to do if a file exists with different content.
         """
         global difflib
+        filename = self.path(filename)
         self.ensure_dir(os.path.dirname(filename), svn_add=svn_add, package=package)
         if not os.path.exists(filename):
             self.logger.info('Creating %s' % filename)

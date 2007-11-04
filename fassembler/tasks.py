@@ -42,10 +42,12 @@ class Task(object):
             for item in string:
                 new_items.append(self.interpolate(item, stacklevel+1, name=name))
             return new_items
-        tmpl = Template(string, name=name, stacklevel=stacklevel+1)
+        if not isinstance(string, Template):
+            tmpl = Template(string, name=name, stacklevel=stacklevel+1)
+        else:
+            tmpl = string
         ns = self.create_namespace()
-        ## FIXME: show the ns if this fails:
-        return tmpl.substitute(ns.dict)
+        return ns.execute_template(tmpl)
 
     def create_namespace(self):
         ns = self.project.create_namespace()
@@ -90,7 +92,7 @@ class interpolated(object):
     def __set__(self, obj, value):
         ## FIXME: nice to compile the template here too
         setattr(obj, '_' + self.name, value)
-    def __del__(self, obj, value):
+    def __delete__(self, obj, value):
         delattr(obj, '_' + self.name)
     def __repr__(self):
         return '<%s for attribute %s>' % (
@@ -166,7 +168,12 @@ class CopyDir(Task):
         self.dest = dest
 
     def run(self):
-        self.maker.copy_dir(self.source, self.dest, template_vars=self.create_namespace().dict)
+        ns = self.create_namespace()
+        def interpolater(contents, vars, filename):
+            tmpl = Template(contents, name=filename)
+            return ns.execute_template(tmpl)
+        self.maker.copy_dir(self.source, self.dest, template_vars=ns.dict,
+                            interpolater=interpolater)
 
 
 class SvnCheckout(Task):
@@ -351,6 +358,54 @@ class EasyInstall(Script):
     ## FIXME: name in the signature is dangerous
     def __init__(self, name, *reqs, **kw):
         assert reqs, 'No requirements given (just a name %r)' % name
-        self.reqs = reqs
+        self.reqs = list(reqs)
         kw.setdefault('cwd', '{{project.build_properties.get("virtualenv_path", "/")}}')
+        if 'find_links' in kw:
+            find_links = kw.pop('find_links')
+            if isinstance(find_links, basestring):
+                find_links = [find_links]
+            for find_link in find_links:
+                self.reqs[:0] = ['-f', find_link]
         super(EasyInstall, self).__init__(name, ['easy_install'] + list(reqs), use_virtualenv=True, **kw)
+
+class InstallPasteConfig(Task):
+
+    template = interpolated('template')
+
+    description = """
+    Install a Paste configuration file in etc/{{project.name}}/{{project.name}}.ini
+    """
+
+    def __init__(self, template, name='Install Paste configuration'):
+        super(InstallPasteConfig, self).__init__(name)
+        self.template = template
+
+    def run(self):
+        self.maker.ensure_file(
+            os.path.join('etc', self.project.name, self.project.name+'.ini'),
+            self.template)
+
+class InstallPasteStartup(Task):
+
+    description = """
+    Install the Paste startup script
+    """
+    ## FIXME: should also create supervisor file
+
+    def __init__(self, name='Install Paste startup script'):
+        super(InstallPasteStartup, self).__init__(name)
+
+    def run(self):
+        self.maker.ensure_file(
+            os.path.join('bin', self.project.name+'.rc'),
+            self.content,
+            executable=True)
+
+    @property
+    def content(self):
+        return self.interpolate(self.content_template, name=__name__+'.InstallPasteStartup.content_template')
+
+    content_template = """\
+#!/bin/sh
+exec paster serve {{env.base_path}}/etc/{{project.name}}/{{project.name}}.ini "$@"
+"""
