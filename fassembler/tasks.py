@@ -76,7 +76,7 @@ class Task(object):
             return repr(self)
         if self.maker is None:
             return repr(self).lstrip('>') + ' (unbound)>'
-        return self.interpolate(self.description)
+        return self.interpolate(self.description, name='description of %s' % self.__class__.__name__)
 
 class interpolated(object):
     def __init__(self, name):
@@ -96,27 +96,46 @@ class interpolated(object):
         return '<%s for attribute %s>' % (
             self.__class__.__name__, self.name)
 
-class Process(Task):
+
+class Script(Task):
     """
-    Run a process
+    Run a process/script
     """
 
     description = """
     Run the process {{task.script}}{{if task.cwd}} in {{task.cwd}}{{endif}}.
     {{if task.extra_args}}Also call run_command with keyword arguments {{task.extra_args}}{{endif}}
+    {{if task.use_virtualenv is None}}A virtualenv environment will be used if one has been build for this project.
+    {{elif task.use_virtualenv}}A virtualenv environment will be used (one MUST be built for the project)
+    {{else}}No virtualenv environment will be used.
+    {{endif}}
     """
 
     script = interpolated('script')
     cwd = interpolated('cwd')
 
-    def __init__(self, name, script, cwd=None, stacklevel=1,
+    def __init__(self, name, script, cwd=None, stacklevel=1, use_virtualenv=None,
                  **extra_args):
-        super(Process, self).__init__(name, stacklevel=stacklevel+1)
+        super(Script, self).__init__(name, stacklevel=stacklevel+1)
         self.script = script
         self.cwd = cwd
+        self.use_virtualenv = use_virtualenv
         self.extra_args = extra_args
 
     def run(self):
+        use_virtualenv = self.use_virtualenv
+        if use_virtualenv is None:
+            use_virtualenv = 'virtualenv_bin_path' in self.project.build_properties
+            if use_virtualenv:
+                self.logger.debug('Using a virtualenv because one was previously defined')
+        extra_args = self.extra_args.copy()
+        if use_virtualenv:
+            venv_path = self.project.build_properties.get('virtualenv_bin_path')
+            if not venv_path:
+                raise Exception(
+                    "You must run a VirtualEnv task before Script if use_virtualenv=True")
+            self.logger.debug('Adding %s to PATH for process invocation' % venv_path)
+            extra_args.setdefault('extra_path', []).insert(0, venv_path)
         self.maker.run_command(self.script, cwd=self.cwd, **self.extra_args)
 
 
@@ -139,6 +158,7 @@ class CopyDir(Task):
 
     def run(self):
         self.maker.copy_dir(self.source, self.dest, template_vars=self.create_namespace().dict)
+
 
 class SvnCheckout(Task):
     """
@@ -275,3 +295,53 @@ class SvnCheckout(Task):
                  repo])
         else:
             self.logger.debug('repository directory %s exists' % repo)
+
+
+class VirtualEnv(Task):
+    """
+    Create a virtualenv environment
+    """
+
+    description = """
+    Create a virtualenv environment in {{maker.path(task.path or project.name)}}
+    {{if not task.path}} ({{project.name}} is the project name){{endif}}
+    """
+
+    def __init__(self, name='create virtualenv', path=None):
+        super(VirtualEnv, self).__init__(name)
+        self.path = path
+
+    def run(self):
+        path = self.maker.path(self.path or self.project.name)
+        import virtualenv
+        ## FIXME: kind of a nasty hack
+        virtualenv.logger = self.logger
+        ## FIXME: turn down verbosity?
+        self.logger.level_adjust -= 1
+        try:
+            virtualenv.create_environment(path)
+        finally:
+            self.logger.level_adjust += 1
+        props = self.project.build_properties
+        ## FIXME: doesn't work on Windows:
+        props['virtualenv_path'] = path
+        props['virtualenv_bin_path'] = os.path.join(path, 'bin')
+        props['virtualenv_src_path'] = os.path.join(path, 'src')
+
+
+class EasyInstall(Script):
+    """
+    Run easy_install
+    """
+
+    ## FIXME: commas:
+    description = """
+    Install (with easy_install) the package(s): {{for req in task.reqs:}}{{req}} {{endfor}}
+    """
+
+    ## FIXME: name in the signature is dangerous
+    def __init__(self, name, *reqs, **kw):
+        assert reqs, 'No requirements given (just a name %r)' % name
+        self.reqs = reqs
+        kw.setdefault('cwd', '{{project.build_properties.get("virtualenv_path", "/")}}')
+        super(EasyInstall, self).__init__(name, ['easy_install'] + list(reqs), use_virtualenv=True, **kw)

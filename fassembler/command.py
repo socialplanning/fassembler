@@ -92,13 +92,27 @@ def main(options, args):
         project = ProjectClass(project_name, maker, logger, config)
         projects.append(project)
     for project in projects:
+        try:
+            project.confirm_settings()
+        except Exception, e:
+            logger.fatal('Error in project %s' % project.project_name)
+            logger.fatal('  Error: %s' % e)
+            continue
         if options.project_help:
             description = project.make_description()
             print description
         else:
-            project.run()
-            logger.notify('Done with project %s' % project_name)
-    logger.notify('Installation successful.')
+            if len(projects) > 1:
+                logger.notify('Starting project %s' % project.project_name)
+                logger.indent += 2
+            try:
+                project.run()
+                logger.notify('Done with project %s' % project_name)
+            finally:
+                if len(projects) > 1:
+                    logger.indent -= 2
+    if not options.project_help:
+        logger.notify('Installation successful.')
 
 _var_re = re.compile(r'^(?:\[(\w+)\])?\s*(\w+)=(.*)$')
 

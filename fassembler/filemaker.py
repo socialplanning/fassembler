@@ -94,6 +94,7 @@ class Maker(object):
         return tmpl.substitute(template_vars)
 
     def path(self, path):
+        assert isinstance(path, basestring), "Bad path: %r" % (path, )
         return os.path.join(self.base_path, path)
 
     def display_path(self, path):
@@ -111,6 +112,7 @@ class Maker(object):
             self.logger.warn('Writing to file outside base directory: %s' % filename)
 
     def _normpath(self, path):
+        assert isinstance(path, basestring), "Bad path: %r" % (path, )
         return os.path.normcase(os.path.abspath(path))
     
     def copy_dir(self, src, dest, sub_filenames=True, template_vars=None, include_hidden=False):
@@ -296,6 +298,12 @@ class Maker(object):
         capture_stderr = popdefault(kw, 'capture_stderr', False)
         expect_returncode = popdefault(kw, 'expect_returncode', False)
         return_full = popdefault(kw, 'return_full')
+        extra_path = popdefault(kw, 'extra_path', [])
+        env = popdefault(kw, 'env', os.environ)
+        if extra_path:
+            env = env.copy()
+            path_parts = env.get('PATH', '').split(os.path.pathsep)
+            env['PATH'] = os.path.pathsep.join(extra_path + path_parts)
         assert not kw, ("Arguments not expected: %s" % kw)
         if capture_stderr:
             stderr_pipe = subprocess.STDOUT
@@ -306,6 +314,7 @@ class Maker(object):
         try:
             proc = subprocess.Popen(cmd,
                                     cwd=cwd,
+                                    env=env,
                                     stderr=stderr_pipe,
                                     stdout=subprocess.PIPE)
         except OSError, e:

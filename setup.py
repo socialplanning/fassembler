@@ -19,10 +19,10 @@ setup(name='fassembler',
       zip_safe=False,
       install_requires=[
           'CmdUtils',
-          'ScriptTest',
-          'PasteScript',
+          #'ScriptTest',
           'Tempita',
           'INITools',
+          'virtualenv',
       ],
       dependency_links=[
           'http://svn.pythonpaste.org/CmdUtils/trunk#egg=CmdUtils-dev',
@@ -33,5 +33,6 @@ setup(name='fassembler',
 
       [fassembler.project]
       topp = fassembler.topp:ToppProject
+      supervisor = fassembler.topp:SupervisorProject
       """,
       )

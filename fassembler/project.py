@@ -22,7 +22,7 @@ class Project(object):
     name = None
     title = None
     actions = None
-    setting_defaults = {}
+    settings = []
 
     def __init__(self, project_name, maker, logger, config):
         self.project_name = project_name
@@ -32,10 +32,19 @@ class Project(object):
         if self.name is None:
             raise NotImplementedError(
                 "No name has been assigned to %r" % self)
+        self.build_properties = {}
 
     @property
     def config_section(self):
         return self.name
+
+    def confirm_settings(self):
+        try:
+            self.setup_config()
+        except ValueError, e:
+            ## FIXME: better API
+            ## FIXME: find all errors
+            raise
 
     def run(self):
         if self.actions is None:
@@ -45,7 +54,12 @@ class Project(object):
         self.setup_config()
         self.bind_tasks()
         for task in self.actions:
-            task.run()
+            self.logger.notify('Starting task %s' % task.name)
+            self.logger.indent += 2
+            try:
+                task.run()
+            finally:
+                self.logger.indent -= 2
 
     def bind_tasks(self):
         for task in self.actions:
@@ -69,12 +83,18 @@ class Project(object):
             doc = '[No project description set]'
         print >> out, dedent(doc)
         print >> out
-        print >> out, indent(underline('Tasks', '='), '  ')
+        print >> out, indent(underline('Settings', '='), '  ')
+        if not self.settings:
+            print >> out, indent('No settings', '    ')
+        else:
+            for setting in self.settings:
+                print >> out, indent(str(setting), '    ')
         print >> out
+        print >> out, indent(underline('Tasks', '='), '  ')
         for task in self.actions:
             desc = str(task)
-            print >> out, indent(underline(task.title, '-'), '  ')
-            print >> out, indent(desc, '  ')
+            print >> out, indent(underline(task.title, '-'), '    ')
+            print >> out, indent(desc, '    ')
             print >> out
         return out.getvalue()
 
@@ -91,10 +111,13 @@ class Project(object):
     def setup_config(self):
         if not self.config.has_section(self.config_section):
             self.config.add_section(self.config_section)
-        for name, value in self.setting_defaults.items():
-            if (not self.config.has_option(self.config_section, name)
-                and not self.config.has_option('DEFAULT', name)):
-                self.config.set(self.config_section, name, value)
+        for setting in self.settings:
+            if (not self.config.has_option(self.config_section, setting.name)
+                and not self.config.has_option('DEFAULT', setting.name)):
+                if not setting.has_default:
+                    raise ValueError(
+                        "The setting [%s] %s must be set" % (self.config_section, setting.name))
+                self.config.set(self.config_section, setting.name, setting.default)
 
 class Environment(object):
 
@@ -109,3 +132,29 @@ class Environment(object):
     @property
     def fq_hostname(self):
         return socket.gethostbyaddr(socket.gethostname())
+
+class Setting(object):
+
+    class _NoDefault(object):
+        def __repr__(self):
+            return '(no default)'
+    NoDefault = _NoDefault()
+    del _NoDefault
+
+    def __init__(self, name, default=NoDefault, help=None):
+        self.name = name
+        self.default = default
+        self.help = help
+
+    @property
+    def has_default(self):
+        return self.default is not self.NoDefault
+
+    def __str__(self):
+        msg = '%s: (default: %r)' % (self.name, self.default)
+        if self.help:
+            msg += '\n' + indent(self.help, '  ')
+        return msg
+        
+            
+            
