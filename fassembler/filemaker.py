@@ -5,6 +5,9 @@ import glob
 import subprocess
 import re
 from difflib import unified_diff, context_diff
+import tempita
+
+EXE_MODE = 0111
 
 class Maker(object):
     """
@@ -36,8 +39,8 @@ class Maker(object):
         assert dest or dest_dir
         if dest_dir:
             dest = os.path.join(dest_dir, os.path.basename(src))
-            if src.endswith('_tmpl'):
-                dest = dest[:-5]
+        if dest.endswith('_tmpl'):
+            dest = dest[:-5]
         dest = self.path(dest)
         self._warn_filename(dest)
         contents, raw_contents = self.get_contents(src, template_vars)
@@ -47,8 +50,8 @@ class Maker(object):
                 self.logger.notify('File %s exists with same content' % self.display_path(dest))
             else:
                 message = 'File %s already exists (with different content)' % self.display_path(dest)
-                if os.path.exists(dest + '.orig'):
-                    existing_raw = self.get_raw_contents(dest + '.orig')
+                if os.path.exists(self.orig_filename(dest)):
+                    existing_raw = self.get_raw_contents(self.orig_filename(dest))
                     if existing_raw == raw_contents:
                         message = (
                             'File %s already exists (with different substitutions, but same original template)'
@@ -59,9 +62,13 @@ class Maker(object):
                         self.logger.notify('Aborting copy')
                         return
 
-        self.ensure_file(dest, contents, overwrite=overwrite)
+        self.ensure_file(dest, contents, overwrite=overwrite, executable=os.stat(src).st_mode&0111)
         if contents != raw_contents:
-            self.ensure_file(dest+'.orig', raw_contents)
+            self.ensure_file(self.orig_filename(dest), raw_contents)
+
+    def orig_filename(self, filename):
+        return os.path.join(os.path.dirname(filename),
+                            '.'+os.path.basename(filename)+'.orig')
 
     def get_contents(self, filename, template_vars=None):
         is_tmpl = filename.endswith('_tmpl')
@@ -90,7 +97,7 @@ class Maker(object):
 
     def fill(self, contents, template_vars, filename=None):
         ## FIXME: catch expected errors here, show available variables
-        tmpl = tempita.Template(content, name=filename)
+        tmpl = tempita.Template(contents, name=filename)
         return tmpl.substitute(template_vars)
 
     def path(self, path):
@@ -223,7 +230,7 @@ class Maker(object):
         else:
             self.logger.debug("Directory already exists: %s" % self.display_path(dir))
 
-    def ensure_file(self, filename, content, svn_add=True, package=False, overwrite=False):
+    def ensure_file(self, filename, content, svn_add=True, package=False, overwrite=False, executable=False):
         """
         Ensure a file named ``filename`` exists with the given
         content.  If ``--interactive`` has been enabled, this will ask
@@ -237,6 +244,8 @@ class Maker(object):
                 f = open(filename, 'wb')
                 f.write(content)
                 f.close()
+            if executable:
+                self.make_executable(filename)
             if svn_add and os.path.exists(os.path.join(os.path.dirname(filename), '.svn')):
                 self.svn_command('add', filename)
             return
@@ -245,6 +254,8 @@ class Maker(object):
         f.close()
         if content == old_content:
             self.logger.info('File %s matches expected content' % filename)
+            if executable and not os.stat(filename).st_mode&0111:
+                self.make_executable(filename)
             return
         ## FIXME: use ask_difference
         if not overwrite:
@@ -275,6 +286,16 @@ class Maker(object):
             f = open(filename, 'wb')
             f.write(content)
             f.close()
+            if executable:
+                self.make_executable(filename)
+
+    def make_executable(self, filename):
+        self.logger.info('Making file %s executable' % filename)
+        if not self.simulate:
+            st_mode = os.stat(filename).st_mode
+            st_mode |= 0111
+            os.chmod(filename, st_mode)
+        
 
     _svn_failed = False
 
