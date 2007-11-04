@@ -39,11 +39,14 @@ class SupervisorProject(Project):
     project_base_dir = os.path.join(os.path.dirname(__file__), 'supervisor-files')
 
     settings = [
+        Setting('supervisor_req',
+                default='supervisor',
+                help='Requirement specification to give easy_install (can be a directory)'),
         ]
     
     actions = [
         tasks.VirtualEnv(),
         ## FIXME: use poach-eggs:
-        tasks.EasyInstall('Install supervisor', 'supervisor'),
-        tasks.CopyDir('create config layout', project_base_dir, 'etc/'),
+        tasks.EasyInstall('Install supervisor', '{{config.supervisor_req}}'),
+        tasks.CopyDir('create config layout', project_base_dir, './'),
         ]
