@@ -105,8 +105,7 @@ class Script(Task):
     description = """
     Run the process {{task.script}}{{if task.cwd}} in {{task.cwd}}{{endif}}.
     {{if task.extra_args}}Also call run_command with keyword arguments {{task.extra_args}}{{endif}}
-    {{if task.use_virtualenv is None}}A virtualenv environment will be used if one has been build for this project.
-    {{elif task.use_virtualenv}}A virtualenv environment will be used (one MUST be built for the project)
+    {{if task.use_virtualenv }}A virtualenv environment will be used (one MUST be built for the project).
     {{else}}No virtualenv environment will be used.
     {{endif}}
     """
@@ -114,7 +113,7 @@ class Script(Task):
     script = interpolated('script')
     cwd = interpolated('cwd')
 
-    def __init__(self, name, script, cwd=None, stacklevel=1, use_virtualenv=None,
+    def __init__(self, name, script, cwd=None, stacklevel=1, use_virtualenv=False,
                  **extra_args):
         super(Script, self).__init__(name, stacklevel=stacklevel+1)
         self.script = script
@@ -123,20 +122,30 @@ class Script(Task):
         self.extra_args = extra_args
 
     def run(self):
-        use_virtualenv = self.use_virtualenv
-        if use_virtualenv is None:
-            use_virtualenv = 'virtualenv_bin_path' in self.project.build_properties
-            if use_virtualenv:
-                self.logger.debug('Using a virtualenv because one was previously defined')
-        extra_args = self.extra_args.copy()
-        if use_virtualenv:
+        script = self.script
+        if self.use_virtualenv:
             venv_path = self.project.build_properties.get('virtualenv_bin_path')
             if not venv_path:
                 raise Exception(
                     "You must run a VirtualEnv task before Script if use_virtualenv=True")
-            self.logger.debug('Adding %s to PATH for process invocation' % venv_path)
-            extra_args.setdefault('extra_path', []).insert(0, venv_path)
-        self.maker.run_command(self.script, cwd=self.cwd, **self.extra_args)
+            script = self.abspath_script(venv_path, script)
+        self.maker.run_command(script, cwd=self.cwd, **self.extra_args)
+
+    def abspath_script(self, path, script):
+        is_string = isinstance(script, basestring)
+        if is_string:
+            # Shell-style string command
+            try:
+                first, rest = script.split(None, 1)
+            except ValueError:
+                first, rest = script, ''
+        else:
+            first, rest = script[0], script[1:]
+        first = os.path.join(path, first)
+        if is_string:
+            return '%s %s' % (first, rest)
+        else:
+            return [first] + rest
 
 
 class CopyDir(Task):
