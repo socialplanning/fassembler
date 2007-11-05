@@ -105,11 +105,9 @@ class Namespace(DictMixin):
                 pass
             exc_info = sys.exc_info()
             print "Error: %s" % exc_info[1]
-            print "Namespace:"
-            print self
             retry = False
             while 1:
-                response = raw_input('What to do? [(c)ancel/(t)raceback/(p)db/(e)xecute/(r)etry/(q)uit] ')
+                response = raw_input('What to do? [(c)ancel/(q)uit/(r)etry/(n)amespace/(t)raceback/(p)db/(e)xecute/(r)etry/] ')
                 if not response.strip():
                     continue
                 char = response.strip().lower()[0]
@@ -117,6 +115,12 @@ class Namespace(DictMixin):
                     break
                 elif char == 'q':
                     raise CommandError('Aborted')
+                elif char == 'r':
+                    retry = True
+                    break
+                elif char == 'n':
+                    print 'Namespace:'
+                    print self
                 elif char == 't':
                     traceback.print_exception(*exc_info)
                 elif char == 'p':
@@ -132,9 +136,6 @@ class Namespace(DictMixin):
                     except:
                         print 'Error in expression %s:' % expr
                         traceback.print_exc()
-                elif char == 'r':
-                    retry = True
-                    break
                 else:
                     print 'Invalid input: %r' % char
             if retry:
