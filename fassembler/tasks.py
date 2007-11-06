@@ -20,8 +20,9 @@ class Task(object):
     def title(self):
         return '%s  (%s.%s)' % (self.name, self.__class__.__module__, self.__class__.__name__)
 
-    def bind(self, maker, logger, config, project):
+    def bind(self, maker, environ, logger, config, project):
         self.maker = maker
+        self.environ = environ
         self.logger = logger
         self.config = config
         self.project = project
@@ -602,3 +603,34 @@ class CheckMySQLDatabase(Task):
             **self.passkw(self.db_root_password))
         
         
+class SaveSetting(Task):
+    """
+    Save a setting in build.ini
+    """
+    
+    description = """
+    Save the setting [{{task.section}}] {{task.var_name}} = {{repr(tast.value)}} in build.ini
+    """
+
+    value = interpolated('value')
+    var_name = interpolated('var_name')
+    section = interpolated('section')
+
+    def __init__(self, name, var_name, value, section='general', stacklevel=1):
+        super(SaveSetting, self).__init__(name, stacklevel=stacklevel+1)
+        self.var_name = var_name
+        self.value = value
+        self.section = section
+
+    def run(self):
+        if not self.environ.config.has_section(self.section):
+            self.environ.config.add_section(self.section)
+        self.environ.config.set(self.section, self.var_name, self.value)
+
+class SaveURL(SaveSetting):
+
+    def __init__(self, name='Save URL setting', var_name='{{project.name}}_url',
+                 value='http://{{config.host}}:{{config.port}}', section='urls',
+                 stacklevel=1):
+        super(SaveURL, self).__init__(name, var_name=var_name,
+                                      value=value, section=section, stacklevel=stacklevel)

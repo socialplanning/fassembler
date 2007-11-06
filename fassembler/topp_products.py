@@ -13,8 +13,8 @@ allow_hosts = *.openplans.org
 
 [server:main]
 use = egg:Paste#http
-host = {{config.scripttranscluder_serve_host}}
-port = {{config.scripttranscluder_port}}
+host = {{config.host}}
+port = {{config.port}}
 """, stacklevel=1)
 
 class ScriptTranscluderProject(Project):
@@ -30,10 +30,13 @@ class ScriptTranscluderProject(Project):
         Setting('scripttranscluder_repo',
                 default='https://svn.openplans.org/svn/ScriptTranscluder/trunk',
                 help='svn repository for ScriptTranscluder'),
-        Setting('scripttranscluder_port',
-                default='FIXME',
+        Setting('port',
+                default='{{env.config.getint("general", "base_port")+int(config.port_offset)}}',
                 help='Port to install ScriptTranscluder on'),
-        Setting('scripttranscluder_serve_host',
+        Setting('port_offset',
+                default='4',
+                help='Offset from base_port'),
+        Setting('host',
                 default='127.0.0.1',
                 help='Host to serve on'),
         ]
@@ -46,6 +49,7 @@ class ScriptTranscluderProject(Project):
         tasks.EasyInstall('Install PasteScript', 'PasteScript'),
         tasks.InstallPasteConfig(scripttranscluder_config_template),
         tasks.InstallPasteStartup(),
+        tasks.SaveURL(),
         ]
 
 
@@ -55,8 +59,8 @@ use = egg:TaskTracker
 
 [server:main]
 use = egg:Paste#http
-host = {{config.tasktracker_serve_host}}
-port = {{config.tasktracker_port}}
+host = {{config.host}}
+port = {{config.port}}
 """, stacklevel=1)
 
 class TaskTrackerProject(Project):
@@ -94,11 +98,13 @@ class TaskTrackerProject(Project):
         Setting('tasktracker_repo',
                 default='https://svn.openplans.org/svn/TaskTracker/trunk',
                 help='svn location to install TaskTracker from'),
-        ## FIXME: should these just be port/host?
-        Setting('tasktracker_port',
-                default='FIXME',
+        Setting('port',
+                default='{{env.config.getint("general", "base_port")+int(config.port_offset)}}',
                 help='Port to install TaskTracker on'),
-        Setting('tasktracker_serve_host',
+        Setting('port_offset',
+                default='3',
+                help='Offset from base_port for TaskTracker'),
+        Setting('host',
                 default='127.0.0.1',
                 help='Host to serve on'),
         ]
@@ -116,5 +122,6 @@ class TaskTrackerProject(Project):
                      ['paster', 'setup-app', '{{env.base_path}}/etc/{{project.name}}/{{project.name}}.ini'],
                      use_virtualenv=True,
                      cwd='{{env.base_path}}/{{project.name}}/src/{{project.name}}'),
+        tasks.SaveURL(),
         ]
 

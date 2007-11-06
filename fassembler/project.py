@@ -5,10 +5,10 @@ These classes should be listed as the entry point [fassembler.project]
 """
 import os
 import sys
-import socket
 from cStringIO import StringIO
 from fassembler.namespace import Namespace
 from fassembler.text import indent, underline, dedent
+from cmdutils import CommandError
 
 class Project(object):
     """
@@ -25,9 +25,10 @@ class Project(object):
     actions = None
     settings = []
 
-    def __init__(self, project_name, maker, logger, config):
+    def __init__(self, project_name, maker, environ, logger, config):
         self.project_name = project_name
         self.maker = maker
+        self.environ = environ
         self.logger = logger
         self.config = config
         if self.name is None:
@@ -40,12 +41,12 @@ class Project(object):
         return self.name
 
     def confirm_settings(self):
+        errors = []
         try:
             self.setup_config()
         except ValueError, e:
-            ## FIXME: better API
-            ## FIXME: find all errors
-            raise
+            errors.append(e)
+        return errors
 
     def run(self):
         if self.actions is None:
@@ -63,15 +64,18 @@ class Project(object):
                     task.run()
                 finally:
                     self.logger.indent -= 2
+            except KeyboardInterrupt:
+                raise
             except:
                 should_continue = self.maker.handle_exception(sys.exc_info(), can_continue=True)
                 if not should_continue:
                     self.logger.fatal('Project %s aborted.' % self.title, color='red')
-                    return
+                    raise CommandError('Aborted', show_usage=False)
 
     def bind_tasks(self):
         for task in self.actions:
-            task.bind(maker=self.maker, logger=self.logger, config=self.config,
+            task.bind(maker=self.maker, environ=self.environ,
+                      logger=self.logger, config=self.config,
                       project=self)
             task.confirm_settings()
 
@@ -108,7 +112,7 @@ class Project(object):
 
     def create_namespace(self):
         ns = Namespace(self.config_section)
-        ns['env'] = Environment(self.maker.base_path)
+        ns['env'] = self.environ
         ns['maker'] = self.maker
         ns['project'] = self
         ns['os'] = os
@@ -126,20 +130,6 @@ class Project(object):
                     raise ValueError(
                         "The setting [%s] %s must be set" % (self.config_section, setting.name))
                 self.config.set(self.config_section, setting.name, setting.default)
-
-class Environment(object):
-
-    def __init__(self, base_path):
-        self.environ = os.environ
-        self.base_path = base_path
-
-    @property
-    def hostname(self):
-        return socket.gethostname().split('.')[0]
-
-    @property
-    def fq_hostname(self):
-        return socket.gethostbyaddr(socket.gethostname())
 
 class Setting(object):
 

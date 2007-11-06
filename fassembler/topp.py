@@ -12,6 +12,8 @@ class ToppProject(Project):
     project_base_dir = os.path.join(os.path.dirname(__file__), 'topp-files')
 
     settings = [
+        Setting('base_port',
+                help='The base port to use for application (each application is an offset from this port)'),
         Setting('etc_svn_repository',
                 default='http://svn.openplans.org/svn/config/',
                 help='Parent directory where the configuration that will go in etc/ comes from'),
@@ -26,6 +28,7 @@ class ToppProject(Project):
                           'etc/',
                           base_repository='{{config.etc_svn_repository}}',
                           create_if_necessary=True),
+        tasks.SaveSetting('Save port', 'base_port', '{{config.base_port}}'),
         ]
 
 

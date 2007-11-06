@@ -5,6 +5,7 @@ import pkg_resources
 from fassembler.filemaker import Maker
 from fassembler.config import ConfigParser
 from fassembler.text import indent
+from fassembler.environ import Environment
 
 ## The long description of how this command works:
 description = """\
@@ -83,28 +84,37 @@ def main(options, args):
         config.set(section, name, value, filename='<cmdline>')
     maker = Maker(base_dir, simulate=options.simulate,
                   interactive=not options.no_interactive, logger=logger)
+    environ = Environment(base_dir, logger=logger)
     projects = []
     for project_name in project_names:
         logger.debug('Finding package %s' % project_name)
         ProjectClass = find_project_class(project_name, logger)
         if ProjectClass is None:
             raise CommandError('Could not find project %s' % project_name, show_usage=False)
-        project = ProjectClass(project_name, maker, logger, config)
+        project = ProjectClass(project_name, maker, environ, logger, config)
         projects.append(project)
     success = True
+    errors = []
     for project in projects:
         try:
-            project.confirm_settings()
+            errors.extend(project.confirm_settings())
         except Exception, e:
             logger.fatal('Error in project %s' % project.project_name, color='bold red')
             logger.fatal('  Error: %s' % e)
-            continue
+            should_continue = maker.handle_exception(sys.exc_info(), can_continue=True)
+            if not should_continue:
+                raise CommandError('Aborted', show_usage=False)
+            errors.append(e)
+    if errors:
+        logger.fatal('Errors in configuration:\n%s' % '\n'.join(['  * %s' % e for e in errors]))
+        raise CommandError('Errors in configuration', show_usage=False)
+    for project in projects:
         if options.project_help:
             description = project.make_description()
             print description
         else:
             if len(projects) > 1:
-                logger.notify('Starting project %s' % project.project_name, color='bold green')
+                logger.notify(' Starting project %s' % project.project_name, color='black green_bg')
                 logger.indent += 2
             try:
                 try:
@@ -113,6 +123,10 @@ def main(options, args):
                 finally:
                     if len(projects) > 1:
                         logger.indent -= 2
+            except CommandError:
+                raise
+            except KeyboardInterrupt:
+                raise CommandError('^C', show_usage=False)
             except Exception, e:
                 success = False
                 continue_projects = maker.handle_exception(sys.exc_info())
@@ -123,6 +137,7 @@ def main(options, args):
     if not options.project_help:
         if success:
             logger.notify('Installation successful.')
+            environ.save()
         else:
             logger.notify('Installation not completely successful.')
 
