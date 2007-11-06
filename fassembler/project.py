@@ -4,6 +4,7 @@ Abstract base class for things that need building.
 These classes should be listed as the entry point [fassembler.project]
 """
 import os
+import sys
 import socket
 from cStringIO import StringIO
 from fassembler.namespace import Namespace
@@ -54,12 +55,19 @@ class Project(object):
         self.setup_config()
         self.bind_tasks()
         for task in self.actions:
-            self.logger.notify('Starting task %s' % task.name)
+            self.logger.set_section(self.name+'.'+task.name)
+            self.logger.notify('== %s ==' % task.name, color='bold green')
             self.logger.indent += 2
             try:
-                task.run()
-            finally:
-                self.logger.indent -= 2
+                try:
+                    task.run()
+                finally:
+                    self.logger.indent -= 2
+            except:
+                should_continue = self.maker.handle_exception(sys.exc_info(), can_continue=True)
+                if not should_continue:
+                    self.logger.fatal('Project %s aborted.' % self.title, color='red')
+                    return
 
     def bind_tasks(self):
         for task in self.actions:

@@ -1,6 +1,7 @@
 # (c) 2005 Ian Bicking and contributors; written for Paste (http://pythonpaste.org)
 # Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 import os
+import sys
 import glob
 import subprocess
 import re
@@ -42,12 +43,14 @@ class Maker(object):
         if dest.endswith('_tmpl'):
             dest = dest[:-5]
         dest = self.path(dest)
+        src = self.path(src)
         self._warn_filename(dest)
         contents, raw_contents = self.get_contents(src, template_vars, interpolater)
+        overwrite = False
         if os.path.exists(dest):
             existing = self.get_raw_contents(dest)
             if existing == contents:
-                self.logger.notify('File %s exists with same content' % self.display_path(dest))
+                self.logger.info('File %s exists with same content' % self.display_path(dest))
             else:
                 message = 'File %s already exists (with different content)' % self.display_path(dest)
                 if os.path.exists(self.orig_filename(dest)):
@@ -61,10 +64,11 @@ class Maker(object):
                     if not response:
                         self.logger.notify('Aborting copy')
                         return
+                overwrite = True
 
         self.ensure_file(dest, contents, overwrite=overwrite, executable=os.stat(src).st_mode&0111)
         if contents != raw_contents:
-            self.ensure_file(self.orig_filename(dest), raw_contents)
+            self.ensure_file(self.orig_filename(dest), raw_contents, overwrite=overwrite)
 
     def orig_filename(self, filename):
         return os.path.join(os.path.dirname(filename),
@@ -239,7 +243,6 @@ class Maker(object):
         content.  If ``--interactive`` has been enabled, this will ask
         the user what to do if a file exists with different content.
         """
-        global difflib
         filename = self.path(filename)
         self.ensure_dir(os.path.dirname(filename), svn_add=svn_add, package=package)
         if not os.path.exists(filename):
@@ -272,16 +275,7 @@ class Maker(object):
             ## FIXME: replace with ask_difference
             print '\n'.join(diff)
             if self.interactive:
-                while 1:
-                    s = raw_input(
-                        'Overwrite file with new content? [y/N] ').strip().lower()
-                    if not s:
-                        s = 'n'
-                    if s.startswith('y'):
-                        break
-                    if s.startswith('n'):
-                        return
-                    print 'Unknown response; Y or N please'
+                response = self.ask_difference(filename, None, content, old_content)
             else:
                 return
                     
@@ -354,12 +348,24 @@ class Maker(object):
             return None
         stdout, stderr = proc.communicate()
         if proc.returncode and not expect_returncode:
-            self.logger.log((self.logger.WARN, self.logger.FATAL),
-                            'Running %s %s' % (cmd, ' '.join(args)))
-            self.logger.warn('Error (exit code: %s)' % proc.returncode)
+            self.logger.log(slice(self.logger.WARN, self.logger.FATAL),
+                            'Running %s' % self._format_command(cmd), color='bold red')
+            self.logger.warn('Error (exit code: %s)' % proc.returncode, color='bold red')
+            if stdout:
+                self.logger.warn('stdout:')
+                self.logger.indent += 2
+                try:
+                    self.logger.warn(stdout)
+                finally:
+                    self.logger.indent -= 2
             if stderr:
-                self.logger.warn(stderr)
-            raise OSError("Error executing command %s" % cmd)
+                self.logger.warn('stderr:')
+                self.logger.indent += 2
+                try:
+                    self.logger.warn(stderr)
+                finally:
+                    self.logger.indent -= 2
+            raise OSError("Error executing command %s" % self._format_command(cmd))
         if stderr:
             self.logger.debug('Command error output:\n%s' % stderr)
         if stdout:
@@ -385,15 +391,17 @@ class Maker(object):
 
     all_answer = None
 
-    def ask_difference(self, dest_fn, new_contents, cur_content):
+    def ask_difference(self, dest_fn, message, new_content, cur_content):
         u_diff = list(unified_diff(
-            new_content.splitlines(),
             cur_content.splitlines(),
-            dest_fn, dest_fn))
+            new_content.splitlines(),
+            dest_fn+' (old content)', dest_fn+' (new content)'))
+        u_diff = [line.rstrip() for line in u_diff]
         c_diff = list(context_diff(
-            new_content.splitlines(),
             cur_content.splitlines(),
-            dest_fn, dest_fn))
+            new_content.splitlines(),
+            dest_fn+' (old content)', dest_fn+' (new content)'))
+        c_diff = [line.rstrip() for line in c_diff]
         added = len([l for l in u_diff if l.startswith('+')
                        and not l.startswith('+++')])
         removed = len([l for l in u_diff if l.startswith('-')
@@ -408,6 +416,8 @@ class Maker(object):
             'Replace %i bytes with %i bytes (%i/%i lines changed%s)' % (
             len(cur_content), len(new_content),
             removed, len(cur_content.splitlines()), msg))
+        if message:
+            print message
         prompt = 'Overwrite %s [y/n/d/B/?] ' % dest_fn
         while 1:
             if self.all_answer is None:
@@ -442,7 +452,7 @@ class Maker(object):
             else:
                 if response[0] != '?':
                     print 'Unknown command: %s' % response
-                print query_usage
+                print self.query_usage
 
     query_usage = '''\
 Responses:
@@ -477,7 +487,9 @@ Responses:
         if help and '?' not in responses:
             msg_responses.append('?')
         msg_responses = '/'.join(msg_responses)
-        full_message = '%s [%s]' % (message, msg_responses)
+        full_message = '%s [%s] ' % (message, msg_responses)
+        if self.logger.supports_color(sys.stdout):
+            full_message = self.logger.colorize(full_message, 'bold cyan')
         if first_char:
             responses = [res.strip('()')[0] for res in responses]
         while 1:
@@ -499,8 +511,42 @@ Responses:
             if help:
                 print help
             
-            
-        
+    def handle_exception(self, exc_info, can_continue=False):
+        self.logger.fatal('Error: %s' % exc_info[1], color='bold red')
+        if not self.interactive:
+            raise exc_info[0], exc_info[1], exc_info[2]
+        responses = ['(t)raceback', '(q)uit']
+        if can_continue:
+            responses.append('(c)continue')
+        if self.logger.section:
+            length = len(self.logger._section_logs)
+            if length:
+                responses.append('(v)iew logs (%s)' % length)
+                responses.append('(p)aged view of logs')
+        while 1:
+            try:
+                response = self.ask('What now?', responses=responses,
+                                    first_char=True)
+            except KeyboardInterrupt:
+                print '^C'
+                response = 'q'
+            ## FIXME: maybe some fancy evalexception stuff?
+            if response == 't':
+                import traceback
+                traceback.print_exception(*exc_info)
+            elif response == 'c':
+                return True
+            elif response == 'q':
+                return False
+            elif response == 'v':
+                print self.logger.section_text()
+            elif response == 'p':
+                pager = os.environ.get('PAGER', 'less')
+                proc = subprocess.Popen(pager,
+                                        stdin=subprocess.PIPE)
+                proc.communicate(self.logger.section_text(color=False))
+            else:
+                assert 0
 
 def popdefault(dict, name, default=None):
     if name not in dict:

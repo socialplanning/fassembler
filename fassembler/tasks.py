@@ -54,6 +54,20 @@ class Task(object):
         ns['task'] = self
         return ns
 
+    def copy_dir(self, *args, **kw):
+        self._run_fill_method('copy_dir', *args, **kw)
+    def copy_file(self, *args, **kw):
+        self._run_fill_method('copy_file', *args, **kw)
+    def _run_fill_method(self, method_name, *args, **kw):
+        ns = self.create_namespace()
+        kw.setdefault('template_vars', ns.dict)
+        def interpolater(content, vars, filename):
+            tmpl = Template(content, name=filename)
+            return ns.execute_template(tmpl)
+        kw.setdefault('interpolater', interpolater)
+        method = getattr(self.maker, method_name)
+        method(*args, **kw)
+
     def _stacklevel_position(self, stacklevel):
         try:
             caller = sys._getframe(stacklevel)
@@ -105,7 +119,9 @@ class Script(Task):
     """
 
     description = """
-    Run the process {{task.script}}{{if task.cwd}} in {{task.cwd}}{{endif}}.
+    Run the process:
+      {{maker._format_command(task.script)}}
+      {{if task.cwd}}in {{task.cwd}}{{endif}}
     {{if task.extra_args}}Also call run_command with keyword arguments {{task.extra_args}}{{endif}}
     {{if task.use_virtualenv }}A virtualenv environment will be used (one MUST be built for the project).
     {{else}}No virtualenv environment will be used.
@@ -168,13 +184,7 @@ class CopyDir(Task):
         self.dest = dest
 
     def run(self):
-        ns = self.create_namespace()
-        def interpolater(contents, vars, filename):
-            tmpl = Template(contents, name=filename)
-            return ns.execute_template(tmpl)
-        self.maker.copy_dir(self.source, self.dest, template_vars=ns.dict,
-                            interpolater=interpolater)
-
+        self.copy_dir(self.source, self.dest)
 
 class SvnCheckout(Task):
     """
@@ -255,8 +265,11 @@ class SvnCheckout(Task):
                         assert 0, response
         if os.path.exists(dest):
             self.maker.run_command(['svn', 'update', dest])
+            self.logger.notify('Updated repository at %s' % dest)
         else:
+            ## FIXME: dot progress?
             self.maker.run_command(['svn', 'checkout', full_repo, dest])
+            self.logger.notify('Checked out repository to %s' % dest)
 
     _repo_url_re = re.compile(r'^URL:\s+(.*)$', re.MULTILINE)
 
@@ -323,8 +336,8 @@ class VirtualEnv(Task):
     {{if not task.path}} ({{project.name}} is the project name){{endif}}
     """
 
-    def __init__(self, name='create virtualenv', path=None):
-        super(VirtualEnv, self).__init__(name)
+    def __init__(self, name='Create virtualenv', path=None, stacklevel=1):
+        super(VirtualEnv, self).__init__(name, stacklevel=stacklevel+1)
         self.path = path
 
     def run(self):
@@ -332,17 +345,17 @@ class VirtualEnv(Task):
         import virtualenv
         ## FIXME: kind of a nasty hack
         virtualenv.logger = self.logger
-        ## FIXME: turn down verbosity?
-        self.logger.level_adjust -= 1
+        self.logger.level_adjust -= 2
         try:
             virtualenv.create_environment(path)
         finally:
-            self.logger.level_adjust += 1
+            self.logger.level_adjust += 2
         props = self.project.build_properties
         ## FIXME: doesn't work on Windows:
         props['virtualenv_path'] = path
         props['virtualenv_bin_path'] = os.path.join(path, 'bin')
         props['virtualenv_src_path'] = os.path.join(path, 'src')
+        self.logger.notify('virtualenv created in %s' % path)
 
 
 class EasyInstall(Script):
@@ -352,7 +365,7 @@ class EasyInstall(Script):
 
     ## FIXME: commas:
     description = """
-    Install (with easy_install) the package(s): {{for req in task.reqs:}}{{req}} {{endfor}}
+    Install (with easy_install) the {{if len(task.reqs)>1}}packages{{else}}package{{endif}}: {{for req in task.reqs:}}{{req}} {{endfor}}
     """
 
     ## FIXME: name in the signature is dangerous
@@ -366,40 +379,81 @@ class EasyInstall(Script):
                 find_links = [find_links]
             for find_link in find_links:
                 self.reqs[:0] = ['-f', find_link]
+        kw['stacklevel'] = kw.get('stacklevel', 1)+1
         super(EasyInstall, self).__init__(name, ['easy_install'] + list(reqs), use_virtualenv=True, **kw)
+
+class SourceInstall(SvnCheckout):
+    """
+    Install from svn source
+    """
+    ## FIXME: this should support other version control systems someday,
+    ## maybe using the setuptools entry point for version control.
+
+    description = """
+    Checkout out {{task.repository}} into src/{{task.checkout_name}}/,
+    then run python setup.py develop
+    """
+
+    checkout_name = interpolated('checkout_name')
+
+    def __init__(self, name, repository, checkout_name, stacklevel=1):
+        self.checkout_name = checkout_name
+        dest = '{{project.build_properties["virtualenv_path"]}}/src/{{task.checkout_name}}'
+        super(SourceInstall, self).__init__(
+            name, repository, dest, create_if_necessary=False,
+            stacklevel=stacklevel+1)
+
+    def run(self):
+        super(SourceInstall, self).run()
+        self.maker.run_command(
+            self.interpolate('{{project.build_properties["virtualenv_bin_path"]}}/python', stacklevel=1),
+            'setup.py', 'develop',
+            cwd=self.dest)
 
 class InstallPasteConfig(Task):
 
     template = interpolated('template')
+    path = interpolated('path')
 
     description = """
     Install a Paste configuration file in etc/{{project.name}}/{{project.name}}.ini
+    from {{if task.template}}a static template{{else}}the file {{task.path}}{{endif}}
     """
 
-    def __init__(self, template, name='Install Paste configuration'):
-        super(InstallPasteConfig, self).__init__(name)
+    def __init__(self, template=None, path=None, name='Install Paste configuration',
+                 stacklevel=1):
+        super(InstallPasteConfig, self).__init__(name, stacklevel=stacklevel+1)
+        assert path or template, "You must give one of path or template"
+        self.path = path
         self.template = template
 
     def run(self):
-        self.maker.ensure_file(
-            os.path.join('etc', self.project.name, self.project.name+'.ini'),
-            self.template)
+        dest = os.path.join('etc', self.project.name, self.project.name+'.ini')
+        if self.template:
+            self.maker.ensure_file(
+                dest,
+                self.template)
+        else:
+            self.copy_file(self.path, dest)
+        self.logger.notify('Configuration written to %s' % dest)
 
 class InstallPasteStartup(Task):
 
     description = """
-    Install the Paste startup script
+    Install the standard Paste startup script
     """
     ## FIXME: should also create supervisor file
 
-    def __init__(self, name='Install Paste startup script'):
-        super(InstallPasteStartup, self).__init__(name)
+    def __init__(self, name='Install Paste startup script', stacklevel=1):
+        super(InstallPasteStartup, self).__init__(name, stacklevel=stacklevel+1)
 
     def run(self):
+        path = os.path.join('bin', self.project.name+'.rc')
         self.maker.ensure_file(
-            os.path.join('bin', self.project.name+'.rc'),
+            path,
             self.content,
             executable=True)
+        self.logger.notify('Startup script written to %s' % path)
 
     @property
     def content(self):
@@ -409,3 +463,142 @@ class InstallPasteStartup(Task):
 #!/bin/sh
 exec paster serve {{env.base_path}}/etc/{{project.name}}/{{project.name}}.ini "$@"
 """
+
+class CheckMySQLDatabase(Task):
+
+    db_name = interpolated('db_name')
+    db_host = interpolated('db_host')
+    db_username = interpolated('db_username')
+    db_password = interpolated('db_password')
+    db_root_password = interpolated('db_root_password')
+
+    description = """
+    Check that the database {{task.db_name}}@{{task.db_host}} exists
+    (accessing it with u/p {{config.db_username}}/{{repr(config.db_password)}}).
+    If it does not exist, create the database.  If the databsae does
+    exist, make sure that the user has full access.
+
+    This will connect as root to create the database if necessary,
+    using {{if not task.db_root_password}}no password{{else}}the password {{repr(task.db_root_password)}}{{endif}}
+    """
+
+    def __init__(self, name, db_name='{{config.db_name}}',
+                 db_host='{{config.db_host}}', db_username='{{config.db_username}}',
+                 db_password='{{config.db_password}}', db_root_password='{{config.db_root_password}}',
+                 stacklevel=1):
+        super(CheckMySQLDatabase, self).__init__(name, stacklevel=stacklevel+1)
+        self.db_name = db_name
+        self.db_host = db_host
+        self.db_username = db_username
+        self.db_password = db_password
+        self.db_root_password = db_root_password
+
+    password_error = 1045
+    unknown_database = 1049
+    unknown_server = 2005
+    server_cant_connect = 2003
+    
+    def passkw(self, password):
+        # There is no default for the passwd argument, so we have
+        # to pass that argument in conditionally
+        if password:
+            return {'passwd': password}
+        else:
+            return {}
+
+    def run(self):
+        try:
+            import MySQLdb
+        except ImportError:
+            self.logger.fatal(
+                "Cannot check MySQL database: MySQLdb module is not installed")
+            ## FIXME: query or something?
+            return
+        try:
+            self.logger.debug(
+                "Connecting to MySQL database %s@%s, username=%s, password=%r"
+                % (self.db_name, self.db_host, self.db_username, self.db_password))
+            conn = MySQLdb.connect(
+                host=self.db_host,
+                db=self.db_name,
+                user=self.db_username,
+                **self.passkw(self.db_password))
+        except MySQLdb.OperationalError, e:
+            code = e.args[0]
+            if code == self.unknown_server or code == self.server_cant_connect:
+                self.logger.fatal(
+                    "Cannot connect to MySQL server at %s: %s"
+                    % (self.db_host, e))
+                raise
+            elif code == self.password_error:
+                # Could be a database name problem, or access
+                self.logger.notify(
+                    "Cannot connect to %s@%s"
+                    % (self.db_name, self.db_host))
+            elif code == self.unknown_database:
+                self.logger.notify(
+                    "Database %s does not exist" % self.db_name)
+            else:
+                self.logger.fatal(
+                    "Unexpected MySQL connection error: %s"
+                    % e)
+                raise
+            self.create_database()
+        else:
+            # All is good
+            self.logger.debug("Connection successful")
+            conn.close()
+        self.change_permissions()
+        self.logger.notify('Database %s@%s setup for user %s' % (self.db_name, self.db_host, self.db_username))
+
+    def create_database(self):
+        import MySQLdb
+        try:
+            conn = self.root_connection()
+        except MySQLdb.OperationalError, e:
+            code = e.args[0]
+            if code == self.password_error:
+                self.logger.fatal("The root password %r is incorrect" % (self.db_root_password or '(no password)'))
+                ## FIXME: I don't like raise here:
+                raise
+            elif code == self.unknown_database:
+                pass
+            else:
+                self.logger.fatal("Error connecting as root: %s" % e)
+                raise
+        else:
+            # Database exists fine
+            self.logger.debug('Database exists')
+            conn.close()
+            return
+        conn = MySQLdb.connect(
+            host=self.db_host,
+            user='root',
+            **self.passkw(self.db_root_password))
+        plan = 'CREATE DATABASE %s' % self.db_name
+        self.logger.info('Executing %s' % plan)
+        if not self.maker.simulate:
+            conn.cursor().execute(plan)
+        conn.close()
+
+    def change_permissions(self):
+        conn = self.root_connection()
+        plan = "GRANT ALL PRIVILEGES ON %s.* TO %s IDENTIFIED BY %r" % (
+            self.db_name, self.db_username, self.db_password)
+        self.logger.info('Executing %s' % plan)
+        if not self.maker.simulate:
+            conn.cursor().execute(
+                "GRANT ALL PRIVILEGES ON %s.* TO %s IDENTIFIED BY %%s"
+                % (self.db_name, self.db_username),
+                (self.db_password,))
+        conn.close()
+
+    def root_connection(self):
+        import MySQLdb
+        return MySQLdb.connect(
+            host=self.db_host,
+            db=self.db_name,
+            user='root',
+            **self.passkw(self.db_root_password))
+        
+        

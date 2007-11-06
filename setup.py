@@ -34,6 +34,7 @@ setup(name='fassembler',
       [fassembler.project]
       topp = fassembler.topp:ToppProject
       supervisor = fassembler.topp:SupervisorProject
-      scripttranscluder = fassembler.topp_products:ScriptTranscluder
+      scripttranscluder = fassembler.topp_products:ScriptTranscluderProject
+      tasktracker = fassembler.topp_products:TaskTrackerProject
       """,
       )

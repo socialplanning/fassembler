@@ -42,10 +42,10 @@ parser.add_option(
     help='Simulate (do not write any files or make changes)')
 
 parser.add_option(
-    '-i', '--interactive',
+    '--no-interactive',
     action='store_true',
-    dest='interactive',
-    help='Ask questions interactively')
+    dest='no_interactive',
+    help='Do not ask questions interactively')
 
 parser.add_option(
     '-H', '--project-help',
@@ -82,20 +82,21 @@ def main(options, args):
             config.add_section(section)
         config.set(section, name, value, filename='<cmdline>')
     maker = Maker(base_dir, simulate=options.simulate,
-                  interactive=options.interactive, logger=logger)
+                  interactive=not options.no_interactive, logger=logger)
     projects = []
     for project_name in project_names:
         logger.debug('Finding package %s' % project_name)
         ProjectClass = find_project_class(project_name, logger)
         if ProjectClass is None:
-            raise BadCommand('Could not find project %s' % project_name)
+            raise CommandError('Could not find project %s' % project_name, show_usage=False)
         project = ProjectClass(project_name, maker, logger, config)
         projects.append(project)
+    success = True
     for project in projects:
         try:
             project.confirm_settings()
         except Exception, e:
-            logger.fatal('Error in project %s' % project.project_name)
+            logger.fatal('Error in project %s' % project.project_name, color='bold red')
             logger.fatal('  Error: %s' % e)
             continue
         if options.project_help:
@@ -103,16 +104,27 @@ def main(options, args):
             print description
         else:
             if len(projects) > 1:
-                logger.notify('Starting project %s' % project.project_name)
+                logger.notify('Starting project %s' % project.project_name, color='bold green')
                 logger.indent += 2
             try:
-                project.run()
-                logger.notify('Done with project %s' % project_name)
-            finally:
-                if len(projects) > 1:
-                    logger.indent -= 2
+                try:
+                    project.run()
+                    logger.notify('Done with project %s' % project_name)
+                finally:
+                    if len(projects) > 1:
+                        logger.indent -= 2
+            except Exception, e:
+                success = False
+                continue_projects = maker.handle_exception(sys.exc_info())
+                if continue_projects:
+                    continue
+                else:
+                    break
     if not options.project_help:
-        logger.notify('Installation successful.')
+        if success:
+            logger.notify('Installation successful.')
+        else:
+            logger.notify('Installation not completely successful.')
 
 _var_re = re.compile(r'^(?:\[(\w+)\])?\s*(\w+)=(.*)$')
 
@@ -150,6 +162,10 @@ def find_project_class(project_name, logger):
         return options[0].load()
     else:
         ep = dist.get_entry_info('fassembler.project', ep_name)
+        if not ep:
+            logger.fatal('Distribution %s (at %s) does not have an entry point %r'
+                         % (dist.project_name, dist.location, ep_name))
+            return None
         logger.debug('Found entry point %s:main = %s' % (dist, ep))
         return ep.load()
 
