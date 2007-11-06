@@ -97,6 +97,7 @@ class Namespace(DictMixin):
         try:
             return tmpl.substitute(self.dict)
         except:
+            ## FIXME: should probably raise if not interactive
             import traceback
             try:
                 # Enable nicer raw_input:
@@ -105,19 +106,25 @@ class Namespace(DictMixin):
                 pass
             exc_info = sys.exc_info()
             print "Error: %s" % exc_info[1]
+            template_content = tmpl.content
+            if len(template_content) < 80 and len(template_content.strip().splitlines()) == 1:
+                print 'Template: %s' % template_content
             retry = False
             while 1:
-                response = raw_input('What to do? [(c)ancel/(q)uit/(r)etry/(n)amespace/(t)raceback/(p)db/(e)xecute/(r)etry/] ')
+                response = raw_input('What to do? [(c)ancel/(q)uit/(r)etry/(s)how source/(n)amespace/(t)raceback/(p)db/(e)xecute/(r)etry/] ')
                 if not response.strip():
                     continue
                 char = response.strip().lower()[0]
                 if char == 'c':
                     break
                 elif char == 'q':
-                    raise CommandError('Aborted')
+                    raise CommandError('Aborted', show_usage=False)
                 elif char == 'r':
                     retry = True
                     break
+                elif char == 's':
+                    print 'Template:'
+                    print template_content
                 elif char == 'n':
                     print 'Namespace:'
                     print self
