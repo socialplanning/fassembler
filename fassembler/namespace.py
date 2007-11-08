@@ -108,6 +108,8 @@ class Namespace(DictMixin):
         global _in_broken_ns
         try:
             return tmpl.substitute(self.dict)
+        except KeyboardInterrupt:
+            raise
         except:
             if _in_broken_ns:
                 # Hitting this recursively while already handling another error
@@ -146,6 +148,8 @@ class Namespace(DictMixin):
                         print 'Namespace:'
                         try:
                             print self
+                        except KeyboardInterrupt:
+                            raise
                         except:
                             # This shouldn't really happen
                             print 'Error printing self:', sys.exc_info()[1]
@@ -162,6 +166,8 @@ class Namespace(DictMixin):
                             continue
                         try:
                             exec compile(expr, '<e>', "single") in self.dict
+                        except KeyboardInterrupt:
+                            raise
                         except:
                             print 'Error in expression %s:' % expr
                             traceback.print_exc()
@@ -224,6 +230,8 @@ class SectionNamespace(DictMixin):
             lines.append('%s = %s' % (option, raw))
             try:
                 interpolated = self.ns.interpolate(raw, name=self.name, self=self)
+            except KeyboardInterrupt:
+                raise
             except Exception, e:
                 interpolated = 'Error evaluating: %s' % e
             if interpolated != raw:

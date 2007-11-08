@@ -34,6 +34,11 @@ class Task(object):
         # Quick test that bind has been called
         assert self.maker is not None
 
+    def setup_build_properties(self):
+        """
+        Called early on to set any project.build_properties that other tasks might need.
+        """
+
     def run(self, quick):
         raise NotImplementedError
 
@@ -362,11 +367,14 @@ class VirtualEnv(Task):
         super(VirtualEnv, self).__init__(name, stacklevel=stacklevel+1)
         self.path = path
 
+    @property
+    def path_resolved(self):
+        return self.maker.path(self.path or self.project.name)
+
     def run(self, quick):
-        path = self.maker.path(self.path or self.project.name)
+        path = self.path_resolved
         if quick and os.path.exists(path):
             self.logger.notify('Skipping virtualenv creation as directory %s exists' % path)
-            self.set_props(path)
             return
         import virtualenv
         ## FIXME: kind of a nasty hack
@@ -376,9 +384,11 @@ class VirtualEnv(Task):
             virtualenv.create_environment(path)
         finally:
             self.logger.level_adjust += 2
-        self.set_props(path)
+        self.logger.notify('virtualenv created in %s' % path)
 
-    def set_props(self, path):
+    def setup_build_properties(self):
+        path = self.path_resolved
+        assert path, "no path (%r)" % path
         props = self.project.build_properties
         ## FIXME: doesn't work on Windows:
         props['virtualenv_path'] = path
@@ -386,7 +396,6 @@ class VirtualEnv(Task):
         props['virtualenv_python'] = os.path.join(path, 'bin', 'python')
         props['virtualenv_src_path'] = os.path.join(path, 'src')
         props['virtualenv_lib_python'] = os.path.join(path, 'lib', 'python%s' % sys.version[:3])
-        self.logger.notify('virtualenv created in %s' % path)
 
 
 class EasyInstall(Script):
@@ -671,9 +680,9 @@ class Patch(Task):
     strip = interpolated('strip')
 
     description = """
-    Patch the files {{', '.join(config.files)}}
-    {{if config.expanded_files != config.files}}(expanded to {{', '.join(config.expanded_files)}}){{endif}}
-    Patches applied to {{config.dest}}, -p {{task.strip}}.
+    Patch the files {{', '.join(task.files)}}
+    {{if task.expanded_files != task.files}}(expanded to {{', '.join(task.expanded_files)}}){{endif}}
+    Patches applied to {{task.dest}}, -p {{task.strip}}.
     """
 
     def __init__(self, name, files, dest, strip='0', stacklevel=1):

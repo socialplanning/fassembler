@@ -78,6 +78,7 @@ class Project(object):
                       logger=self.logger, config=self.config,
                       project=self)
             task.confirm_settings()
+            task.setup_build_properties()
 
     def make_description(self):
         """

@@ -119,6 +119,8 @@ def main(options, args):
     for project in projects:
         try:
             errors.extend(project.confirm_settings())
+        except KeyboardInterrupt:
+            raise
         except Exception, e:
             logger.fatal('Error in project %s' % project.project_name, color='bold red')
             logger.fatal('  Error: %s' % e)
