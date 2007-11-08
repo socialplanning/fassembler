@@ -11,7 +11,6 @@ class OpenCoreProject(Project):
     title = 'Install OpenCore'
 
     settings = [
-        # zope_source
         Setting('zope_instance',
                 default='var/opencore/zope',
                 help='Instance home for Zope'),
@@ -41,11 +40,11 @@ class OpenCoreProject(Project):
                 default='{{project.build_properties["virtualenv_path"]}}/src/Zope',
                 help='Location of Zope source'),
         Setting('zope_svn_repo',
-                default='svn://svn.zope.org/repos/main/Zope/tags/2.9.8',
+                default='http://svn.zope.de/zope.org/Zope/branches/2.9',
                 help='Location of Zope svn'),
         ]
 
-    patch_dir = os.path.join(os.path.dirname(__file__), 'opencore-patches')
+    patch_dir = os.path.join(os.path.dirname(__file__), 'opencore-files', 'patches')
 
     actions = [
         tasks.VirtualEnv(),
@@ -59,12 +58,12 @@ class OpenCoreProject(Project):
         tasks.Script('Make Zope', ['make'], cwd='{{config.zope_source}}'),
         tasks.Script('Install Zope', ['make', 'inplace'], cwd='{{config.zope_source}}'),
         tasks.Script('Make Zope Instance', [
-        'mkzopeinstance.py', '--dir', '{{config.zope_instance}}'
+        'python', '{{config.zope_source}}/bin/mkzopeinstance.py', '--dir', '{{config.zope_instance}}',
         '--user', '{{config.zope_user}}:{{config.zope_password}}',
         '--skelsrc', '{{config.zope_source}}/custom_skel'],
                      use_virtualenv=True),
         tasks.Script('Make ZEO Instance', [
-        'mkzeoinstance.py', '{{config.zeo_instance}}', '{{config.zeo_port}}'],
+        'python', '{{config.zope_source}}/bin/mkzeoinstance.py', '{{config.zeo_instance}}', '{{config.zeo_port}}'],
                      use_virtualenv=True),
         ## FIXME: linkzope and linkzopebinaries?
         ]
