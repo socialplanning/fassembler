@@ -20,12 +20,15 @@ setup(name='fassembler',
       install_requires=[
           'CmdUtils',
           #'ScriptTest',
-          'Tempita',
-          'INITools',
+          'Tempita==dev,>=0.1.1dev',
+          'INITools==dev,>=0.2.1dev',
           'virtualenv',
       ],
+      ## FIXME: release all of these once fassembler stabilizes:
       dependency_links=[
           'http://svn.pythonpaste.org/CmdUtils/trunk#egg=CmdUtils-dev',
+          'http://svn.colorstudy.com/INITools/trunk#egg=INITools-dev',
+          'http://svn.pythonpaste.org/Tempita/trunk#egg=Tempita-dev',
       ],
       entry_points="""
       [console_scripts]
