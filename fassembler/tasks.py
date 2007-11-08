@@ -668,7 +668,7 @@ class SaveSetting(Task):
 
 class SaveURI(SaveSetting):
 
-    def __init__(self, name='Save URI setting', var_name='{{project.name}}_urI',
+    def __init__(self, name='Save URI setting', var_name='{{project.name}}_uri',
                  value='http://{{config.host}}:{{config.port}}', section='uris',
                  stacklevel=1):
         super(SaveURI, self).__init__(name, var_name=var_name,
