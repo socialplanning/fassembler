@@ -163,7 +163,7 @@ class Maker(object):
                     orig_destdir = destdir
                     destdir = self.fill_filename(destdir, template_vars)
                     if orig_destdir != destdir:
-                        logger.debug('Filling name %s to %s' % (orig_destdir, destdir))
+                        self.logger.debug('Filling name %s to %s' % (orig_destdir, destdir))
                 self.ensure_dir(destdir)
             for filename in filenames:
                 if not include_hidden and self.is_hidden(filename):
@@ -174,7 +174,7 @@ class Maker(object):
                     orig_destfn = destfn
                     destfn = self.fill_filename(destfn, template_vars)
                     if orig_destfn != destfn:
-                        logger.debug('Filling name %s to %s' % (orig_destfn, destfn))
+                        self.logger.debug('Filling name %s to %s' % (orig_destfn, destfn))
                 self.copy_file(os.path.join(src, dirpath, filename), destfn, template_vars=template_vars, interpolater=interpolater)
 
     def is_hidden(self, filename):
@@ -314,6 +314,7 @@ class Maker(object):
         Returns stdout, or None if simulating.
         """
         cwd = popdefault(kw, 'cwd', self.base_path) or self.base_path
+        cwd = self.path(cwd)
         capture_stderr = popdefault(kw, 'capture_stderr', False)
         expect_returncode = popdefault(kw, 'expect_returncode', False)
         return_full = popdefault(kw, 'return_full')
@@ -344,6 +345,10 @@ class Maker(object):
                 "The expected executable %s was not found (%s)"
                 % (cmd, e))
         self.logger.info('Running %s' % self._format_command(cmd))
+        if env != os.environ:
+            self.logger.debug('Using environment overrides: %s' % dict_diff(env, os.environ))
+        if cwd != self.base_path:
+            self.logger.debug('Running in working directory %s' % self.display_path(cwd))
         if self.simulate:
             return None
         stdout, stderr = proc.communicate()
@@ -556,3 +561,18 @@ def popdefault(dict, name, default=None):
         del dict[name]
         return v
 
+def dict_diff(d1, d2):
+    """
+    Show the differences in two dictionaries (typically os.environ-style dicts)
+    """
+    all_keys = sorted(set(d1) | set(d2))
+    lines = []
+    for key in all_keys:
+        if key in d1 and key not in d2:
+            lines.append('+%s=%r' % (key, d1[key]))
+        elif key in d2 and key not in d1:
+            lines.append('-%s (previously: %r)' % (key, d2[key]))
+        elif d1[key] != d2[key]:
+            lines.append('%s=%r (previously: %r)' % (key, d1[key], d2[key]))
+    return '\n'.join(lines)
+        
