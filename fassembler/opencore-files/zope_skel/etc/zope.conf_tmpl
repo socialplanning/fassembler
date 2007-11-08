@@ -1038,7 +1038,7 @@ zserver-threads 6
 #      foo qux
 #    </myproduct>
 <product-config opencore.nui>
-      email-confirmation {{config.email_configuration}}
+      email-confirmation {{config.email_confirmation}}
 {{#FIXME: needs to be more dynamic:}}
 {{if env.config.has_option('uris', 'twirlip_uri'):}}
       twirlip_uri {{env.config.get('uris', 'twirlip_uri')}}
