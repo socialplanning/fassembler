@@ -4,6 +4,7 @@ import urlparse
 from tempita import Template
 import re
 from glob import glob
+from fassembler.filemaker import RunCommandError
 
 class Task(object):
     """
@@ -247,7 +248,7 @@ class SvnCheckout(Task):
             current_repo = self.get_repo_url(dest)
             self.logger.debug('There is a repository at %s from %s'
                               % (dest, current_repo))
-            if current_repo != full_repo:
+            if current_repo and current_repo != full_repo:
                 self.logger.debug("The repository at %s isn't from the expected location %s"
                                   % (dest, full_repo))
                 if self.maker.interactive:
@@ -259,7 +260,8 @@ class SvnCheckout(Task):
                         responses=['(i)gnore',
                                    '(s)witch',
                                    '(b)ackup',
-                                   '(w)ipe'])
+                                   '(w)ipe'],
+                        first_char=True)
                     if response == 'i':
                         self.logger.warn('Ignoring svn repository differences')
                     elif response == 's':
@@ -291,7 +293,14 @@ class SvnCheckout(Task):
         """
         ## FIXME: ideally we'd set LANG or something, as the output
         ## can get i18n'd
-        stdout = self.maker.run_command(['svn', 'info', path])
+        try:
+            stdout = self.maker.run_command(
+                ['svn', 'info', path])
+        except RunCommandError, e:
+            if 'is not a working copy' in e.stderr:
+                # Not really a problem
+                return None
+            raise
         match = self._repo_url_re.search(stdout)
         if not match:
             raise ValueError(
@@ -627,7 +636,7 @@ class SaveSetting(Task):
     """
     
     description = """
-    Save the setting [{{task.section}}] {{task.var_name}} = {{repr(tast.value)}} in build.ini
+    Save the setting [{{task.section}}] {{task.var_name}} = {{repr(task.value)}} in build.ini
     """
 
     value = interpolated('value')

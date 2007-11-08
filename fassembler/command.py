@@ -1,4 +1,5 @@
 import sys
+import os
 import re
 from cmdutils import OptionParser, CommandError, main_func
 import pkg_resources
@@ -83,9 +84,9 @@ def main(options, args):
                 "You cannot use arguments with --list-projects")
         list_projects(options)
         return
-    if len(args) < 2:
+    if len(args) < 1:
         raise CommandError(
-            "You must provide at least a base directory and one project")
+            "You must provide at least one project")
     base_path = options.base_path
     if not base_path:
         script_path = os.path.abspath(sys.argv[0])

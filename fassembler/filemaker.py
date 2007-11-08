@@ -10,6 +10,14 @@ import tempita
 
 EXE_MODE = 0111
 
+class RunCommandError(OSError):
+    def __init__(self, message, command=None, stdout=None, stderr=None, returncode=None):
+        OSError.__init__(self, message)
+        self.command = command
+        self.stdout = stdout
+        self.stderr = stderr
+        self.returncode = returncode
+
 class Maker(object):
     """
     Enhance the ease of file copying/processing from a package into a target
@@ -370,7 +378,9 @@ class Maker(object):
                     self.logger.warn(stderr)
                 finally:
                     self.logger.indent -= 2
-            raise OSError("Error executing command %s" % self._format_command(cmd))
+            raise RunCommandError("Error executing command %s" % self._format_command(cmd),
+                                  command=cmd, stdout=stdout, stderr=stderr,
+                                  returncode=proc.returncode)
         if stderr:
             self.logger.debug('Command error output:\n%s' % stderr)
         if stdout:
