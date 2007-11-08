@@ -1,0 +1,15 @@
+#!/bin/bash
+
+. <<deploydir>>/bin/activate
+
+PYTHON="<<python>>"
+INSTANCE_HOME="<<zope_instance>>"
+CONFIG_FILE="${INSTANCE_HOME}/etc/zope.conf"
+ZOPE_HOME="<<zope_home>>"
+SOFTWARE_HOME="${ZOPE_HOME}/lib/python"
+PYTHONPATH="$SOFTWARE_HOME:$PYTHONPATH"
+export PYTHONPATH INSTANCE_HOME SOFTWARE_HOME
+
+ZDCTL="$SOFTWARE_HOME/Zope2/Startup/zopectl.py"
+
+exec "$PYTHON" "$ZDCTL" -C "$CONFIG_FILE" "$@"
