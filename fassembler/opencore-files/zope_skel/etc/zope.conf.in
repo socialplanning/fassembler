@@ -22,10 +22,10 @@
 
 # ZConfig "defines" used for later textual substitution
 
-%define ZOPE_PORT <<zope_port>>
-%define ZEO_PORT <<zeo_port>>
-%define DEBUG_MODE <<debug_mode>>
-%define INSTANCE <<zope_instance>>
+%define ZOPE_PORT {{config.port}}
+%define ZEO_PORT {{config.zeo_port}}
+%define DEBUG_MODE {{config.debug}}
+%define INSTANCE {{config.zope_instance}}
 
 # Directive: instancehome
 #
@@ -1038,28 +1038,36 @@ zserver-threads 6
 #      foo qux
 #    </myproduct>
 <product-config opencore.nui>
-      email-confirmation <<EMAILCONFIRMATION>>
-      twirlip_uri <<universal/twirlip_uri>>
+      email-confirmation {{config.email_configuration}}
+{{#FIXME: needs to be more dynamic:}}
+{{if env.config.has_option('uris', 'twirlip_uri'):}}
+      twirlip_uri {{env.config.get('uris', 'twirlip_uri')}}
+{{endif}}
 </product-config>
 <product-config opencore.auth>
-  topp_secret_filename  <<universal/topp_secret_filename>>
+  topp_secret_filename  {{env.config.get('general', 'topp_secret_filename')}}
 </product-config>
 
 %import Products.ClockServer
 <clock-server>
   method /<<openplans>>/portal_catalog_queue/manage_process
   period 300
-  user <<zope_user>>
-  password <<zope_password>>
-  host <<host>>
+  user {{config.zope_user}}
+  password {{config.zope_password}}
+  host {{config.host}}
 </clock-server>
 
+{{#FIXME: needs to be more dynamic}}
+{{if env.config.has_option('uris', 'tasktracker_uri'):}}
 <product-config opencore.tasktracker>
-  uri <<universal/tasktracker_uri>>
+  uri {{env.config.get('uris', 'tasktracker_uri')}}
   external_uri tasks
 </product-config>
+{{endif}}
 
+{{if env.config.has_option('uris', 'wordpress_uri'):}}
 <product-config opencore.wordpress>
-  uri <<universal/blog_uri>>
+  uri {{env.config.get('uris', 'wordpress_uri')}}
   external_uri blog
 </product-config>
+{{endif}}

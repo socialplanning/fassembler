@@ -81,10 +81,10 @@ Usage:
 import sys, os
 
 # these are replacements from mkzopeinstance
-PYTHON = r'<<python>>'
-SOFTWARE_HOME=r'<<zope_home>>'
-INSTANCE_HOME = os.path.join(r'<<deploydir>>', r'<<zope_instance>>')
-ZOPE_HOME = r'<<zope_home>>'
+PYTHON = {{repr(env.build_properties["virtualenv_python"])}}
+SOFTWARE_HOME={{repr(env.build_properties['virtualenv_lib_python'])}}
+INSTANCE_HOME = {{repr(config.zope_instance)}}
+ZOPE_HOME = {{repr(config.zope_source)}}
 
 ZOPE_RUN = r'%s\Zope2\Startup\run.py' % SOFTWARE_HOME
 CONFIG_FILE= os.path.join(INSTANCE_HOME, 'etc', 'zope.conf')

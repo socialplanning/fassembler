@@ -2,7 +2,7 @@ This directory will hold any additional Python packages installed into
 this Zope instance.  Installing Distutils-based packages should be
 done using the command:
 
-  <<python>> setup.py install --home <<deploydir>>/<<zope_instance>>
+  {{project.build_properties["virtualenv_python"]}} setup.py install
 
 This will cause the newly installed Python packages to appear in this
 directory.

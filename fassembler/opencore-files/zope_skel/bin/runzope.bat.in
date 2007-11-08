@@ -1,6 +1,6 @@
-@set ZOPE_HOME=<<zope_home>>
-@set INSTANCE_HOME=<<deploydir>>\<<zope_instance>>
-@set PYTHON=%ZOPE_HOME%\bin\python.exe
+@set ZOPE_HOME={{config.zope_source}}
+@set INSTANCE_HOME={{config.zope_instance}}
+@set PYTHON={{project.build_properties['virtualenv_python']}}
 @set SOFTWARE_HOME=%ZOPE_HOME%\lib\python
 @set CONFIG_FILE=%INSTANCE_HOME%\etc\zope.conf
 @set PYTHONPATH=%SOFTWARE_HOME%
