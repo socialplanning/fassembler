@@ -126,10 +126,10 @@ class Project(object):
         for setting in self.settings:
             if (not self.config.has_option(self.config_section, setting.name)
                 and not self.config.has_option('DEFAULT', setting.name)):
-                if not setting.has_default:
+                if not setting.has_default(self.environ):
                     raise ValueError(
                         "The setting [%s] %s must be set" % (self.config_section, setting.name))
-                self.config.set(self.config_section, setting.name, setting.default)
+                self.config.set(self.config_section, setting.name, setting.get_default(self.environ))
 
 class Setting(object):
 
@@ -139,14 +139,26 @@ class Setting(object):
     NoDefault = _NoDefault()
     del _NoDefault
 
-    def __init__(self, name, default=NoDefault, help=None):
+    def __init__(self, name, default=NoDefault, help=None, inherit_config=None):
         self.name = name
         self.default = default
         self.help = help
+        self.inherit_config = inherit_config
 
-    @property
-    def has_default(self):
-        return self.default is not self.NoDefault
+    def has_default(self, environ):
+        if self.default is not self.NoDefault:
+            return True
+        if self.inherit_config is not None:
+            if environ.config.has_option(*self.inherit_config):
+                return True
+        return False
+
+    def get_default(self, environ):
+        if self.inherit_config and environ.config.has_option(*self.inherit_config):
+            return environ.config.get(*self.inherit_config)
+        if self.default is not self.NoDefault:
+            return self.default
+        assert 0, 'no default'
 
     def __str__(self):
         msg = '%s: (default: %r)' % (self.name, self.default)
