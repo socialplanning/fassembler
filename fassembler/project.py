@@ -48,7 +48,7 @@ class Project(object):
             errors.append(e)
         return errors
 
-    def run(self):
+    def run(self, quick):
         if self.actions is None:
             raise NotImplementedError(
                 "The actions attribute has not been overridden in %r"
@@ -61,7 +61,7 @@ class Project(object):
             self.logger.indent += 2
             try:
                 try:
-                    task.run()
+                    task.run(quick)
                 finally:
                     self.logger.indent -= 2
             except KeyboardInterrupt:

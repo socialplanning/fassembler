@@ -3,6 +3,7 @@ import os
 import urlparse
 from tempita import Template
 import re
+from glob import glob
 
 class Task(object):
     """
@@ -32,7 +33,7 @@ class Task(object):
         # Quick test that bind has been called
         assert self.maker is not None
 
-    def run(self):
+    def run(self, quick):
         raise NotImplementedError
 
     def interpolate(self, string, stacklevel=1, name=None):
@@ -93,7 +94,10 @@ class Task(object):
             return repr(self)
         if self.maker is None:
             return repr(self).lstrip('>') + ' (unbound)>'
-        return self.interpolate(self.description, name='description of %s' % self.__class__.__name__)
+        try:
+            return self.interpolate(self.description, name='description of %s' % self.__class__.__name__)
+        except Exception, e:
+            return '%s (error in description: %s)>' % (repr(self).rstrip('>'), e)
 
 class interpolated(object):
     def __init__(self, name):
@@ -102,7 +106,11 @@ class interpolated(object):
         ## FIXME: I *could* return a string subclass that gives access to the raw value too
         if obj is None:
             return self
-        raw_value = getattr(obj, '_' + self.name)
+        try:
+            raw_value = getattr(obj, '_' + self.name)
+        except AttributeError:
+            raise AttributeError(
+                "No value set for %s" % self.name)
         return obj.interpolate(raw_value, name=obj.position + (' attribute %s' % self.name))
     def __set__(self, obj, value):
         ## FIXME: nice to compile the template here too
@@ -140,7 +148,7 @@ class Script(Task):
         self.use_virtualenv = use_virtualenv
         self.extra_args = extra_args
 
-    def run(self):
+    def run(self, quick):
         script = self.script
         if self.use_virtualenv:
             venv_path = self.project.build_properties.get('virtualenv_bin_path')
@@ -184,7 +192,7 @@ class CopyDir(Task):
         self.source = source
         self.dest = dest
 
-    def run(self):
+    def run(self, quick):
         self.copy_dir(self.source, self.dest)
 
 class SvnCheckout(Task):
@@ -207,7 +215,7 @@ class SvnCheckout(Task):
     base_repository = interpolated('base_repository')
 
     def __init__(self, name, repository, dest, base_repository=None,
-                 create_if_necessary=True, stacklevel=1):
+                 create_if_necessary=False, stacklevel=1):
         super(SvnCheckout, self).__init__(name, stacklevel=stacklevel+1)
         self.repository = repository
         self.dest = dest
@@ -224,7 +232,7 @@ class SvnCheckout(Task):
         else:
             return self.repository
 
-    def run(self):
+    def run(self, quick):
         base = self.base_repository
         if base and self.create_if_necessary and base.startswith('file:'):
             self.confirm_repository(base)
@@ -233,6 +241,9 @@ class SvnCheckout(Task):
             self.confirm_directory(full_repo)
         dest = self.dest
         if self.maker.exists(dest):
+            if quick:
+                self.logger.notify('Checkout %s exists; skipping update' % dest)
+                return
             current_repo = self.get_repo_url(dest)
             self.logger.debug('There is a repository at %s from %s'
                               % (dest, current_repo))
@@ -341,8 +352,12 @@ class VirtualEnv(Task):
         super(VirtualEnv, self).__init__(name, stacklevel=stacklevel+1)
         self.path = path
 
-    def run(self):
+    def run(self, quick):
         path = self.maker.path(self.path or self.project.name)
+        if quick and os.path.exists(path):
+            self.logger.notify('Skipping virtualenv creation as directory %s exists' % path)
+            self.set_props(path)
+            return
         import virtualenv
         ## FIXME: kind of a nasty hack
         virtualenv.logger = self.logger
@@ -351,6 +366,9 @@ class VirtualEnv(Task):
             virtualenv.create_environment(path)
         finally:
             self.logger.level_adjust += 2
+        self.set_props(path)
+
+    def set_props(self, path):
         props = self.project.build_properties
         ## FIXME: doesn't work on Windows:
         props['virtualenv_path'] = path
@@ -381,7 +399,7 @@ class EasyInstall(Script):
             for find_link in find_links:
                 self.reqs[:0] = ['-f', find_link]
         kw['stacklevel'] = kw.get('stacklevel', 1)+1
-        super(EasyInstall, self).__init__(name, ['easy_install'] + list(reqs), use_virtualenv=True, **kw)
+        super(EasyInstall, self).__init__(name, ['easy_install'] + list(self.reqs), use_virtualenv=True, **kw)
 
 class SourceInstall(SvnCheckout):
     """
@@ -404,8 +422,8 @@ class SourceInstall(SvnCheckout):
             name, repository, dest, create_if_necessary=False,
             stacklevel=stacklevel+1)
 
-    def run(self):
-        super(SourceInstall, self).run()
+    def run(self, quick):
+        super(SourceInstall, self).run(quick)
         self.maker.run_command(
             self.interpolate('{{project.build_properties["virtualenv_bin_path"]}}/python', stacklevel=1),
             'setup.py', 'develop',
@@ -428,7 +446,7 @@ class InstallPasteConfig(Task):
         self.path = path
         self.template = template
 
-    def run(self):
+    def run(self, quick):
         dest = os.path.join('etc', self.project.name, self.project.name+'.ini')
         if self.template:
             self.maker.ensure_file(
@@ -448,7 +466,7 @@ class InstallPasteStartup(Task):
     def __init__(self, name='Install Paste startup script', stacklevel=1):
         super(InstallPasteStartup, self).__init__(name, stacklevel=stacklevel+1)
 
-    def run(self):
+    def run(self, quick):
         path = os.path.join('bin', self.project.name+'.rc')
         self.maker.ensure_file(
             path,
@@ -507,7 +525,7 @@ class CheckMySQLDatabase(Task):
         else:
             return {}
 
-    def run(self):
+    def run(self, quick):
         try:
             import MySQLdb
         except ImportError:
@@ -622,7 +640,7 @@ class SaveSetting(Task):
         self.value = value
         self.section = section
 
-    def run(self):
+    def run(self, quick):
         if not self.environ.config.has_section(self.section):
             self.environ.config.add_section(self.section)
         self.environ.config.set(self.section, self.var_name, self.value)
@@ -633,4 +651,93 @@ class SaveURL(SaveSetting):
                  value='http://{{config.host}}:{{config.port}}', section='urls',
                  stacklevel=1):
         super(SaveURL, self).__init__(name, var_name=var_name,
-                                      value=value, section=section, stacklevel=stacklevel)
+                                      value=value, section=section, stacklevel=stacklevel+1)
+class Patch(Task):
+
+    files = interpolated('files')
+    dest = interpolated('dest')
+    strip = interpolated('strip')
+
+    description = """
+    Patch the files {{', '.join(config.files)}}
+    {{if config.expanded_files != config.files}}(expanded to {{', '.join(config.expanded_files)}}){{endif}}
+    Patches applied to {{config.dest}}, -p {{task.strip}}.
+    """
+
+    def __init__(self, name, files, dest, strip='0', stacklevel=1):
+        super(Patch, self).__init__(name, stacklevel=stacklevel+1)
+        if isinstance(files, basestring):
+            files = [files]
+        self.files = files
+        self.dest = dest
+        self.strip = strip
+
+    _rejects_regex = re.compile('rejects to file (.*)')
+
+    def run(self, quick):
+        files = self.expanded_files
+        if files != self.files:
+            self.logger.notify('Applying patches %s (from %s)' % (', '.join(files), ', '.join(self.files)))
+        else:
+            self.logger.notify('Applying patches %s' % ', '.join(files))
+        for file in files:
+            self.logger.indent += 2
+            try:
+                # --forward makes re-applying a patch OK
+                stdout, stderr, returncode = self.maker.run_command(
+                    ['patch', '-p', self.strip, '--forward', '-i', file],
+                    cwd=self.dest, expect_returncode=True,
+                    return_full=True)
+                if returncode:
+                    if 'Reversed (or previously applied) patch detected!  Skipping patch.' in stdout:
+                        self.logger.info('Patch already applied.')
+                    else:
+                        self.logger.error('Patch returned with code %s' % returncode, color='bold red')
+                        self.logger.error('Patch file %s applied from directory %s' % (file, self.maker.path(self.dest)))
+                        if stdout:
+                            self.logger.error('stdout:')
+                            self.logger.indent += 2
+                            try:
+                                self.logger.error(stdout)
+                            finally:
+                                self.logger.indent -= 2
+                        if stderr:
+                            self.logger.error('stderr:')
+                            self.logger.indent += 2
+                            try:
+                                self.logger.error(stderr)
+                            finally:
+                                self.logger.indent -= 2
+                        self.logger.debug('Patch contents:')
+                        self.logger.indent += 2
+                        try:
+                            self.logger.debug(open(file).read())
+                        finally:
+                            self.logger.indent -= 2
+                        reject_match = self._rejects_regex.search(stdout)
+                        if reject_match:
+                            reject_file = os.path.join(self.dest, reject_match.group(1))
+                            self.logger.debug('Contents of rejects file %s:' % reject_file)
+                            self.logger.indent += 2
+                            try:
+                                self.logger.debug(open(reject_file).read())
+                            finally:
+                                self.logger.indent -= 2
+                        raise OSError('Patch failed')
+                ## FIXME: on failure, it would be nice to show the patch and dest file
+            finally:
+                self.logger.indent -= 2
+
+    @property
+    def expanded_files(self):
+        return self.expand_globs(self.files)
+
+    def expand_globs(self, files):
+        result = []
+        for file_spec in files:
+            if '*' not in file_spec:
+                result.append(file_spec)
+                continue
+            result.extend(glob(file_spec))
+        return result
+

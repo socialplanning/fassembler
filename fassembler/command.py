@@ -49,6 +49,12 @@ parser.add_option(
     help='Do not ask questions interactively')
 
 parser.add_option(
+    '--quick',
+    action='store_true',
+    dest='quick',
+    help='Try to do things quickly (may not be as safe)')
+
+parser.add_option(
     '-H', '--project-help',
     action='store_true',
     dest='project_help',
@@ -118,7 +124,7 @@ def main(options, args):
                 logger.indent += 2
             try:
                 try:
-                    project.run()
+                    project.run(options.quick)
                     logger.notify('Done with project %s' % project_name)
                 finally:
                     if len(projects) > 1:
