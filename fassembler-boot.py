@@ -597,6 +597,8 @@ def create_bootstrap_script(extra_text):
     return content.replace('##EXT' 'END##', extra_text)
 
 
+FASS_LOCATION = '$HeadURL$'[len('HeadURL')+2:-1].strip()
+
 import shutil
 
 def adjust_options(options, args):
