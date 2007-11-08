@@ -13,6 +13,11 @@ script_name = os.path.join(base_dir, 'fassembler-boot.py')
 import virtualenv
 
 EXTRA_TEXT = """
+FASS_SVN_LOCATION = '/'.join('$HeadURL: $'[len('HeadURL')+2:-1].strip().split('/')[:-1])
+if not FASS_SVN_LOCATION:
+    # Happens when this is trunk
+    FASS_SVN_LOCATION = 'https://svn.openplans.org/svn/fassembler/trunk'
+
 import shutil
 
 def adjust_options(options, args):
@@ -24,9 +29,9 @@ def after_install(options, home_dir):
     base_dir = os.path.dirname(home_dir)
     src_dir = join(home_dir, 'src')
     fassembler_dir = join(src_dir, 'fassembler')
-    logger.notify('Installing fassembler from __SVN_LOCATION__ to %s' % fassembler_dir)
+    logger.notify('Installing fassembler from %s to %s' % (FASS_SVN_LOCATION, fassembler_dir))
     fs_ensure_dir(src_dir)
-    call_subprocess(['svn', 'checkout', '--quiet', '__SVN_LOCATION__', fassembler_dir],
+    call_subprocess(['svn', 'checkout', '--quiet', FASS_SVN_LOCATION, fassembler_dir],
                     show_stdout=True)
     call_subprocess([os.path.abspath(join(home_dir, 'bin', 'python')),
                      'setup.py', 'develop'],
@@ -75,29 +80,8 @@ def filter_python_develop(line):
     return (Logger.NOTIFY, line)
 """
 
-
-_repo_url_re = re.compile(r'^URL:\s+(.*)$', re.MULTILINE)
-
-def find_svn_location():
-    """
-    Returns the svn location where this script is located
-    """
-    proc = subprocess.Popen(
-        ['svn', 'info', base_dir],
-        stdout=subprocess.PIPE)
-    stdout, stderr = proc.communicate()
-    match = _repo_url_re.search(stdout)
-    if not match:
-        print 'svn info %s output:' % base_dir
-        print stdout
-        raise OSError(
-            "Could not find svn URL")
-    return match.group(1)
-
 def main():
     text = virtualenv.create_bootstrap_script(EXTRA_TEXT)
-    svn_location = find_svn_location()
-    text = text.replace('__SVN_LOCATION__', svn_location)
     if os.path.exists(script_name):
         f = open(script_name)
         cur_text = f.read()

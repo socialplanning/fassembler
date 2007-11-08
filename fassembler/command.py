@@ -22,11 +22,18 @@ variable will be set globally.
 """
 
 parser = OptionParser(
-    usage="%prog [OPTIONS] BASE_DIR PROJECT [PROJECT...] VARIABLES",
+    usage="%prog [OPTIONS] PROJECT [PROJECT...] VARIABLES",
     version_package='fassembler',
     description=description,
     use_logging=True,
     )
+
+parser.add_option(
+    '-b', '--base',
+    dest='base_path',
+    metavar='DIR',
+    default=None,
+    help='Base directory to install in; if not run from an fassembler-boot.py path, this argument is required')
 
 parser.add_option(
     '-c', '--config',
@@ -79,8 +86,15 @@ def main(options, args):
     if len(args) < 2:
         raise CommandError(
             "You must provide at least a base directory and one project")
-    base_dir = args[0]
-    project_names, variables = parse_positional(args[1:])
+    base_path = options.base_path
+    if not base_path:
+        script_path = os.path.abspath(sys.argv[0])
+        base_path = os.path.dirname(os.path.dirname(script_path))
+        build_ini = os.path.join(base_path, 'etc', 'build.ini')
+        if not os.path.exists(build_ini):
+            raise CommandError(
+                "%s not found; you must provide the --base value" % build_ini)
+    project_names, variables = parse_positional(args)
     logger = options.logger
     config = load_configs(options.configs)
     for section, name, value in variables:
@@ -88,9 +102,9 @@ def main(options, args):
         if not config.has_section(section):
             config.add_section(section)
         config.set(section, name, value, filename='<cmdline>')
-    maker = Maker(base_dir, simulate=options.simulate,
+    maker = Maker(base_path, simulate=options.simulate,
                   interactive=not options.no_interactive, logger=logger)
-    environ = Environment(base_dir, logger=logger)
+    environ = Environment(base_path, logger=logger)
     projects = []
     for project_name in project_names:
         logger.debug('Finding package %s' % project_name)

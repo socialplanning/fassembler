@@ -597,7 +597,10 @@ def create_bootstrap_script(extra_text):
     return content.replace('##EXT' 'END##', extra_text)
 
 
-FASS_LOCATION = '$HeadURL$'[len('HeadURL')+2:-1].strip()
+FASS_SVN_LOCATION = '/'.join('$HeadURL$'[len('HeadURL')+2:-1].strip().split('/')[:-1])
+if not FASS_SVN_LOCATION:
+    # Happens when this is trunk
+    FASS_SVN_LOCATION = 'https://svn.openplans.org/svn/fassembler/trunk'
 
 import shutil
 
@@ -610,9 +613,9 @@ def after_install(options, home_dir):
     base_dir = os.path.dirname(home_dir)
     src_dir = join(home_dir, 'src')
     fassembler_dir = join(src_dir, 'fassembler')
-    logger.notify('Installing fassembler from https://svn.openplans.org/svn/fassembler/trunk to %s' % fassembler_dir)
+    logger.notify('Installing fassembler from %s to %s' % (FASS_SVN_LOCATION, fassembler_dir))
     fs_ensure_dir(src_dir)
-    call_subprocess(['svn', 'checkout', '--quiet', 'https://svn.openplans.org/svn/fassembler/trunk', fassembler_dir],
+    call_subprocess(['svn', 'checkout', '--quiet', FASS_SVN_LOCATION, fassembler_dir],
                     show_stdout=True)
     call_subprocess([os.path.abspath(join(home_dir, 'bin', 'python')),
                      'setup.py', 'develop'],
