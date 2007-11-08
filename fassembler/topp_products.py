@@ -49,7 +49,7 @@ class ScriptTranscluderProject(Project):
         tasks.EasyInstall('Install PasteScript', 'PasteScript'),
         tasks.InstallPasteConfig(scripttranscluder_config_template),
         tasks.InstallPasteStartup(),
-        tasks.SaveURL(),
+        tasks.SaveURI(),
         ]
 
 
@@ -122,6 +122,6 @@ class TaskTrackerProject(Project):
                      ['paster', 'setup-app', '{{env.base_path}}/etc/{{project.name}}/{{project.name}}.ini'],
                      use_virtualenv=True,
                      cwd='{{env.base_path}}/{{project.name}}/src/{{project.name}}'),
-        tasks.SaveURL(),
+        tasks.SaveURI(),
         ]
 

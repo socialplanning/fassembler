@@ -194,6 +194,8 @@ class CopyDir(Task):
         self.dest = dest
 
     def run(self, quick):
+        self.logger.info(
+            'Copying %s to %s' % (self.source, self.dest))
         self.copy_dir(self.source, self.dest)
 
 class SvnCheckout(Task):
@@ -381,7 +383,9 @@ class VirtualEnv(Task):
         ## FIXME: doesn't work on Windows:
         props['virtualenv_path'] = path
         props['virtualenv_bin_path'] = os.path.join(path, 'bin')
+        props['virtualenv_python'] = os.path.join(path, 'bin', 'python')
         props['virtualenv_src_path'] = os.path.join(path, 'src')
+        props['virtualenv_lib_python'] = os.path.join(path, 'lib', 'python%s' % sys.version[:3])
         self.logger.notify('virtualenv created in %s' % path)
 
 
@@ -653,12 +657,12 @@ class SaveSetting(Task):
             self.environ.config.add_section(self.section)
         self.environ.config.set(self.section, self.var_name, self.value)
 
-class SaveURL(SaveSetting):
+class SaveURI(SaveSetting):
 
-    def __init__(self, name='Save URL setting', var_name='{{project.name}}_url',
-                 value='http://{{config.host}}:{{config.port}}', section='urls',
+    def __init__(self, name='Save URI setting', var_name='{{project.name}}_urI',
+                 value='http://{{config.host}}:{{config.port}}', section='uris',
                  stacklevel=1):
-        super(SaveURL, self).__init__(name, var_name=var_name,
+        super(SaveURI, self).__init__(name, var_name=var_name,
                                       value=value, section=section, stacklevel=stacklevel+1)
 class Patch(Task):
 
