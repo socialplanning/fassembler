@@ -3,7 +3,11 @@ from tempita import Template
 from cmdutils import CommandError
 import sys
 
+_in_broken_ns = False
+
 class Namespace(DictMixin):
+    ## FIXME: probably this should have access to the maker, for
+    ## error handling.
     def __init__(self, name=None):
         self.name = name
         self.dict = {}
@@ -88,66 +92,86 @@ class Namespace(DictMixin):
         return '\n'.join(lines)
 
     def _quote(self, value):
-        return value
+        ## FIXME: should handle cases when a value is really long
+        try:
+            return str(value)
+        except Exception, e:
+            try:
+                return 'Error doing str(%r): %s' % (value, e)
+            except Exception, e:
+                return 'Error doing repr(value): %s' % e
 
     def __str__(self):
         return self.string_repr()
 
     def execute_template(self, tmpl):
+        global _in_broken_ns
         try:
             return tmpl.substitute(self.dict)
         except:
-            ## FIXME: should probably raise if not interactive
-            import traceback
+            if _in_broken_ns:
+                # Hitting this recursively while already handling another error
+                raise
+            _in_broken_ns = True
             try:
-                # Enable nicer raw_input:
-                import readline
-            except ImportError:
-                pass
-            exc_info = sys.exc_info()
-            print "Error: %s" % exc_info[1]
-            template_content = tmpl.content
-            if len(template_content) < 80 and len(template_content.strip().splitlines()) == 1:
-                print 'Template: %s' % template_content
-            retry = False
-            while 1:
-                response = raw_input('What to do? [(c)ancel/(q)uit/(r)etry/(s)how source/(n)amespace/(t)raceback/(p)db/(e)xecute/(r)etry/] ')
-                if not response.strip():
-                    continue
-                char = response.strip().lower()[0]
-                if char == 'c':
-                    break
-                elif char == 'q':
-                    raise CommandError('Aborted', show_usage=False)
-                elif char == 'r':
-                    retry = True
-                    break
-                elif char == 's':
-                    print 'Template:'
-                    print template_content
-                elif char == 'n':
-                    print 'Namespace:'
-                    print self
-                elif char == 't':
-                    traceback.print_exception(*exc_info)
-                elif char == 'p':
-                    import pdb
-                    pdb.set_trace()
-                elif char == 'e':
-                    expr = response[1:].strip()
-                    if not expr:
-                        print 'Use "e express_to_execute"'
+                ## FIXME: should probably raise if not interactive
+                import traceback
+                try:
+                    # Enable nicer raw_input:
+                    import readline
+                except ImportError:
+                    pass
+                exc_info = sys.exc_info()
+                print "Error: %s" % exc_info[1]
+                template_content = tmpl.content
+                if len(template_content) < 80 and len(template_content.strip().splitlines()) == 1:
+                    print 'Template: %s' % template_content
+                retry = False
+                while 1:
+                    response = raw_input('What to do? [(c)ancel/(q)uit/(r)etry/(s)how source/(n)amespace/(t)raceback/(p)db/(e)xecute/(r)etry/] ')
+                    if not response.strip():
                         continue
-                    try:
-                        exec compile(expr, '<e>', "single") in self.dict
-                    except:
-                        print 'Error in expression %s:' % expr
-                        traceback.print_exc()
-                else:
-                    print 'Invalid input: %r' % char
-            if retry:
-                return self.execute_template(tmpl)
-            raise
+                    char = response.strip().lower()[0]
+                    if char == 'c':
+                        break
+                    elif char == 'q':
+                        raise CommandError('Aborted', show_usage=False)
+                    elif char == 'r':
+                        retry = True
+                        break
+                    elif char == 's':
+                        print 'Template:'
+                        print template_content
+                    elif char == 'n':
+                        print 'Namespace:'
+                        try:
+                            print self
+                        except:
+                            # This shouldn't really happen
+                            print 'Error printing self:', sys.exc_info()[1]
+                            traceback.print_exc()
+                    elif char == 't':
+                        traceback.print_exception(*exc_info)
+                    elif char == 'p':
+                        import pdb
+                        pdb.set_trace()
+                    elif char == 'e':
+                        expr = response[1:].strip()
+                        if not expr:
+                            print 'Use "e express_to_execute"'
+                            continue
+                        try:
+                            exec compile(expr, '<e>', "single") in self.dict
+                        except:
+                            print 'Error in expression %s:' % expr
+                            traceback.print_exc()
+                    else:
+                        print 'Invalid input: %r' % char
+                if retry:
+                    return self.execute_template(tmpl)
+                raise
+            finally:
+                _in_broken_ns = False
 
 class SectionNamespace(DictMixin):
 
