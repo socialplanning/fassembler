@@ -167,7 +167,7 @@ class Maker(object):
                 if not include_hidden and self.is_hidden(dirname):
                     self.logger.debug('Skipping hidden directory %s' % dirname)
                     continue
-                destdir = self.path(os.path.join(dirpath, dirname))
+                destdir = self.path(os.path.join(dest, dirpath, dirname))
                 if sub_filenames:
                     orig_destdir = destdir
                     destdir = self.fill_filename(destdir, template_vars)
@@ -178,7 +178,7 @@ class Maker(object):
                 if not include_hidden and self.is_hidden(filename):
                     self.logger.debug('Skipping hidden file %s' % filename)
                     continue
-                destfn = self.path(os.path.join(dirpath, filename))
+                destfn = self.path(os.path.join(dest, dirpath, filename))
                 if sub_filenames:
                     orig_destfn = destfn
                     destfn = self.fill_filename(destfn, template_vars)
