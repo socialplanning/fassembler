@@ -1,0 +1,18 @@
+Index: test.py
+===================================================================
+--- test.py	(revision 72483)
++++ test.py	(working copy)
+@@ -86,6 +86,14 @@
+     products = os.path.join(ihome, 'Products')
+     if os.path.exists(products):
+         defaults += ['--package-path', products, 'Products']
++
++    # Add all paths in sys.path, except those in the standard
++    # location; a lame way to include packages that we might want to
++    # test.
++    lib_home = os.path.join(sys.prefix, 'lib', 'python%s' % sys.version[:3])
++    for path in sys.path:
++        if not path.startswith(lib_home):
++            defaults += ['--test-path', path]
+ else:
+     defaults += ['--test-path', shome]

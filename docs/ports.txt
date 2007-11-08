@@ -1,5 +1,6 @@
 +0 = Deliverance
 +1 = Zope
-+2 = WordPress
-+3 = TaskTracker
-+4 = ScriptTranscluder
++2 = ZEO
++3 = WordPress
++4 = TaskTracker
++5 = ScriptTranscluder

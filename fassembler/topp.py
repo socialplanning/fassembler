@@ -12,6 +12,7 @@ class ToppProject(Project):
     project_base_dir = os.path.join(os.path.dirname(__file__), 'topp-files')
 
     settings = [
+        ## FIXME: this *should* draw from the global settings if it is not set
         Setting('base_port',
                 help='The base port to use for application (each application is an offset from this port)'),
         Setting('etc_svn_repository',
