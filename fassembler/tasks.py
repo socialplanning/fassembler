@@ -136,7 +136,9 @@ class Script(Task):
     description = """
     Run the process:
       {{maker._format_command(task.script)}}
-      {{if task.cwd}}in {{task.cwd}}{{endif}}
+      {{if task.cwd}}
+      in {{task.cwd}}
+      {{endif}}
     {{if task.extra_args}}Also call run_command with keyword arguments {{task.extra_args}}{{endif}}
     {{if task.use_virtualenv }}A virtualenv environment will be used (one MUST be built for the project).
     {{else}}No virtualenv environment will be used.
