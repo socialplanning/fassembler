@@ -5,6 +5,7 @@ import sys
 import glob
 import subprocess
 import re
+import shutil
 from difflib import unified_diff, context_diff
 import tempita
 
@@ -315,6 +316,14 @@ class Maker(object):
             if not self._svn_failed:
                 self.logger.warn('Unable to run svn command (%s); proceeding anyway' % e)
                 self._svn_failed = True
+
+    def rmtree(self, filename):
+        if not os.path.isdir(filename):
+            self.logger.fatal('%s is not a directory' % filename)
+            raise OSError('%s is not a directory' % filename)
+        self.logger.debug('Deleting recursively: %s' % filename)
+        if not self.simulate:
+            shutil.rmtree(filename)
 
     def run_command(self, cmd, *args, **kw):
         """

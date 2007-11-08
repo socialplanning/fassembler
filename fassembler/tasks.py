@@ -267,8 +267,7 @@ class SvnCheckout(Task):
                     elif response == 's':
                         self.logger.warn('Switching repository locations')
                         self.maker.run_command(
-                            ['svn', 'switch', '--relocate',
-                             current_repo, full_repo, dest])
+                            ['svn', 'switch', full_repo, dest])
                     elif response == 'b' or response == 'w':
                         if response == 'b':
                             self.maker.backup(dest)
