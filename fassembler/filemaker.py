@@ -138,7 +138,8 @@ class Maker(object):
         assert isinstance(path, basestring), "Bad path: %r" % (path, )
         return os.path.normcase(os.path.abspath(path))
     
-    def copy_dir(self, src, dest, sub_filenames=True, template_vars=None, interpolater=None, include_hidden=False):
+    def copy_dir(self, src, dest, sub_filenames=True, template_vars=None, interpolater=None, include_hidden=False,
+                 add_dest_to_svn=False):
         """
         Copy a directory recursively, processing any files within it
         that need to be processed (end in _tmpl).
@@ -146,6 +147,8 @@ class Maker(object):
         if template_vars is None:
             sub_filenames = False
         skips = []
+        dest = self.path(dest)
+        self.ensure_dir(dest, svn_add=add_dest_to_svn)
         for dirpath, dirnames, filenames in os.walk(src):
             ## FIXME: this doesn't indent or handle recursion as
             ## cleaning as a trully recursive version would.
@@ -218,7 +221,7 @@ class Maker(object):
             __init__.py file.
         
         """
-        dir = dir.rstrip(os.sep)
+        dir = os.path.abspath(dir.rstrip(os.sep))
         if not dir:
             # we either reached the parent-most directory, or we got
             # a relative directory
