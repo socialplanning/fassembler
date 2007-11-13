@@ -1,6 +1,8 @@
 import os
 import socket
 from fassembler.config import ConfigParser
+import string
+import random
 
 class Environment(object):
 
@@ -30,8 +32,19 @@ class Environment(object):
         return self._parser
 
     def save(self):
+        """
+        Save the configuration in etc/build.ini
+        """
         ## FIXME: this should use ensure_file or something
         self.logger.info('Writing environment config file: %s' % self.config_filename)
         f = open(self.config_filename, 'wb')
         self.config.write(f)
         f.close()
+
+    def random_string(self, length=20, chars=string.printable.strip()):
+        """
+        Return a random string of the given length, taken from the given characters.
+        """
+        return ''.join([
+            random.choice(chars) for i in range(length)])
+    

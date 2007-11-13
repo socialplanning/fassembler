@@ -9,7 +9,7 @@ class ToppProject(Project):
 
     name = 'topp'
     title = 'TOPP (openplans.org) Standard File Layout'
-    project_base_dir = os.path.join(os.path.dirname(__file__), 'topp-files', 'base-layout')
+    project_base_dir = os.path.join(os.path.dirname(__file__), 'topp-files')
 
     settings = [
         ## FIXME: this *should* draw from the global settings if it is not set
@@ -23,18 +23,25 @@ class ToppProject(Project):
         Setting('etc_svn_subdir',
                 default='{{env.hostname}}-{{os.path.basename(env.base_path)}}',
                 help='svn subdirectory where data configuration is kept (will be created if necessary)'),
+        Setting('admin_password',
+                default=None,
+                help='The admin password'),
         ]
 
     actions = [
-        tasks.CopyDir('create layout', project_base_dir, './'),
+        tasks.CopyDir('create layout', os.path.join(project_base_dir, 'base-layout'), './'),
         tasks.SvnCheckout('check out etc/', '{{config.etc_svn_subdir}}',
                           'etc/',
                           base_repository='{{config.etc_svn_repository}}',
                           create_if_necessary=True),
-        ## FIXME: write secret.txt
+        tasks.EnsureFile('Write secret.txt if necessary', '{{env.base_path}}/var/secret.txt', '{{env.random_string(40)}}',
+                         overwrite=False),
+        tasks.EnsureFile('Write admin.txt if necessary', '{{env.base_path}}/var/admin.txt',
+                         '{{py:assert config.admin_password, ("You must give the setting admin_password")}}admin:{{config.admin_password}}',
+                         overwrite=False),
         tasks.SaveSetting('Save port', 'base_port', '{{config.base_port}}'),
-        tasks.SaveSetting('Save secret filename', 'topp_secret_filename', '{{env.base_path}}/etc/secret.txt'),
-        tasks.SaveSetting('Save admin u/p', 'admin_info_filename', '{{env.base_path}}/etc/admin.txt'),
+        tasks.SaveSetting('Save secret filename', 'topp_secret_filename', '{{env.base_path}}/var/secret.txt'),
+        tasks.SaveSetting('Save admin u/p', 'admin_info_filename', '{{env.base_path}}/var/admin.txt'),
         ]
 
 

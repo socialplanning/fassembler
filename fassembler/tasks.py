@@ -193,6 +193,43 @@ class CopyDir(Task):
             'Copying %s to %s' % (self.source, self.dest))
         self.copy_dir(self.source, self.dest)
 
+class EnsureFile(Task):
+    """
+    Write a single file
+    """
+
+    description = """
+    Write the file {{task.dest}} with the given content.
+    {{if not task.overwrite:}}
+    If {{task.dest}} already exists, do not overwrite it.
+    {{endif}}
+    {{if task.svn_add}}
+    If {{os.path.dirname(task.dest)}} is an svn checkout, this file will be added.
+    {{endif}}
+    {{if task.executable}}
+    The file will be made executable.
+    {{endif}}
+    """
+
+    dest = interpolated('dest')
+    content = interpolated('content')
+
+    def __init__(self, name, dest, content, overwrite=False, svn_add=False,
+                 executable=False, stacklevel=1):
+        super(EnsureFile, self).__init__(name, stacklevel=stacklevel+1)
+        self.dest = dest
+        self.content = content
+        self.overwrite = overwrite
+        self.svn_add = svn_add
+        self.executable = executable
+
+    def run(self):
+        if not self.overwrite and self.maker.exists(self.dest):
+            self.logger.notify('File %s already exists; not overwriting' % self.dest)
+            return
+        self.maker.ensure_file(self.dest, self.content, svn_add=self.svn_add,
+                               overwrite=self.overwrite, executable=self.executable)
+
 class SvnCheckout(Task):
     """
     Check out files from svn
