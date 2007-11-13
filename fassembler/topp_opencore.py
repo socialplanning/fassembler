@@ -57,6 +57,9 @@ class OpenCoreProject(Project):
         Setting('zope_svn_repo',
                 default='http://svn.zope.de/zope.org/Zope/branches/2.9',
                 help='Location of Zope svn'),
+        Setting('zope_egg',
+                default='Zope==2.98_final',
+                help='Requirement for installing Zope'),
         ## FIXME: not sure if this is right:
         ## FIXME: should also be more global
         ## FIXME: also, type check on bool-ness
@@ -75,14 +78,16 @@ class OpenCoreProject(Project):
     actions = [
         tasks.VirtualEnv(),
         tasks.EasyInstall('Install PIL', 'PIL', find_links=['http://dist.repoze.org/simple/PIL/']),
-        tasks.SvnCheckout('Check out Zope', '{{config.zope_svn_repo}}',
-                          '{{config.zope_source}}'),
-        tasks.Patch('Patch Zope', os.path.join(patch_dir, '*.diff'), '{{config.zope_source}}'),
+        tasks.EasyInstall('Install Zope', '{{config.zope_egg}}',
+                          find_links=['https://svn.openplans.org/eggs/']),
+        #tasks.SvnCheckout('Check out Zope', '{{config.zope_svn_repo}}',
+        #                  '{{config.zope_source}}'),
+        #tasks.Patch('Patch Zope', os.path.join(patch_dir, '*.diff'), '{{config.zope_source}}'),
         tasks.CopyDir('Create custom skel',
                       skel_dir, '{{project.name}}/src/Zope/custom_skel'),
-        tasks.Script('Configure Zope', [
-        './configure', '--prefix', '{{project.build_properties["virtualenv_path"]}}'],
-        cwd='{{config.zope_source}}'),
+        #tasks.Script('Configure Zope', [
+        #'./configure', '--prefix', '{{project.build_properties["virtualenv_path"]}}'],
+        #cwd='{{config.zope_source}}'),
         tasks.Script('Make Zope', ['make'], cwd='{{config.zope_source}}'),
         tasks.Script('Install Zope', ['make', 'inplace'], cwd='{{config.zope_source}}'),
         tasks.Script('Make Zope Instance', [

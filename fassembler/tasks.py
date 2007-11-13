@@ -39,7 +39,7 @@ class Task(object):
         Called early on to set any project.build_properties that other tasks might need.
         """
 
-    def run(self, quick):
+    def run(self):
         raise NotImplementedError
 
     def interpolate(self, string, stacklevel=1, name=None):
@@ -94,6 +94,13 @@ class Task(object):
         if lineno:
             name += ':%s' % lineno
         return name
+
+    def venv_property(self, name='path'):
+        prop = self.project.build_properties.get('virtualenv_%s' % name)
+        if not prop:
+            raise Exception(
+                "You must run a VirtualEnv task before this task")
+        return prop
 
     def __str__(self):
         if self.description is None:
@@ -156,31 +163,12 @@ class Script(Task):
         self.use_virtualenv = use_virtualenv
         self.extra_args = extra_args
 
-    def run(self, quick):
+    def run(self):
         script = self.script
+        kw = self.extra_args.copy()
         if self.use_virtualenv:
-            venv_path = self.project.build_properties.get('virtualenv_bin_path')
-            if not venv_path:
-                raise Exception(
-                    "You must run a VirtualEnv task before Script if use_virtualenv=True")
-            script = self.abspath_script(venv_path, script)
-        self.maker.run_command(script, cwd=self.cwd, **self.extra_args)
-
-    def abspath_script(self, path, script):
-        is_string = isinstance(script, basestring)
-        if is_string:
-            # Shell-style string command
-            try:
-                first, rest = script.split(None, 1)
-            except ValueError:
-                first, rest = script, ''
-        else:
-            first, rest = script[0], script[1:]
-        first = os.path.join(path, first)
-        if is_string:
-            return '%s %s' % (first, rest)
-        else:
-            return [first] + rest
+            kw['script_abspath'] = self.venv_property('bin_path')
+        self.maker.run_command(script, cwd=self.cwd, **kw)
 
 
 class CopyDir(Task):
@@ -200,7 +188,7 @@ class CopyDir(Task):
         self.source = source
         self.dest = dest
 
-    def run(self, quick):
+    def run(self):
         self.logger.info(
             'Copying %s to %s' % (self.source, self.dest))
         self.copy_dir(self.source, self.dest)
@@ -242,79 +230,14 @@ class SvnCheckout(Task):
         else:
             return self.repository
 
-    def run(self, quick):
+    def run(self):
         base = self.base_repository
         if base and self.create_if_necessary and base.startswith('file:'):
             self.confirm_repository(base)
         full_repo = self.full_repository
         if self.create_if_necessary:
             self.confirm_directory(full_repo)
-        dest = self.dest
-        if self.maker.exists(dest):
-            if quick:
-                self.logger.notify('Checkout %s exists; skipping update' % dest)
-                return
-            current_repo = self.get_repo_url(dest)
-            self.logger.debug('There is a repository at %s from %s'
-                              % (dest, current_repo))
-            if current_repo and current_repo != full_repo:
-                self.logger.debug("The repository at %s isn't from the expected location %s"
-                                  % (dest, full_repo))
-                if self.maker.interactive:
-                    response = self.maker.ask(
-                        'At %s there is already a checkout from %s\n'
-                        'The expected repository is %s\n'
-                        'What should I do?'
-                        % (dest, current_repo, full_repo),
-                        responses=['(i)gnore',
-                                   '(s)witch',
-                                   '(b)ackup',
-                                   '(w)ipe'],
-                        first_char=True)
-                    if response == 'i':
-                        self.logger.warn('Ignoring svn repository differences')
-                    elif response == 's':
-                        self.logger.warn('Switching repository locations')
-                        self.maker.run_command(
-                            ['svn', 'switch', full_repo, dest])
-                    elif response == 'b' or response == 'w':
-                        if response == 'b':
-                            self.maker.backup(dest)
-                        else:
-                            self.logger.warn('Deleting checkout %s' % dest)
-                        self.maker.rmtree(dest)
-                    else:
-                        assert 0, response
-        if os.path.exists(dest):
-            self.maker.run_command(['svn', 'update', dest])
-            self.logger.notify('Updated repository at %s' % dest)
-        else:
-            ## FIXME: dot progress?
-            self.maker.run_command(['svn', 'checkout', full_repo, dest])
-            self.logger.notify('Checked out repository to %s' % dest)
-
-    _repo_url_re = re.compile(r'^URL:\s+(.*)$', re.MULTILINE)
-
-    def get_repo_url(self, path):
-        """
-        Get the subversion URL that path was checked out from
-        """
-        ## FIXME: ideally we'd set LANG or something, as the output
-        ## can get i18n'd
-        try:
-            stdout = self.maker.run_command(
-                ['svn', 'info', path])
-        except RunCommandError, e:
-            if 'is not a working copy' in e.stderr:
-                # Not really a problem
-                return None
-            raise
-        match = self._repo_url_re.search(stdout)
-        if not match:
-            raise ValueError(
-                "Could not determine svn URL of %s; output:\n%s"
-                % (path, stdout))
-        return match.group(1).strip()
+        self.maker.checkout_svn(full_repo, self.dest)
 
     def confirm_repository(self, repo):
         """
@@ -373,9 +296,9 @@ class VirtualEnv(Task):
     def path_resolved(self):
         return self.maker.path(self.path or self.project.name)
 
-    def run(self, quick):
+    def run(self):
         path = self.path_resolved
-        if quick and os.path.exists(path):
+        if self.maker.quick and os.path.exists(path):
             self.logger.notify('Skipping virtualenv creation as directory %s exists' % path)
             return
         import virtualenv
@@ -445,8 +368,8 @@ class SourceInstall(SvnCheckout):
             name, repository, dest, create_if_necessary=False,
             stacklevel=stacklevel+1)
 
-    def run(self, quick):
-        super(SourceInstall, self).run(quick)
+    def run(self):
+        super(SourceInstall, self).run()
         self.maker.run_command(
             self.interpolate('{{project.build_properties["virtualenv_bin_path"]}}/python', stacklevel=1),
             'setup.py', 'develop',
@@ -469,7 +392,7 @@ class InstallPasteConfig(Task):
         self.path = path
         self.template = template
 
-    def run(self, quick):
+    def run(self):
         dest = os.path.join('etc', self.project.name, self.project.name+'.ini')
         if self.template:
             self.maker.ensure_file(
@@ -489,7 +412,7 @@ class InstallPasteStartup(Task):
     def __init__(self, name='Install Paste startup script', stacklevel=1):
         super(InstallPasteStartup, self).__init__(name, stacklevel=stacklevel+1)
 
-    def run(self, quick):
+    def run(self):
         path = os.path.join('bin', self.project.name+'.rc')
         self.maker.ensure_file(
             path,
@@ -548,7 +471,7 @@ class CheckMySQLDatabase(Task):
         else:
             return {}
 
-    def run(self, quick):
+    def run(self):
         try:
             import MySQLdb
         except ImportError:
@@ -663,7 +586,7 @@ class SaveSetting(Task):
         self.value = value
         self.section = section
 
-    def run(self, quick):
+    def run(self):
         if not self.environ.config.has_section(self.section):
             self.environ.config.add_section(self.section)
         self.environ.config.set(self.section, self.var_name, self.value)
@@ -697,7 +620,7 @@ class Patch(Task):
 
     _rejects_regex = re.compile('rejects to file (.*)')
 
-    def run(self, quick):
+    def run(self):
         files = self.expanded_files
         if files != self.files:
             self.logger.notify('Applying patches %s (from %s)' % (', '.join(files), ', '.join(self.files)))
@@ -764,3 +687,113 @@ class Patch(Task):
             result.extend(glob(file_spec))
         return result
 
+class InstallSpec(Task):
+
+    spec_filename = interpolated('spec_filename')
+
+    def __init__(self, name, spec_filename, stacklevel=1):
+        super(InstallSpec, self).__init__(name, stacklevel=stacklevel+1)
+        self.spec_filename = spec_filename
+
+    def run(self):
+        context, commands = self.read_commands()
+        context['virtualenv_python'] = self.project.build_properties['virtualenv_python']
+        extra_commands = []
+        for command, arg in commands:
+            result = command(context, arg)
+            if result:
+                extra_commands.append(result)
+        for command, arg in extra_commands:
+            command(context, arg)
+
+    def read_commands(self, filename=None):
+        if filename is None:
+            filename = self.spec_filename
+        self.logger.debug('Reading spec %s' % filename)
+        f = open(filename)
+        context = dict(find_links=[],
+                       src_base=os.path.join(self.project.build_properties['virtualenv_path'], 'src'))
+        commands = []
+        uneditable_eggs = []
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            if line.startswith('-f') or line.startswith('--find-links'):
+                if line.startswith('-f'):
+                    line = line[2:]
+                else:
+                    line = line[len('--find-links'):].lstrip('=')
+                context['find_links'].append(line.strip())
+                continue
+            if line.startswith('-e') or line.startswith('--editable'):
+                if uneditable_eggs:
+                    commands.append((self.install_eggs, uneditable_eggs))
+                    uneditable_eggs = []
+                if line.startswith('-e'):
+                    line = line[2:]
+                else:
+                    line = line[len('--editable'):].lstrip('=')
+                commands.append((self.install_editable, line.strip()))
+                continue
+            uneditable_eggs.append(line.strip())
+        if uneditable_eggs:
+            commands.append((self.install_eggs, uneditable_eggs))
+        return context, commands
+
+    _rev_svn_re = re.compile(r'@(\d+)$')
+    _egg_spec_re = re.compile(r'egg=([^-=&]?)')
+
+    def install_editable(self, context, svn):
+        ops = []
+        name = None
+        if '#' in svn:
+            svn, fragment = svn.split('#', 1)
+            match = self._egg_spec_re.search(fragment)
+            if match:
+                name = match.group(1)
+        revision = None
+        match = self._rev_svn_re.search(svn)
+        if match:
+            svn = svn[:match.start()]
+            revision = match.group(1)
+        ops.append(svn)
+        if name is None:
+            parts = [p for p in svn.split('/') if p]
+            if parts[-2] in ('tags', 'branches', 'tag', 'branch'):
+                name = parts[-3]
+            elif parts[-1] == 'trunk':
+                name = parts[-2]
+            else:
+                raise ValueError(
+                    "Cannot determine the name of the package from the svn directory %s; "
+                    "you should add #egg=Name to the URL" % svn)
+        # Normalizing the name, so it's more predictable later:
+        name = name.lower()
+        dest = os.path.join(context['src_base'], name)
+        self.maker.checkout_svn(svn, dest, revision=revision)
+        self.maker.run_command(
+            'python', 'setup.py', 'develop', '--no-deps',
+            cwd=dest,
+            script_abspath=self.venv_property('bin_path'))
+        return self.install_finalize_editable, dest
+
+    def install_finalize_editable(self, context, src_dir):
+        cmd = ['python', 'setup.py', 'develop']
+        for link in context['find_links']:
+            cmd.extend(['-f', link])
+        self.maker.run_command(
+            cmd,
+            cwd=src_dir,
+            script_abspath=self.venv_property('bin_path'))
+
+    def install_eggs(self, context, eggs):
+        cmd = ['easy_install']
+        for link in context['find_links']:
+            cmd.extend(['-f', link])
+        cmd.extend(eggs)
+        self.maker.run_command(
+            cmd,
+            cwd=self.venv_property('path'),
+            script_abspath=self.venv_property('bin_path'))
+            

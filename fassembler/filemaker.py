@@ -27,7 +27,8 @@ class Maker(object):
     
     def __init__(self, base_path, logger,
                  simulate=False, 
-                 interactive=True):
+                 interactive=True,
+                 quick=False):
         """
         Initialize the Maker.  Files go under base_path.
         """
@@ -35,6 +36,7 @@ class Maker(object):
         self.logger = logger
         self.simulate = simulate
         self.interactive = interactive
+        self.quick = quick
     
     def copy_file(self, src, dest=None, dest_dir=None, template_vars=None, interpolater=None, overwrite=False):
         """
@@ -340,10 +342,13 @@ class Maker(object):
         return_full = popdefault(kw, 'return_full')
         extra_path = popdefault(kw, 'extra_path', [])
         env = popdefault(kw, 'env', os.environ)
+        script_abspath = popdefault(kw, 'script_abspath', None)
         if extra_path:
             env = env.copy()
             path_parts = env.get('PATH', '').split(os.path.pathsep)
             env['PATH'] = os.path.pathsep.join(extra_path + path_parts)
+        if script_abspath:
+            cmd = self._script_abspath(cmd, script_abspath)
         assert not kw, ("Arguments not expected: %s" % kw)
         if capture_stderr:
             stderr_pipe = subprocess.STDOUT
@@ -401,6 +406,101 @@ class Maker(object):
             return (stdout, stderr, proc.returncode)
         else:
             return stdout
+
+    def checkout_svn(self, repo, dest, revision=None):
+        if self.exists(dest):
+            if self.quick:
+                self.logger.notify('Checkout %s exists; skipping update' % dest)
+                return
+            current_repo = self._get_repo_url(dest)
+            self.logger.debug('There is a repository at %s from %s'
+                              % (dest, current_repo))
+            if current_repo and current_repo != repo:
+                self.logger.debug("The repository at %s isn't from the expected location %s"
+                                  % (dest, repo))
+                if self.interactive:
+                    response = self.ask(
+                        'At %s there is already a checkout from %s\n'
+                        'The expected repository is %s\n'
+                        'What should I do?'
+                        % (dest, current_repo, repo),
+                        responses=['(i)gnore',
+                                   '(s)witch',
+                                   '(b)ackup',
+                                   '(w)ipe'],
+                        first_char=True)
+                    if response == 'i':
+                        self.logger.warn('Ignoring svn repository differences')
+                    elif response == 's':
+                        self.logger.warn('Switching repository locations')
+                        self.run_command(
+                            ['svn', 'switch', repo, dest])
+                    elif response == 'b' or response == 'w':
+                        if response == 'b':
+                            self.backup(dest)
+                        else:
+                            self.logger.warn('Deleting checkout %s' % dest)
+                        self.rmtree(dest)
+                    else:
+                        assert 0, response
+        if os.path.exists(dest):
+            cmd = ['svn', 'update']
+            if revision:
+                cmd.extend(['-r', str(revision)])
+            cmd.append(dest)
+            self.run_command(cmd)
+            self.logger.notify('Updated repository at %s' % dest)
+        else:
+            ## FIXME: dot progress?
+            cmd = ['svn', 'checkout']
+            if revision:
+                cmd.extend(['-r', str(revision)])
+            cmd.extend([repo, dest])
+            self.run_command(cmd)
+            self.logger.notify('Checked out repository to %s' % dest)
+
+    _repo_url_re = re.compile(r'^URL:\s+(.*)$', re.MULTILINE)
+
+    def _get_repo_url(self, path):
+        """
+        Get the subversion URL that path was checked out from
+        """
+        ## FIXME: ideally we'd set LANG or something, as the output
+        ## can get i18n'd
+        try:
+            stdout = self.run_command(
+                ['svn', 'info', path])
+        except RunCommandError, e:
+            if 'is not a working copy' in e.stderr:
+                # Not really a problem
+                return None
+            raise
+        match = self._repo_url_re.search(stdout)
+        if not match:
+            raise ValueError(
+                "Could not determine svn URL of %s; output:\n%s"
+                % (path, stdout))
+        return match.group(1).strip()
+
+    def _script_abspath(self, cmd, abspath):
+        is_string = isinstance(cmd, basestring)
+        if is_string:
+            # Shell-style string command
+            try:
+                first, rest = cmd.split(None, 1)
+            except ValueError:
+                first = cmd
+                rest = ''
+        else:
+            first, rest = cmd[0], cmd[1:]
+        first = os.path.join(abspath, first)
+        if is_string:
+            if rest:
+                return '%s %s' % (first, rest)
+            else:
+                return first
+        else:
+            return [first] + rest
 
     def _format_command(self, cmd):
         if not isinstance(cmd, list):

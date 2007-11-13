@@ -104,7 +104,8 @@ def main(options, args):
             config.add_section(section)
         config.set(section, name, value, filename='<cmdline>')
     maker = Maker(base_path, simulate=options.simulate,
-                  interactive=not options.no_interactive, logger=logger)
+                  interactive=not options.no_interactive, logger=logger,
+                  quick=options.quick)
     environ = Environment(base_path, logger=logger)
     projects = []
     for project_name in project_names:
@@ -141,7 +142,7 @@ def main(options, args):
                 logger.indent += 2
             try:
                 try:
-                    project.run(options.quick)
+                    project.run()
                     logger.notify('Done with project %s' % project_name)
                 finally:
                     if len(projects) > 1:
