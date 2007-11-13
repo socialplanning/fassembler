@@ -11,15 +11,9 @@ class OpenCoreProject(Project):
     title = 'Install OpenCore'
 
     settings = [
-        Setting('opencore_repo',
-                default='https://svn.openplans.org/svn/opencore/trunk',
-                help='Repository for OpenCore'),
-        Setting('featurelets_repo',
-                default='https://svn.openplans.org/svn/topp.featurelets/trunk',
-                help='Repository for topp.featurelets'),
-        Setting('topp_utils_repo',
-                default='https://svn.openplans.org/svn/topp.utils/trunk',
-                help='Repository for topp.utils'),
+        Setting('spec',
+                default=os.path.join(os.path.dirname(__file__), 'opencore-files', 'opencore-requirements.txt'),
+                help='Specification of packages to install'),
         Setting('zope_instance',
                 default='var/opencore/zope',
                 help='Instance home for Zope'),
@@ -77,11 +71,8 @@ class OpenCoreProject(Project):
 
     actions = [
         tasks.VirtualEnv(),
-        tasks.EasyInstall('Install PIL', 'PIL', find_links=['http://dist.repoze.org/simple/PIL/']),
-        tasks.EasyInstall('Install Zope', '{{config.zope_egg}}',
-                          find_links=['https://svn.openplans.org/eggs/']),
-        #tasks.SvnCheckout('Check out Zope', '{{config.zope_svn_repo}}',
-        #                  '{{config.zope_source}}'),
+        tasks.InstallSpec('Install Zope',
+                          '{{config.spec}}'),
         #tasks.Patch('Patch Zope', os.path.join(patch_dir, '*.diff'), '{{config.zope_source}}'),
         tasks.CopyDir('Create custom skel',
                       skel_dir, '{{project.name}}/src/Zope/custom_skel'),
@@ -98,12 +89,6 @@ class OpenCoreProject(Project):
         tasks.Script('Make ZEO Instance', [
         'python', '{{config.zope_source}}/bin/mkzeoinstance.py', '{{config.zeo_instance}}', '{{config.zeo_port}}'],
                      use_virtualenv=True),
-        tasks.SourceInstall('Install topp.utils',
-                            '{{config.topp_utils_repo}}', 'topp.utils'),
-        tasks.SourceInstall('Install topp.featurelets',
-                            '{{config.featurelets_repo}}', 'topp.featurelets'),
-        tasks.SourceInstall('Install opencore',
-                            '{{config.opencore_repo}}', 'opencore'),
         ## FIXME: linkzope and linkzopebinaries?
         tasks.SaveURI(),
         ## FIXME: save ZEO uri too
