@@ -28,9 +28,9 @@ class ScriptTranscluderProject(Project):
     settings = [
         ## FIXME: there should be some higher-level sense of
         ## tag/branch/trunk, and maybe latest too:
-        Setting('scripttranscluder_repo',
-                default='https://svn.openplans.org/svn/ScriptTranscluder/trunk',
-                help='svn repository for ScriptTranscluder'),
+        Setting('spec',
+                default=os.path.join(os.path.dirname(__file__), 'topp-files', 'scripttranscluder-requirements.txt'),
+                help='Specification of packages to install'),
         Setting('port',
                 default='{{env.config.getint("general", "base_port")+int(config.port_offset)}}',
                 help='Port to install ScriptTranscluder on'),
@@ -45,9 +45,8 @@ class ScriptTranscluderProject(Project):
     actions = [
         tasks.VirtualEnv(),
         ## FIXME: use poach-eggs?
-        tasks.SourceInstall('Check out and install ScriptTranscluder',
-                            '{{config.scripttranscluder_repo}}', 'scripttranscluder'),
-        tasks.EasyInstall('Install PasteScript', 'PasteScript'),
+        tasks.InstallSpec('Install ScriptTranscluder',
+                          '{{config.spec}}'),
         tasks.InstallPasteConfig(scripttranscluder_config_template),
         tasks.InstallPasteStartup(),
         tasks.SaveURI(),
