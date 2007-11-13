@@ -34,6 +34,7 @@ class ToppProject(Project):
         ## FIXME: write secret.txt
         tasks.SaveSetting('Save port', 'base_port', '{{config.base_port}}'),
         tasks.SaveSetting('Save secret filename', 'topp_secret_filename', '{{env.base_path}}/etc/secret.txt'),
+        tasks.SaveSetting('Save admin u/p', 'admin_info_filename', '{{env.base_path}}/etc/admin.txt'),
         ]
 
 
