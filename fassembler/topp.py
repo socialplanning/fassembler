@@ -9,7 +9,7 @@ class ToppProject(Project):
 
     name = 'topp'
     title = 'TOPP (openplans.org) Standard File Layout'
-    project_base_dir = os.path.join(os.path.dirname(__file__), 'topp-files')
+    project_base_dir = os.path.join(os.path.dirname(__file__), 'topp-files', 'base-layout')
 
     settings = [
         ## FIXME: this *should* draw from the global settings if it is not set
