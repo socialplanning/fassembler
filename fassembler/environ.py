@@ -4,6 +4,15 @@ from fassembler.config import ConfigParser
 import string
 import random
 
+class bunch(object):
+    def __init__(self, **kw):
+        for name, value in kw:
+            setattr(self, name, value)
+    def __repr__(self):
+        return '<bunch %s %s>' % (
+            hex(id(self)),
+            ' '.join(['%s=%r' % (n, v) for n, v in sorted(self.__dict__.items())]))
+
 class Environment(object):
 
     def __init__(self, base_path, logger):
@@ -48,3 +57,9 @@ class Environment(object):
         return ''.join([
             random.choice(chars) for i in range(length)])
     
+    def parse_auth(self, filename):
+        f = open(filename)
+        line = f.read().strip()
+        f.close()
+        username, password = line.split(':', 1)
+        return bunch(username=username, password=password)
