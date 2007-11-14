@@ -779,7 +779,7 @@ class InstallSpec(Task):
         return context, commands
 
     _rev_svn_re = re.compile(r'@(\d+)$')
-    _egg_spec_re = re.compile(r'egg=([^-=&]?)')
+    _egg_spec_re = re.compile(r'egg=([^-=&]*)')
 
     def install_editable(self, context, svn):
         ops = []
