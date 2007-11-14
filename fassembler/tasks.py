@@ -610,18 +610,25 @@ class SaveSetting(Task):
     """
     
     description = """
+    {{if not task.overwrite_if_empty and not task.value}}
+    *Would* save the setting [{{task.section}}] {{task.var_name}}, if the setting was provided;
+    because no setting was provided, the variable will not be set.
+    {{else}}
     Save the setting [{{task.section}}] {{task.var_name}} = {{repr(task.value)}} in build.ini
+    {{endif}}
     """
 
     value = interpolated('value')
     var_name = interpolated('var_name')
     section = interpolated('section')
 
-    def __init__(self, name, var_name, value, section='general', stacklevel=1):
+    def __init__(self, name, var_name, value, section='general',
+                 overwrite_if_empty=True, stacklevel=1):
         super(SaveSetting, self).__init__(name, stacklevel=stacklevel+1)
         self.var_name = var_name
         self.value = value
         self.section = section
+        self.overwrite_if_empty = overwrite_if_empty
 
     def run(self):
         if not self.environ.config.has_section(self.section):
