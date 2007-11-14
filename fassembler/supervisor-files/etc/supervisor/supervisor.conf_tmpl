@@ -1,3 +1,6 @@
+[include]
+files = ./supervisor.d/*.ini
+
 [unix_http_server]
 file={{env.base_path}}/supervisor/var/supervisor.sock   ; (the path to the socket file)
 ;chmod=0700                 ; sockef file mode (default 0700)
@@ -44,3 +47,4 @@ serverurl=unix://{{env.base_path}}/supervisor/var/supervisor.sock ; use a unix:/
 ;username=chris              ; should be same as http_username if set
 ;password=123                ; should be same as http_password if set
 ;prompt=mysupervisor         ; cmd line prompt (default "supervisor")
+
