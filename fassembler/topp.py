@@ -45,7 +45,7 @@ class ToppProject(Project):
         tasks.SaveSetting('Save port', 'base_port', '{{config.base_port}}'),
         tasks.SaveSetting('Save secret filename', 'topp_secret_filename', '{{env.base_path}}/var/secret.txt'),
         tasks.SaveSetting('Save admin u/p', 'admin_info_filename', '{{env.base_path}}/var/admin.txt'),
-        tasks.SaveSetting('Save db_prefix', 'db_prefix', '{{db_prefix}}', overwrite_if_empty=False),
+        tasks.SaveSetting('Save db_prefix', 'db_prefix', '{{config.db_prefix}}', overwrite_if_empty=False),
         ]
 
 

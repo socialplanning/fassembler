@@ -6,7 +6,7 @@ import random
 
 class bunch(object):
     def __init__(self, **kw):
-        for name, value in kw:
+        for name, value in kw.items():
             setattr(self, name, value)
     def __repr__(self):
         return '<bunch %s %s>' % (
