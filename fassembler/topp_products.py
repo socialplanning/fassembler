@@ -84,7 +84,7 @@ class TaskTrackerProject(Project):
                 default='localhost',
                 help='Host where database is running'),
         Setting('db_name',
-                default='tasktracker',
+                default='{{env.config.getdefault("general", "db_prefix", "")}}tasktracker',
                 help='Name of database'),
         Setting('db_test_sqlobject',
                 default='mysql://{{config.db_username}}:{{config.db_password}}@{{config.db_host}}/{{config.db_test_name}}',
