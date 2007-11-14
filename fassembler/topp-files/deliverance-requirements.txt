@@ -1,0 +1,6 @@
+# Transcluder needs this, and the link isn't picked up right be easy_install:
+-f http://superb-west.dl.sourceforge.net/sourceforge/pyavl/pyavl-1.1.tar.gz#egg=pyavl-dev
+-e http://codespeak.net/svn/z3/deliverance/DeliveranceVHoster/trunk
+-e http://codespeak.net/svn/z3/deliverance/trunk
+PasteScript
+lxml>=1.2,<2.0a

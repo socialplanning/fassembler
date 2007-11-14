@@ -39,6 +39,7 @@ setup(name='fassembler',
       supervisor = fassembler.topp:SupervisorProject
       scripttranscluder = fassembler.topp_products:ScriptTranscluderProject
       tasktracker = fassembler.topp_products:TaskTrackerProject
+      deliverance = fassembler.topp_products:DeliveranceProject
       opencore = fassembler.topp_opencore:OpenCoreProject
       """,
       )

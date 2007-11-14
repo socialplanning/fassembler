@@ -126,3 +126,34 @@ class TaskTrackerProject(Project):
         tasks.SaveURI(),
         ]
 
+
+
+class DeliveranceProject(Project):
+    """
+    Install Deliverance/DeliveranceVHoster
+    """
+
+    name = 'deliverance'
+    title = 'Install Deliverance/DeliveranceVHoster'
+    settings = [
+        Setting('spec',
+                default=os.path.join(os.path.dirname(__file__), 'topp-files', 'deliverance-requirements.txt'),
+                help='Specification of packages to install'),
+        Setting('port',
+                default='{{env.config.getint("general", "base_port")+int(config.port_offset)}}',
+                help='Port to install Deliverance on'),
+        Setting('port_offset',
+                default='0',
+                help='Offset from base_port for TaskTracker'),
+        Setting('host',
+                default='127.0.0.1',
+                help='Host to serve on'),
+        ]
+
+    actions = [
+        tasks.VirtualEnv(),
+        tasks.InstallSpec('Install Deliverance', '{{config.spec}}'),
+        tasks.InstallPasteConfig(path='deliverance/src/deliverancevhoster/fassembler_config.ini_tmpl'),
+        tasks.InstallPasteStartup(),
+        ## FIXME: SaveURI?
+        ]
