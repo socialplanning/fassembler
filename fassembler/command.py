@@ -164,6 +164,7 @@ def main(options, args):
             environ.save()
         else:
             logger.notify('Installation not completely successful.')
+    ## FIXME: commit etc/?
 
 _var_re = re.compile(r'^(?:\[(\w+)\])?\s*(\w+)=(.*)$')
 

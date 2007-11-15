@@ -68,6 +68,13 @@ class OpenCoreProject(Project):
     patch_dir = os.path.join(files_dir, 'patches')
     skel_dir = os.path.join(files_dir, 'zope_skel')
 
+    ## FIXME: I don't think this is the right way to start Zope, even under
+    ## Supervisor:
+    start_script_template = """\
+#!/bin/sh
+exec {{env.base_path}}/bin/zopectl fg
+"""
+
     actions = [
         tasks.VirtualEnv(),
         tasks.InstallSpec('Install Zope',
@@ -89,6 +96,13 @@ class OpenCoreProject(Project):
         'python', '{{config.zope_source}}/bin/mkzeoinstance.py', '{{config.zeo_instance}}', '{{config.zeo_port}}'],
                      use_virtualenv=True),
         ## FIXME: linkzope and linkzopebinaries?
+        ## FIXME: Write start script
+        tasks.InstallSupervisorConfig(),
+        tasks.EnsureFile('Write the start script',
+                         '{{env.base_path}}/bin/start-{{project.name}}',
+                         content=start_script_template,
+                         svn_add=True,
+                         executable=True),
         tasks.SaveURI(),
-        ## FIXME: save ZEO uri too
+        # ZEO doesn't really have a uri
         ]

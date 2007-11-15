@@ -315,6 +315,7 @@ class SvnCheckout(Task):
             self.logger.debug('repository directory %s exists' % repo)
 
 
+## FIXME: I need to find a way to make this faster, and avoid recreating a perfectly fine virtualenv
 class VirtualEnv(Task):
     """
     Create a virtualenv environment
@@ -444,13 +445,12 @@ class InstallPasteStartup(Task):
     description = """
     Install the standard Paste startup script
     """
-    ## FIXME: should also create supervisor file
 
     def __init__(self, name='Install Paste startup script', stacklevel=1):
         super(InstallPasteStartup, self).__init__(name, stacklevel=stacklevel+1)
 
     def run(self):
-        path = os.path.join('bin', self.project.name+'.rc')
+        path = os.path.join('bin', 'start-'+self.project.name)
         self.maker.ensure_file(
             path,
             self.content,
@@ -464,6 +464,35 @@ class InstallPasteStartup(Task):
     content_template = """\
 #!/bin/sh
 exec paster serve {{env.base_path}}/etc/{{project.name}}/{{project.name}}.ini "$@"
+"""
+
+class InstallSupervisorConfig(Task):
+
+    def __init__(self, name='Install supervisor startup script', stacklevel=1):
+        super(InstallSupervisorConfig, self).__init__(name, stacklevel=stacklevel+1)
+
+    def run(self):
+        path = os.path.join('etc', 'supervisor.d', self.project.name + '.ini')
+        self.maker.ensure_file(
+            path,
+            self.content,
+            executable=True)
+        self.logger.notify('Supervisor config written to %s' % path)
+
+    @property
+    def content(self):
+        return self.interpolate(self.content_template, name=__name__+'.InstallSupervisorConfig.content_template')
+
+    content_template = """\
+[program:{{task.project.name}}]
+command={{env.base_path}}/bin/start-{{task.project.name}}
+{{#FIXME: should set user=username}}
+stdout_logfile = {{env.base_path}}/logs/{{task.project.name}}/{{task.project.name}}-supervisor.log
+stdout_logfile_maxbytes = 1MB
+stdout_logfile_backups = 10
+stderr_logfile = {{env.base_path}}/logs/{{task.project.name}}/{{task.project.name}}-supervisor-errors.log
+stderr_logfile_maxbytes = 1MB
+stderr_logfile_backups = 10
 """
 
 class CheckMySQLDatabase(Task):

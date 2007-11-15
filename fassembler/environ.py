@@ -44,7 +44,13 @@ class Environment(object):
         """
         Save the configuration in etc/build.ini
         """
+        if self._parser is None:
+            # Nothing was changed
+            self.logger.info('No config file changes made')
+            return
         ## FIXME: this should use ensure_file or something
+        ## FIXME: somehow this is clearing the config file when no changes are made
+        ## (the self._parser is None check avoids this, but only incidentally)
         self.logger.info('Writing environment config file: %s' % self.config_filename)
         f = open(self.config_filename, 'wb')
         self.config.write(f)

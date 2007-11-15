@@ -49,6 +49,7 @@ class ScriptTranscluderProject(Project):
                           '{{config.spec}}'),
         tasks.InstallPasteConfig(scripttranscluder_config_template),
         tasks.InstallPasteStartup(),
+        tasks.InstallSupervisorConfig(),
         tasks.SaveURI(),
         ]
 
@@ -118,6 +119,7 @@ class TaskTrackerProject(Project):
                           '{{config.spec}}'),
         tasks.InstallPasteConfig(path='tasktracker/src/tasktracker/fassembler_config.ini_tmpl'),
         tasks.InstallPasteStartup(),
+        tasks.InstallSupervisorConfig(),
         tasks.CheckMySQLDatabase('Check database exists'),
         tasks.Script('Run setup-app',
                      ['paster', 'setup-app', '{{env.base_path}}/etc/{{project.name}}/{{project.name}}.ini#tasktracker'],
@@ -155,5 +157,6 @@ class DeliveranceProject(Project):
         tasks.InstallSpec('Install Deliverance', '{{config.spec}}'),
         tasks.InstallPasteConfig(path='deliverance/src/deliverancevhoster/fassembler_config.ini_tmpl'),
         tasks.InstallPasteStartup(),
+        tasks.InstallSupervisorConfig(),
         ## FIXME: SaveURI?
         ]
