@@ -223,6 +223,7 @@ class Maker(object):
             __init__.py file.
         
         """
+        dir = self.path(dir)
         dir = os.path.abspath(dir.rstrip(os.sep))
         if not dir:
             # we either reached the parent-most directory, or we got

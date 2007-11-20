@@ -1,0 +1,2 @@
+#!/bin/sh
+exec {{env.base_path}}/supervisor/bin/supervisord -c {{env.base_path}}/etc/supervisor/supervisor.conf "$@"

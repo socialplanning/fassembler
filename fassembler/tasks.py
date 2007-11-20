@@ -502,6 +502,10 @@ class InstallSupervisorConfig(Task):
             self.conf_path,
             self.content,
             executable=True)
+        ## FIXME: is this really the proper place to be making a log directory?
+        ## I don't really think so.
+        self.maker.ensure_dir(
+            os.path.join('logs', self.project.name))
         self.logger.notify('Supervisor config written to %s' % self.conf_path)
 
     @property

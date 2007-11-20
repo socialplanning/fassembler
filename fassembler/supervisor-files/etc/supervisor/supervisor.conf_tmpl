@@ -1,5 +1,5 @@
 [include]
-files = ./supervisor.d/*.ini
+files = ../supervisor.d/*.ini
 
 [unix_http_server]
 file={{env.base_path}}/supervisor/var/supervisor.sock   ; (the path to the socket file)
