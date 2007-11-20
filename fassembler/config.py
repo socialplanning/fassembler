@@ -9,5 +9,5 @@ class ConfigParser(configparser.RawConfigParser):
     def getdefault(self, section, option, default=None):
         try:
             return self.get(section, option)
-        except (NoSectionError, NoOptionError), e:
+        except (configparser.NoSectionError, configparser.NoOptionError), e:
             return default
