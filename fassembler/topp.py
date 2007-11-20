@@ -42,10 +42,12 @@ class ToppProject(Project):
         tasks.EnsureFile('Write admin.txt if necessary', '{{env.base_path}}/var/admin.txt',
                          'admin:{{config.admin_password or env.random_string(12, "alphanumeric")}}',
                          overwrite=False),
-        tasks.SaveSetting('Save port', 'base_port', '{{config.base_port}}'),
-        tasks.SaveSetting('Save secret filename', 'topp_secret_filename', '{{env.base_path}}/var/secret.txt'),
-        tasks.SaveSetting('Save admin u/p', 'admin_info_filename', '{{env.base_path}}/var/admin.txt'),
-        tasks.SaveSetting('Save db_prefix', 'db_prefix', '{{config.db_prefix}}', overwrite_if_empty=False),
+        tasks.SaveSetting('Save settings',
+                          {'base_port': '{{config.base_port}}',
+                           'topp_secret_filename': '{{env.base_path}}/var/secret.txt',
+                           'admin_info_filename': '{{env.base_path}}/var/admin.txt',
+                           }),
+        tasks.SaveSetting('Save db_prefix', {'db_prefix': '{{config.db_prefix}}'}, overwrite_if_empty=False),
         ]
 
 

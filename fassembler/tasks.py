@@ -50,6 +50,12 @@ class Task(object):
             for item in string:
                 new_items.append(self.interpolate(item, stacklevel+1, name=name))
             return new_items
+        if isinstance(string, dict):
+            new_dict = {}
+            for key in string:
+                new_dict[self.interpolate(key, stacklevel+1, name=name)] = self.interpolate(
+                    string[key], stacklevel+1, name=name)
+            return new_dict
         if not isinstance(string, Template):
             tmpl = Template(string, name=name, stacklevel=stacklevel+1)
         else:
@@ -199,9 +205,9 @@ class EnsureFile(Task):
     """
 
     description = """
-    Write the file {{task.dest}} with the given content.
+    Write the file {{task.dest}} with the given content ({{len(task.content)}} bytes/{{len(task.content.splitlines())}} lines).
     {{if not task.overwrite:}}
-    If {{task.dest}} already exists, do not overwrite it.
+    If {{task.dest}} already exists{{if maker.exists(task.dest)}} (and it does){{endif}}, do not overwrite it.
     {{endif}}
     {{if task.svn_add}}
     If {{os.path.dirname(task.dest)}} is an svn checkout, this file will be added.
@@ -241,7 +247,7 @@ class SvnCheckout(Task):
     {{if task.base_repository and task.base_repository.startswith('file:')}}
     If the repository at {{task.base_repository}} does not exist, it will be created.
     {{endif}}
-    If the directory at {{task.full_repository}} does not exist, it will be created.
+    If the svn directory at {{task.full_repository}} does not exist, it will be created.
     {{endif}}
     """
 
@@ -324,6 +330,15 @@ class VirtualEnv(Task):
     description = """
     Create a virtualenv environment in {{maker.path(task.path or project.name)}}
     {{if not task.path}} ({{project.name}} is the project name){{endif}}
+
+    {{if os.path.exists(task.path_resolved):}}
+    Directory already exists.
+    {{if project.config.getdefault('DEFAULT', 'force_virtualenv'):}}
+    Because force_virtualenv is set, the virtualenv will be recreated.
+    {{else}}
+    Because force_virtualenv is not set, the virtualenv (re)creation will be skipped.
+    {{endif}}
+    {{endif}}
     """
 
     def __init__(self, name='Create virtualenv', path=None, stacklevel=1):
@@ -336,9 +351,12 @@ class VirtualEnv(Task):
 
     def run(self):
         path = self.path_resolved
-        if self.maker.quick and os.path.exists(path):
-            self.logger.notify('Skipping virtualenv creation as directory %s exists' % path)
-            return
+        if os.path.exists(path) and os.path.exists(os.path.join(path, 'lib')):
+            if not self.project.config.getdefault('DEFAULT', 'force_virtualenv'):
+                self.logger.notify('Skipping virtualenv creation as directory %s exists' % path)
+                return
+            else:
+                self.logger.notify('Forcing virtualenv recreation')
         import virtualenv
         ## FIXME: kind of a nasty hack
         virtualenv.logger = self.logger
@@ -468,16 +486,23 @@ exec paster serve {{env.base_path}}/etc/{{project.name}}/{{project.name}}.ini "$
 
 class InstallSupervisorConfig(Task):
 
+    description = """
+    Install standard supervisor template into {{task.conf_path}}
+    """
+
     def __init__(self, name='Install supervisor startup script', stacklevel=1):
         super(InstallSupervisorConfig, self).__init__(name, stacklevel=stacklevel+1)
 
+    @property
+    def conf_path(self):
+        return os.path.join('etc', 'supervisor.d', self.project.name + '.ini')
+
     def run(self):
-        path = os.path.join('etc', 'supervisor.d', self.project.name + '.ini')
         self.maker.ensure_file(
-            path,
+            self.conf_path,
             self.content,
             executable=True)
-        self.logger.notify('Supervisor config written to %s' % path)
+        self.logger.notify('Supervisor config written to %s' % self.conf_path)
 
     @property
     def content(self):
@@ -485,7 +510,7 @@ class InstallSupervisorConfig(Task):
 
     content_template = """\
 [program:{{task.project.name}}]
-command={{env.base_path}}/bin/start-{{task.project.name}}
+command = {{env.base_path}}/bin/start-{{task.project.name}}
 {{#FIXME: should set user=username}}
 stdout_logfile = {{env.base_path}}/logs/{{task.project.name}}/{{task.project.name}}-supervisor.log
 stdout_logfile_maxbytes = 1MB
@@ -639,38 +664,82 @@ class SaveSetting(Task):
     """
     
     description = """
-    {{if not task.overwrite_if_empty and not task.value}}
-    *Would* save the setting [{{task.section}}] {{task.var_name}}, if the setting was provided;
+    {{if not task.overwrite_if_empty and not filter(None, task.variables.values())}}
+    *Would* save the settings {{task.format_variables(task.variables)}}, if the setting was provided;
     because no setting was provided, the variable will not be set.
     {{else}}
-    Save the setting [{{task.section}}] {{task.var_name}} = {{repr(task.value)}} in build.ini
+    Save the setting{{if len(task.variables)>1}}s{{endif}} into build.ini:
+    {{for setting in task.format_variables(task.variables)}}
+    * {{setting}}
+    {{endfor}}
     {{endif}}
     """
 
-    value = interpolated('value')
-    var_name = interpolated('var_name')
+    variables = interpolated('variables')
     section = interpolated('section')
 
-    def __init__(self, name, var_name, value, section='general',
+    def __init__(self, name, variables, section='general',
                  overwrite_if_empty=True, stacklevel=1):
+        assert isinstance(variables, dict), (
+            "The variables parameter should be a dictionary")
         super(SaveSetting, self).__init__(name, stacklevel=stacklevel+1)
-        self.var_name = var_name
-        self.value = value
+        self.variables = variables
         self.section = section
         self.overwrite_if_empty = overwrite_if_empty
 
     def run(self):
         if not self.environ.config.has_section(self.section):
             self.environ.config.add_section(self.section)
-        self.environ.config.set(self.section, self.var_name, self.value)
+        for key, value in self.variables.items():
+            if isinstance(key, (tuple, list)):
+                section, key = key
+            else:
+                section = self.section
+            self.environ.config.set(section, key, value)
+
+    def format_variables(self, variables):
+        keys = sorted(variables)
+        default_section = self.section
+        output = []
+        for key in keys:
+            if isinstance(key, (tuple, list)):
+                section, key = key
+            else:
+                section = default_section
+            output.append('[%s] %s = %r' % (section, key, variables[key]))
+        return output
 
 class SaveURI(SaveSetting):
 
-    def __init__(self, name='Save URI setting', var_name='{{project.name}}_uri',
-                 value='http://{{config.host}}:{{config.port}}', section='uris',
+    project_name = interpolated('project_name')
+
+    def __init__(self, name='Save URI setting',
+                 project_name='{{project.name}}',
+                 path=None,
+                 uri='http://{{config.host}}:{{config.port}}',
+                 project_local=True,
+                 uri_template=None,
+                 theme=True,
+                 trailing_slash=True,
                  stacklevel=1):
-        super(SaveURI, self).__init__(name, var_name=var_name,
-                                      value=value, section=section, stacklevel=stacklevel+1)
+        assert path is not None, (
+            "You must give a value for path")
+        variables = {'{{task.project_name}} uri': uri,
+                     '{{task.project_name}} path': path,
+                     }
+        if not project_local:
+            variables['{{task.project_name}} project_local'] = 'false'
+        if uri_template:
+            variables['{{task.project_name}} uri_template'] = uri_template
+        if not theme:
+            variables['{{task.project_name}} theme'] = 'false'
+        if not trailing_slash:
+            variables['{{task.project_name}} trailing_slash'] = 'false'
+        self.project_name = project_name
+        super(SaveURI, self).__init__(
+            name, variables, section='applications',
+            stacklevel=stacklevel+1)
+                                      
 class Patch(Task):
 
     files = interpolated('files')
@@ -761,6 +830,13 @@ class Patch(Task):
         return result
 
 class InstallSpec(Task):
+
+    description = """
+    Install the packages from {{task.spec_filename}}:
+    {{for line in open(task.spec_filename):}}
+    {{py: line = line.strip()}}
+    {{if line.startswith('-e') or line.startswith('--editable'):}}* svn checkout {{line.split(None, 1)[1]}}{{else}}* {{line}}{{endif}}{{endfor}}
+    """
 
     spec_filename = interpolated('spec_filename')
 

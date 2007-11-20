@@ -50,7 +50,9 @@ class ScriptTranscluderProject(Project):
         tasks.InstallPasteConfig(scripttranscluder_config_template),
         tasks.InstallPasteStartup(),
         tasks.InstallSupervisorConfig(),
-        tasks.SaveURI(),
+        tasks.SaveURI(path='/include.js',
+                      project_local=False,
+                      trailing_slash=False),
         ]
 
 
@@ -125,9 +127,8 @@ class TaskTrackerProject(Project):
                      ['paster', 'setup-app', '{{env.base_path}}/etc/{{project.name}}/{{project.name}}.ini#tasktracker'],
                      use_virtualenv=True,
                      cwd='{{env.base_path}}/{{project.name}}/src/{{project.name}}'),
-        tasks.SaveURI(),
+        tasks.SaveURI(path='/tasks'),
         ]
-
 
 
 class DeliveranceProject(Project):
@@ -141,6 +142,9 @@ class DeliveranceProject(Project):
         Setting('spec',
                 default=os.path.join(os.path.dirname(__file__), 'topp-files', 'deliverance-requirements.txt'),
                 help='Specification of packages to install'),
+        Setting('openplans_hooks_repo',
+                default='https://svn.openplans.org/svn/config/dvhoster/trunk',
+                help='SVN location of openplans_hooks'),
         Setting('port',
                 default='{{env.config.getint("general", "base_port")+int(config.port_offset)}}',
                 help='Port to install Deliverance on'),
@@ -155,8 +159,10 @@ class DeliveranceProject(Project):
     actions = [
         tasks.VirtualEnv(),
         tasks.InstallSpec('Install Deliverance', '{{config.spec}}'),
+        tasks.SvnCheckout('Checkout openplans_hooks',
+                          '{{config.openplans_hooks_repo}}', '{{project.name}}/src/openplans_hooks'),
         tasks.InstallPasteConfig(path='deliverance/src/deliverancevhoster/fassembler_config.ini_tmpl'),
         tasks.InstallPasteStartup(),
         tasks.InstallSupervisorConfig(),
-        ## FIXME: SaveURI?
+        tasks.SaveURI(path='/', theme=False),
         ]
