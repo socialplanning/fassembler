@@ -6,18 +6,6 @@ from fassembler.project import Project, Setting
 from fassembler import tasks
 from tempita import Template
 
-
-scripttranscluder_config_template = Template("""\
-[app:main]
-use = egg:ScriptTranscluder
-allow_hosts = *.openplans.org
-
-[server:main]
-use = egg:Paste#http
-host = {{config.host}}
-port = {{config.port}}
-""", stacklevel=1)
-
 class ScriptTranscluderProject(Project):
     """
     Install ScriptTranscluder
@@ -47,7 +35,7 @@ class ScriptTranscluderProject(Project):
         ## FIXME: use poach-eggs?
         tasks.InstallSpec('Install ScriptTranscluder',
                           '{{config.spec}}'),
-        tasks.InstallPasteConfig(scripttranscluder_config_template),
+        tasks.InstallPasteConfig(path='scripttranscluder/src/scripttranscluder/fassembler_config.ini_tmpl'),
         tasks.InstallPasteStartup(),
         tasks.InstallSupervisorConfig(),
         tasks.SaveURI(path='/include.js',
@@ -55,16 +43,6 @@ class ScriptTranscluderProject(Project):
                       trailing_slash=False),
         ]
 
-
-tasktracker_config_template = Template("""\
-[app:main]
-use = egg:TaskTracker
-
-[server:main]
-use = egg:Paste#http
-host = {{config.host}}
-port = {{config.port}}
-""", stacklevel=1)
 
 class TaskTrackerProject(Project):
     """

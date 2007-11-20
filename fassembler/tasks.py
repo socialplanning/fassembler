@@ -464,8 +464,11 @@ class InstallPasteStartup(Task):
     Install the standard Paste startup script
     """
 
-    def __init__(self, name='Install Paste startup script', stacklevel=1):
+    exe_dir = interpolated('exe_dir')
+
+    def __init__(self, name='Install Paste startup script', exe_dir='{{env.base_path}}/{{project.name}}/src/{{project.name}}', stacklevel=1):
         super(InstallPasteStartup, self).__init__(name, stacklevel=stacklevel+1)
+        self.exe_dir = exe_dir
 
     def run(self):
         path = os.path.join('bin', 'start-'+self.project.name)
@@ -481,7 +484,8 @@ class InstallPasteStartup(Task):
 
     content_template = """\
 #!/bin/sh
-exec paster serve {{env.base_path}}/etc/{{project.name}}/{{project.name}}.ini "$@"
+cd {{task.exe_dir}}
+exec {{env.base_path}}/{{project.name}}/bin/paster serve {{env.base_path}}/etc/{{project.name}}/{{project.name}}.ini "$@"
 """
 
 class InstallSupervisorConfig(Task):
