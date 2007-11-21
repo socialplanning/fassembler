@@ -36,6 +36,21 @@ class WordPressProject(Project):
         Setting('server_admin',
                 default='{{env.environ["USER"]}}@{{env.fq_hostname}}',
                 help='Server admin for Apache'),
+        Setting('db_name',
+                default='wordpress',
+                help='Database name'),
+        Setting('db_username',
+                default='wordpress',
+                help='Database user'),
+        Setting('db_password',
+                default='wordpress',
+                help='Database password'),
+        Setting('db_host',
+                default='localhost',
+                help='Database host'),
+        Setting('db_root_password',
+                default=None,
+                help='Database root password'),
         ]
 
     skel_dir = os.path.join(os.path.dirname(__file__), 'wordpress-files', 'skel')
@@ -48,7 +63,11 @@ class WordPressProject(Project):
         tasks.SvnCheckout('Checkout scripts',
                           '{{config.wordpress_scripts_repo}}',
                           '{{env.base_path}}/wordpress/src/scripts'),
-        ## FIXME: need to do database setup
+        tasks.EnsureFile('Fill in wp-config.php',
+                         '{{env.base_path}}/wordpress/src/wordpress-mu/wp-config.php',
+                         content_path='{{env.base_path}}/wordpress/src/wordpress-mu/wp-config.php_tmpl',
+                         svn_add=False),
+        tasks.CheckMySQLDatabase('Check database'),
         tasks.InstallSupervisorConfig(),
         tasks.SaveURI(path='/blog'),
         ]
