@@ -1,3 +1,9 @@
+"""
+This file represents the entry point for the ``fassembler`` script.
+
+It implements the command-line API, and some of the outermost level of setup.
+"""
+
 import sys
 import os
 import re
@@ -8,7 +14,6 @@ from fassembler.config import ConfigParser
 from fassembler.text import indent
 from fassembler.environ import Environment
 
-## The long description of how this command works:
 description = """\
 fassembler assembles files.
 
@@ -76,8 +81,12 @@ parser.add_option(
 
 parser.add_verbose()
 
+#@main_func runs the parser before calling this function.
 @main_func(parser)
 def main(options, args):
+    """
+    This implements the command-line fassembler script.
+    """
     if options.list_projects:
         if args:
             raise CommandError(
@@ -175,6 +184,10 @@ def main(options, args):
 _var_re = re.compile(r'^(?:\[(\w+)\])?\s*(\w+)=(.*)$')
 
 def parse_positional(args):
+    """
+    Parses out the positional arguments into fassembler projects and
+    variable assignments.
+    """
     project_names = []
     variables = []
     for arg in args:
@@ -186,6 +199,10 @@ def parse_positional(args):
     return project_names, variables
 
 def find_project_class(project_name, logger):
+    """
+    Takes a project name (like 'fassembler:opencore') and loads the
+    class that is being referred to, using entry points.
+    """
     if ':' in project_name:
         project_name, ep_name = project_name.split(':', 1)
     else:
@@ -216,6 +233,11 @@ def find_project_class(project_name, logger):
         return ep.load()
 
 def load_configs(configs):
+    """
+    Load up the configuration files.
+
+    (Configuration files aren't being used for much of anything currently)
+    """
     conf = ConfigParser()
     ## FIXME: test that all configs exist
     conf.read(configs)
@@ -226,6 +248,9 @@ def load_configs(configs):
 ############################################################
 
 def list_projects(options):
+    """
+    Implements --list-projects
+    """
     import traceback
     from cStringIO import StringIO
     for ep in pkg_resources.iter_entry_points('fassembler.project'):
@@ -244,6 +269,10 @@ def list_projects(options):
         print
 
 def ep_name(ep):
+    """
+    Given a pkg_resources.EntryPoint object, return the name that can
+    be used to load that entry point.
+    """
     if ep.name == 'main':
         return str(ep.dist.project_name)
     else:

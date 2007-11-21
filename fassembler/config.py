@@ -1,3 +1,7 @@
+"""
+The configuration file loader (based on INITools)
+"""
+
 from initools import configparser
 
 class ConfigParser(configparser.RawConfigParser):

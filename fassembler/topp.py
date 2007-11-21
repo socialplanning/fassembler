@@ -1,3 +1,8 @@
+"""
+General TOPP-related projects, for the initial setup of the
+environment.
+"""
+
 import os
 from fassembler.project import Project, Setting
 from fassembler import tasks

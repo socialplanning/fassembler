@@ -15,10 +15,12 @@ class Project(object):
     """
     This represents an abstract project.
 
-    Subclasses should describe the project built in the docstring.
+    Subclasses should describe the project built in the docstring,
+    and/or the title attribute.
 
-    Subclasses should also define an actions attribute, which is a list
-    of tasks.
+    Subclasses should also define an actions attribute, which is a
+    list of tasks, and a settings attribute, which is a list of
+    Setting instances.
     """
 
     name = None
@@ -39,9 +41,16 @@ class Project(object):
 
     @property
     def config_section(self):
+        """
+        The section that should be used to find settings for this project.
+        """
         return self.name
 
     def confirm_settings(self):
+        """
+        This is run to confirm that all the required settings have
+        been set, for this project and all its tasks.
+        """
         errors = []
         try:
             self.setup_config()
@@ -50,6 +59,10 @@ class Project(object):
         return errors
 
     def run(self):
+        """
+        Actually run the project.  Subclasses seldom override this;
+        this runs all the tasks given in ``self.actions``
+        """
         if self.actions is None:
             raise NotImplementedError(
                 "The actions attribute has not been overridden in %r"
@@ -74,6 +87,10 @@ class Project(object):
                     raise CommandError('Aborted', show_usage=False)
 
     def bind_tasks(self):
+        """
+        Bind all the task instances to the context in which they will
+        be run (with this project, the maker, etc).
+        """
         for task in self.actions:
             task.bind(maker=self.maker, environ=self.environ,
                       logger=self.logger, config=self.config,
@@ -113,9 +130,15 @@ class Project(object):
         return out.getvalue()
 
     def interpolate(self, string, stacklevel=1, name=None):
+        """
+        Interpolate a string in the context of the project namespace.
+        """
         return self.interpolate_ns(string, self.create_namespace(), stacklevel=stacklevel+1, name=name)
 
     def interpolate_ns(self, string, ns, stacklevel=1, name=None):
+        """
+        Interpolate a string in the given namespace.
+        """
         if string is None:
             return None
         if isinstance(string, (list, tuple)):
@@ -136,6 +159,12 @@ class Project(object):
         return ns.execute_template(tmpl)
 
     def create_namespace(self):
+        """
+        Create a namespace for this object.
+
+        Each call returns a new namespace.  This namespace can be
+        further augmented (as it is by tasks).
+        """
         ns = Namespace(self.config_section)
         ns['env'] = self.environ
         ns['maker'] = self.maker
@@ -146,6 +175,10 @@ class Project(object):
         return ns
 
     def setup_config(self):
+        """
+        This sets all the configuration values, using defaults when
+        necessary, or a value from the global configuration.
+        """
         if not self.config.has_section(self.config_section):
             self.config.add_section(self.config_section)
         for setting in self.settings:
@@ -157,6 +190,17 @@ class Project(object):
                 self.config.set(self.config_section, setting.name, setting.get_default(self.environ))
 
 class Setting(object):
+    """
+    Instances of Setting describe one setting a project takes.
+
+    Settings each have a name, and should have help.  They may have a
+    default value; if none is given then the setting must be set by
+    the user.
+
+    If ``inherit_config`` is given with a value like
+    ``('section_name', 'config_name')``, then the setting will inherit
+    from that value in the global config if it is not given explicitly.
+    """
 
     class _NoDefault(object):
         def __repr__(self):
@@ -171,6 +215,10 @@ class Setting(object):
         self.inherit_config = inherit_config
 
     def has_default(self, environ):
+        """
+        Is there a default for this setting, given the environment and
+        its global configuration?
+        """
         if self.default is not self.NoDefault:
             return True
         if self.inherit_config is not None:
@@ -179,6 +227,10 @@ class Setting(object):
         return False
 
     def get_default(self, environ):
+        """
+        Find the default value for this setting, given the environment
+        and its global configuration.
+        """
         if self.inherit_config and environ.config.has_option(*self.inherit_config):
             return environ.config.get(*self.inherit_config)
         if self.default is not self.NoDefault:

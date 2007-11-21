@@ -1,5 +1,11 @@
-# (c) 2005 Ian Bicking and contributors; written for Paste (http://pythonpaste.org)
+"""
+The basic abstraction for doing actions.
+
+Everything happens in the Maker object.
+"""
+# (c) 2005 Ian Bicking, Ben Bangert, and contributors; written for Paste (http://pythonpaste.org)
 # Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+# This was originally based on paste.filemaker
 import os
 import sys
 import glob
@@ -12,6 +18,10 @@ import tempita
 EXE_MODE = 0111
 
 class RunCommandError(OSError):
+    """
+    Represents a failed script run (a script that returns a non-zero
+    exit code, and/or has output on stderr).
+    """
     def __init__(self, message, command=None, stdout=None, stderr=None, returncode=None):
         OSError.__init__(self, message)
         self.command = command
@@ -21,8 +31,18 @@ class RunCommandError(OSError):
 
 class Maker(object):
     """
-    Enhance the ease of file copying/processing from a package into a target
-    project
+    Instances of Maker are abstractions of several pieces of context:
+
+    * The base_path, the implement root of all destination file paths
+    * A logger
+    * A simulate flag (if true, then nothing should *actually* be done)
+    * An interactive flag (if true, then query the user about some changes)
+    * A quick flag (if true, skip some checks to make this run faster)
+
+    All actions should ideally go through this object.
+
+    This object is generally instantiated just once per fassembler
+    run, and used by all projects and tasks.
     """
     
     def __init__(self, base_path, logger,
@@ -56,16 +76,16 @@ class Maker(object):
         dest = self.path(dest)
         src = self.path(src)
         self._warn_filename(dest)
-        contents, raw_contents = self.get_contents(src, template_vars, interpolater)
+        contents, raw_contents = self._get_contents(src, template_vars, interpolater)
         overwrite = False
         if os.path.exists(dest):
-            existing = self.get_raw_contents(dest)
+            existing = self._get_raw_contents(dest)
             if existing == contents:
                 self.logger.info('File %s exists with same content' % self.display_path(dest))
             else:
                 message = 'File %s already exists (with different content)' % self.display_path(dest)
-                if os.path.exists(self.orig_filename(dest)):
-                    existing_raw = self.get_raw_contents(self.orig_filename(dest))
+                if os.path.exists(self._orig_filename(dest)):
+                    existing_raw = self._get_raw_contents(self._orig_filename(dest))
                     if existing_raw == raw_contents:
                         message = (
                             'File %s already exists (with different substitutions, but same original template)'
@@ -79,19 +99,35 @@ class Maker(object):
 
         self.ensure_file(dest, contents, overwrite=overwrite, executable=os.stat(src).st_mode&0111)
         if contents != raw_contents:
-            self.ensure_file(self.orig_filename(dest), raw_contents, overwrite=overwrite)
+            self.ensure_file(self._orig_filename(dest), raw_contents, overwrite=overwrite)
 
-    def orig_filename(self, filename):
+    def _orig_filename(self, filename):
+        """
+        Gives the filename used to save the template used to generate a 'real' file.
+        """
         return os.path.join(os.path.dirname(filename),
                             '.'+os.path.basename(filename)+'.orig')
 
-    def get_contents(self, filename, template_vars=None, interpolater=None):
+    def _get_contents(self, filename, template_vars=None, interpolater=None):
+        """
+        Return the (contents, raw_contents) of a file.
+
+        If the file ends with ``_tmpl`` then it is assumed to be a
+        Tempita template and substitution is done (if you give an
+        interpolater callback, the interpolater is called like
+        ``interpolater(raw_contents, template_Vars,
+        filename=filename)``).
+
+        If the file doesn't end with ``_tmpl``, then contents and
+        raw_contents will be the same and no modification will be
+        done.
+        """
         is_tmpl = filename.endswith('_tmpl')
         if is_tmpl and template_vars is None and interpolater is None:
             raise ValueError(
                 "You must provide template_vars to fill a file (filename=%r)"
                 % filename)
-        raw_contents = contents = self.get_raw_contents(filename)
+        raw_contents = contents = self._get_raw_contents(filename)
         if is_tmpl:
             if interpolater is not None:
                 contents = interpolater(contents, template_vars, filename=filename)
@@ -99,7 +135,10 @@ class Maker(object):
                 contents = self.fill(contents, template_vars, filename=filename)
         return contents, raw_contents
 
-    def get_raw_contents(self, filename):
+    def _get_raw_contents(self, filename):
+        """
+        Return the contents of a file.
+        """
         f = open(filename, 'rb')
         try:
             return f.read()
@@ -107,6 +146,9 @@ class Maker(object):
             f.close()
 
     def _writefile(self, filename, contents):
+        """
+        Write the contents to a file.
+        """
         self.logger.debug('Writing %i bytes to %s' %
                           (len(contents), filename))
         f = open(filename, 'wb')
@@ -114,15 +156,27 @@ class Maker(object):
         f.close()
 
     def fill(self, contents, template_vars, filename=None):
+        """
+        Fill the content as a template, using the given variables.
+        """
         ## FIXME: catch expected errors here, show available variables
         tmpl = tempita.Template(contents, name=filename)
         return tmpl.substitute(template_vars)
 
     def path(self, path):
+        """
+        Returns a normalized path, interpreted as relative to
+        ``self.base_path``
+        """
         assert isinstance(path, basestring), "Bad path: %r" % (path, )
         return os.path.join(self.base_path, path)
 
     def display_path(self, path):
+        """
+        Return the path, possibly shortened for display purposes.
+
+        This strips ``self.base_path`` from the filename, if necessary.
+        """
         path = self._normpath(path)
         if path.startswith(self.base_path):
             path = path[len(self.base_path):].lstrip(os.path.sep)
@@ -137,14 +191,32 @@ class Maker(object):
             self.logger.warn('Writing to file outside base directory: %s' % filename)
 
     def _normpath(self, path):
+        """
+        A more thorough normalization of a path than just what ``os.path.normpath`` does.
+        """
         assert isinstance(path, basestring), "Bad path: %r" % (path, )
         return os.path.normcase(os.path.abspath(path))
     
     def copy_dir(self, src, dest, sub_filenames=True, template_vars=None, interpolater=None, include_hidden=False,
                  add_dest_to_svn=False):
         """
-        Copy a directory recursively, processing any files within it
-        that need to be processed (end in _tmpl).
+        Copy a directory recursively (from ``src`` to ``dest``),
+        processing any files within it that need to be processed (end
+        in _tmpl).
+
+        If ``include_hidden`` is False, then 'hidden' files (files
+        with a leading dot) will be skipped.
+
+        If ``sub_filenames`` is true, then ``+var+`` in filenames will
+        be replaced with the value of variables from
+        ``template_vars``.
+
+        If ``interpolater`` is given, that is a callback that will be
+        used with ``self._get_contents`` to fill in template files.
+
+        If ``add_dest_to_svn`` is true, then if ``dest`` is contained
+        in an svn-controlled directory it will be added to that
+        directory.
         """
         if template_vars is None:
             sub_filenames = False
@@ -197,17 +269,28 @@ class Maker(object):
     _filename_var_re = re.compile(r'[+](.*?)[+]')
 
     def fill_filename(self, filename, template_vars):
-        ## FIXME: should add standard variables
+        """
+        Fills a filename with the given variables.
+
+        Anything like ``+var+`` will be treated as a substitution in
+        the filename.
+        """
+        ## FIXME: should add (more?) standard variables
+        vars = template_vars.copy()
+        vars['dot'] = '.'
         def subber(match):
             name = match.group(1)
-            if name not in template_vars:
+            if name not in vars:
                 raise NameError(
                     "Variable +%s+ not in variables, in filename %s"
                     % (name, filename))
-            return template_vars[name]
+            return vars[name]
         return self._filename_var_re.sub(subber, filename)
 
     def exists(self, path):
+        """
+        Does the path exist?  Paths are normalized against ``self.base_path``
+        """
         return os.path.exists(self.path(path))
     
     def ensure_dir(self, dir, svn_add=True, package=False):
@@ -303,12 +386,14 @@ class Maker(object):
                 self.make_executable(filename)
 
     def make_executable(self, filename):
+        """
+        Make a file executable.
+        """
         self.logger.info('Making file %s executable' % filename)
         if not self.simulate:
             st_mode = os.stat(filename).st_mode
             st_mode |= 0111
             os.chmod(filename, st_mode)
-        
 
     _svn_failed = False
 
@@ -324,6 +409,9 @@ class Maker(object):
                 self._svn_failed = True
 
     def rmtree(self, filename):
+        """
+        Deletes a tree recursively.
+        """
         if not os.path.isdir(filename):
             self.logger.fatal('%s is not a directory' % filename)
             raise OSError('%s is not a directory' % filename)
@@ -333,8 +421,39 @@ class Maker(object):
 
     def run_command(self, cmd, *args, **kw):
         """
-        Runs the command, respecting verbosity and simulation.
-        Returns stdout, or None if simulating.
+        Runs the command (either a single string, or a script with
+        arguments), respecting verbosity and simulation.  Returns
+        stdout, or None if simulating.
+
+        Some keyword arguments are supported:
+
+        ``cwd``:
+            The working directory to run the script in.  By default it
+            is ``self.base_path``.
+
+        ``capture_stderr``:
+            If true, then stderr is captured in stdout, instead of
+            being handled separately.
+
+        ``expect_returncode``:
+            If true, then a non-zero exit code from the script will
+            not be an error.
+
+        ``return_full``:
+            If true, then ``(stdout, stderr, returncode)`` is
+            returned; otherwise by default only stdout is returned.
+
+        ``extra_path``:
+            A list of extra paths that should be added to ``$PATH``
+
+        ``env``:
+            The environment to run the script in (by default the same
+            environment as this process is run in, os.environ).
+
+        ``script_abspath``:
+            If given, the script will be looked for in the given path
+            exactly.  You can also just give an absolute path for the
+            first argument.
         """
         cwd = popdefault(kw, 'cwd', self.base_path) or self.base_path
         cwd = self.path(cwd)
@@ -408,7 +527,58 @@ class Maker(object):
         else:
             return stdout
 
+    def _script_abspath(self, cmd, abspath):
+        """
+        Rewrite the command to use the given abspath
+        """
+        is_string = isinstance(cmd, basestring)
+        if is_string:
+            # Shell-style string command
+            try:
+                first, rest = cmd.split(None, 1)
+            except ValueError:
+                first = cmd
+                rest = ''
+        else:
+            first, rest = cmd[0], cmd[1:]
+        first = os.path.join(abspath, first)
+        if is_string:
+            if rest:
+                return '%s %s' % (first, rest)
+            else:
+                return first
+        else:
+            return [first] + rest
+
+    def _format_command(self, cmd):
+        """
+        Format a command for printing (turn a list of arguments into a string)
+        """
+        if not isinstance(cmd, list):
+            return cmd
+        def quote(item):
+            if ' ' in item or '"' in item or "'" in item or '$' in item:
+                item = item.replace('\\', '\\\\')
+                item = item.replace('"', '\\"')
+                item = item.replace('$', '\\$')
+                item = item.replace("'", "\\'")
+                return '"%s"' % item
+            else:
+                return item
+        return ' '.join([quote(item) for item in cmd])
+
     def checkout_svn(self, repo, dest, revision=None):
+        """
+        Checkout an svn repository ``repo`` to the given ``dest`` path.
+
+        If ``revision`` is given, it is used with ``svn checkout -r <revision>``.
+
+        If the dest exists, this will check if the repository is the
+        same one as is supposed to be checked out.  If not, the user
+        will be asked about changing the repository (and may opt not
+        to).  If ``self.quick`` is false, the repository will also be
+        updated.
+        """
         if self.exists(dest):
             if self.quick:
                 self.logger.notify('Checkout %s exists; skipping update' % dest)
@@ -483,43 +653,18 @@ class Maker(object):
                 % (path, stdout))
         return match.group(1).strip()
 
-    def _script_abspath(self, cmd, abspath):
-        is_string = isinstance(cmd, basestring)
-        if is_string:
-            # Shell-style string command
-            try:
-                first, rest = cmd.split(None, 1)
-            except ValueError:
-                first = cmd
-                rest = ''
-        else:
-            first, rest = cmd[0], cmd[1:]
-        first = os.path.join(abspath, first)
-        if is_string:
-            if rest:
-                return '%s %s' % (first, rest)
-            else:
-                return first
-        else:
-            return [first] + rest
-
-    def _format_command(self, cmd):
-        if not isinstance(cmd, list):
-            return cmd
-        def quote(item):
-            if ' ' in item or '"' in item or "'" in item or '$' in item:
-                item = item.replace('\\', '\\\\')
-                item = item.replace('"', '\\"')
-                item = item.replace('$', '\\$')
-                item = item.replace("'", "\\'")
-                return '"%s"' % item
-            else:
-                return item
-        return ' '.join([quote(item) for item in cmd])
-
     all_answer = None
 
     def ask_difference(self, dest_fn, message, new_content, cur_content):
+        """
+        Ask about the differences between two files, and whether the
+        old content should be overwritten.
+
+        This returns true if the file should be overwritten, false
+        otherwise.  It may backup the file if the user asks to do so.
+
+        This gives the user an option to see a diff of the file.
+        """
         u_diff = list(unified_diff(
             cur_content.splitlines(),
             new_content.splitlines(),
@@ -640,6 +785,13 @@ Responses:
                 print help
             
     def handle_exception(self, exc_info, can_continue=False):
+        """
+        Give an interactive way to handle an exception.
+
+        If can_continue is true, then the user is given the option to
+        quit (abort the whole thing) or continue.  Not everything can
+        be continued.
+        """
         self.logger.fatal('Error: %s' % exc_info[1], color='bold red')
         if not self.interactive:
             raise exc_info[0], exc_info[1], exc_info[2]
@@ -677,6 +829,9 @@ Responses:
                 assert 0
 
 def popdefault(dict, name, default=None):
+    """
+    Used to handle keyword-only arguments.
+    """
     if name not in dict:
         return default
     else:
@@ -686,7 +841,8 @@ def popdefault(dict, name, default=None):
 
 def dict_diff(d1, d2):
     """
-    Show the differences in two dictionaries (typically os.environ-style dicts)
+    Show the differences in two dictionaries (typically
+    os.environ-style dicts).  Returns a human-readable string.
     """
     all_keys = sorted(set(d1) | set(d2))
     lines = []

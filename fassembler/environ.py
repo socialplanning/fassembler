@@ -3,8 +3,12 @@ import socket
 from fassembler.config import ConfigParser
 import string
 import random
+import subprocess
 
 class bunch(object):
+    """
+    A generic object that holds values in the attributes.
+    """
     def __init__(self, **kw):
         for name, value in kw.items():
             setattr(self, name, value)
@@ -15,6 +19,14 @@ class bunch(object):
 
 class Environment(object):
 
+    """
+    The environment represents global settings of the build.  It is
+    available as ``env`` in templates.
+
+    Besides several properties and functions there is a ``.base_path``
+    attribute and ``.environ`` (which is the same as ``os.environ``).
+    """
+
     def __init__(self, base_path, logger):
         self.environ = os.environ
         self.base_path = os.path.abspath(base_path)
@@ -23,19 +35,39 @@ class Environment(object):
 
     @property
     def hostname(self):
+        """
+        The hostname of the current computer; just a single segment
+        like ``'flow'``, not fully-qualified.
+
+        This uses the same mechanism as the ``hostname`` command; if
+        you are getting the wrong value you should do ``sudo hostname
+        corrent-hostname``
+        """
         return socket.gethostname().split('.')[0]
 
     @property
     def fq_hostname(self):
-        ## FIXME: this seems to return localhost.localdomain and other useless stuff
+        """
+        The fully-qualified hostname of this computer.
+
+        This uses reverse DNS to determine the complete domain name.
+        """
+        ## this seems to return localhost.localdomain and other useless stuff:
         return socket.gethostbyaddr(socket.gethostname())[0]
 
     @property
     def config_filename(self):
+        """
+        The global configuration file.
+        """
         return os.path.join(self.base_path, 'etc', 'build.ini')
 
     @property
     def config(self):
+        """
+        The config property gives a ConfigParser (-like) object that
+        represents the global configuration for the build.
+        """
         if self._parser is None:
             self._parser = ConfigParser()
             self._parser.read(self.config_filename)
@@ -72,6 +104,14 @@ class Environment(object):
             random.choice(chars) for i in range(length)])
     
     def parse_auth(self, filename):
+        """
+        Parses an admin authentication file into an object with a
+        ``.username`` and ``.password`` attribute.
+
+        Typically used like::
+
+            env.parse_auth(env.config.get('general', 'admin_info_filename'))
+        """
         f = open(filename)
         line = f.read().strip()
         f.close()

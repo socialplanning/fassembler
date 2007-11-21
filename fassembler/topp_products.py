@@ -1,6 +1,7 @@
 """
-Misc. builders for various topp products
+Misc. builders for various smaller topp products
 """
+
 import os
 from fassembler.project import Project, Setting
 from fassembler import tasks

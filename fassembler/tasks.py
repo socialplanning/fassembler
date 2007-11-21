@@ -1,3 +1,8 @@
+"""
+The abstract base class for tasks (``Task``) and many useful
+subclasses that actually do something.
+"""
+
 import sys
 import os
 import urlparse
@@ -20,9 +25,15 @@ class Task(object):
 
     @property
     def title(self):
+        """
+        A human-readable summary of this task.
+        """
         return '%s  (%s.%s)' % (self.name, self.__class__.__module__, self.__class__.__name__)
 
     def bind(self, maker, environ, logger, config, project):
+        """
+        This is called by the project to bind this task instance to a running environment.
+        """
         self.maker = maker
         self.environ = environ
         self.logger = logger
@@ -31,6 +42,9 @@ class Task(object):
         self.config_section = project.config_section
 
     def confirm_settings(self):
+        """
+        This is called to check that all required settings have been set.
+        """
         # Quick test that bind has been called
         assert self.maker is not None
 
@@ -40,20 +54,36 @@ class Task(object):
         """
 
     def run(self):
+        """
+        Subclasses should implement this.
+        """
         raise NotImplementedError
 
     def interpolate(self, string, stacklevel=1, name=None):
+        """
+        Interpolate the given string, using ``name`` if given or a
+        name derived from the callstack if not.
+        """
         return self.project.interpolate_ns(
             string, self.create_namespace(), stacklevel=stacklevel+1, name=name)
 
     def create_namespace(self):
+        """
+        Create a task-local namespace.
+        """
         ns = self.project.create_namespace()
         ns['task'] = self
         return ns
 
     def copy_dir(self, *args, **kw):
+        """
+        Run maker.copy_dir, with interpolated arguments.
+        """
         self._run_fill_method('copy_dir', *args, **kw)
     def copy_file(self, *args, **kw):
+        """
+        Run maker.copy_file, with interpolated arguments.
+        """
         self._run_fill_method('copy_file', *args, **kw)
     def _run_fill_method(self, method_name, *args, **kw):
         ns = self.create_namespace()
@@ -66,6 +96,9 @@ class Task(object):
         method(*args, **kw)
 
     def _stacklevel_position(self, stacklevel):
+        """
+        Figure out the file location of the given frame, stacklevel frames back.
+        """
         try:
             caller = sys._getframe(stacklevel)
         except ValueError:
@@ -85,6 +118,10 @@ class Task(object):
         return name
 
     def venv_property(self, name='path'):
+        """
+        Return a property in ``self.project.build_properties`` named
+        ``virtualenv_<name>``.  Gives a reasonable error if not present.
+        """
         prop = self.project.build_properties.get('virtualenv_%s' % name)
         if not prop:
             raise Exception(
@@ -92,6 +129,9 @@ class Task(object):
         return prop
 
     def __str__(self):
+        """
+        Human-readable description of what this task will do.
+        """
         if self.description is None:
             return repr(self)
         if self.maker is None:
@@ -102,6 +142,12 @@ class Task(object):
             return '%s (error in description: %s)>' % (repr(self).rstrip('>'), e)
 
 class interpolated(object):
+    """
+    This is a descriptor, a dynamic kind of attribute.
+
+    This descriptor takes values, and whenever the values are
+    retrieved they are interpolated with ``self.interpolate(value)``.
+    """
     def __init__(self, name):
         self.name = name
     def __get__(self, obj, type=None):
@@ -218,6 +264,9 @@ class EnsureFile(Task):
 
     @property
     def resolved_content(self):
+        """
+        The content from self.content or self.content_path
+        """
         if self.content_path:
             tmpl = Template.from_filename(self.maker.path(self.content_path))
             return self.interpolate(tmpl)
@@ -260,6 +309,9 @@ class SvnCheckout(Task):
 
     @property
     def full_repository(self):
+        """
+        The repository, interpreted relative to ``self.base_repository``
+        """
         base = self.base_repository
         if base:
             if not base.endswith('/'):
@@ -611,6 +663,9 @@ class CheckMySQLDatabase(Task):
         self.logger.notify('Database %s@%s setup for user %s' % (self.db_name, self.db_host, self.db_username))
 
     def create_database(self):
+        """
+        Creates the database, accessing MySQL as root.
+        """
         import MySQLdb
         try:
             conn = self.root_connection()
@@ -641,6 +696,9 @@ class CheckMySQLDatabase(Task):
         conn.close()
 
     def change_permissions(self):
+        """
+        Grants all privileges to the configured user for the database.
+        """
         conn = self.root_connection()
         plan = "GRANT ALL PRIVILEGES ON %s.* TO %s@localhost IDENTIFIED BY %r" % (
             self.db_name, self.db_username, self.db_password)
@@ -657,6 +715,9 @@ class CheckMySQLDatabase(Task):
         conn.close()
 
     def root_connection(self):
+        """
+        Returns a connection to the MySQL database, as root.
+        """
         import MySQLdb
         return MySQLdb.connect(
             host=self.db_host,
@@ -705,6 +766,9 @@ class SaveSetting(Task):
             self.environ.config.set(section, key, value)
 
     def format_variables(self, variables):
+        """
+        Format the given variable dictionary for human reading.
+        """
         keys = sorted(variables)
         default_section = self.section
         output = []
@@ -828,6 +892,9 @@ class Patch(Task):
         return self.expand_globs(self.files)
 
     def expand_globs(self, files):
+        """
+        Expand a list of files, treating each as a glob.
+        """
         result = []
         for file_spec in files:
             if '*' not in file_spec:
@@ -863,6 +930,17 @@ class InstallSpec(Task):
             command(context, arg)
 
     def read_commands(self, filename=None):
+        """
+        Reads the commands in the given file (or self.spec_filename),
+        returning ``(context_dictionary, list_of_commands)``, where
+        the list of commands is in the form::
+
+          [(function, argument)]
+
+        The functions will be called like ``function(context,
+        argument)``, and may return another ``(function, argument)``
+        to be called later.
+        """
         if filename is None:
             filename = self.spec_filename
         self.logger.debug('Reading spec %s' % filename)
@@ -901,6 +979,11 @@ class InstallSpec(Task):
     _egg_spec_re = re.compile(r'egg=([^-=&]*)')
 
     def install_editable(self, context, svn):
+        """
+        Installs one editable project.  This step does not install any
+        dependencies for the project; that is done later by
+        ``self.install_finalize_editable``
+        """
         ops = []
         name = None
         if '#' in svn:
@@ -935,6 +1018,9 @@ class InstallSpec(Task):
         return self.install_finalize_editable, dest
 
     def install_finalize_editable(self, context, src_dir):
+        """
+        Finalizes the installation of an editable project.
+        """
         cmd = ['python', 'setup.py', 'develop']
         for link in context['find_links']:
             cmd.extend(['-f', link])
@@ -944,6 +1030,9 @@ class InstallSpec(Task):
             script_abspath=self.venv_property('bin_path'))
 
     def install_eggs(self, context, eggs):
+        """
+        Installs a set of eggs.
+        """
         cmd = ['easy_install']
         for link in context['find_links']:
             cmd.extend(['-f', link])

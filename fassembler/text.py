@@ -1,3 +1,7 @@
+"""
+Little text-formatting helpers.
+"""
+
 import textwrap
 
 __all__ = ['indent', 'indent', 'underline']

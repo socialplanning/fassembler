@@ -1,3 +1,7 @@
+"""
+Represents a substitution namespace for templates.
+"""
+
 from UserDict import DictMixin
 from tempita import Template
 from cmdutils import CommandError
@@ -6,6 +10,18 @@ import sys
 _in_broken_ns = False
 
 class Namespace(DictMixin):
+    """
+    Represents a namespace that templates are executed in.
+
+    ``self.dict`` contains the concrete dictionary object to use for
+    interpretation.  ``exec`` (and ``eval`` etc) can only work with
+    actual dictionaries.  This object acts *like* a dictionary as
+    well, but more lazily.
+
+    This can handle config files and config sections with recursive
+    interpolation.
+    """
+
     ## FIXME: probably this should have access to the maker, for
     ## error handling.
     def __init__(self, name=None):
@@ -13,6 +29,8 @@ class Namespace(DictMixin):
         self.dict = {}
         if name:
             self.dict['__name__'] = self.name
+
+    ## All the UserDict abstract methods:
 
     def __getitem__(self, key):
         return self.dict[key]
@@ -27,6 +45,13 @@ class Namespace(DictMixin):
         del self.dict[key]
 
     def add_section(self, config, section, variable=None):
+        """
+        Add a section from the given ConfigParser-like object ``config``.
+
+        This will show up as a variable named after ``section`` (or
+        the name in ``variable`` if given).  The values in the config
+        will be interpolated in this namespace.
+        """
         if self.name:
             subname = '%s.%s' % (self.name, section)
         else:
@@ -35,13 +60,26 @@ class Namespace(DictMixin):
         self.dict[variable or section] = ns
 
     def add_all_sections(self, config):
+        """
+        Add all sections from a configuration file.
+        """
         for section in config.sections():
             self.add_section(config, section)
 
     def interpolate(self_, string, stacklevel=1, name=None, self=None):
         """
         Interpolate a string.
+
+        You can provide temporary ``self`` object with that keyword
+        argument.
+
+        This handles exceptions internally.
+
+        The variable ``name`` is used to name the string.  Alternately
+        it can look up ``stacklevel`` frames to find the location
+        where the literal ``string`` is given (for error reports).
         """
+        ## FIXME: maybe I should actually use "self" somewhere?
         if name is None:
             name = self_.name
             if stacklevel:
@@ -65,6 +103,9 @@ class Namespace(DictMixin):
                 del self_.dict['self']
 
     def string_repr(self, detail=0):
+        """
+        The string representation of this namespace.
+        """
         lines = []
         if self.name:
             lines.append('Namespace %s:' % self.name)
@@ -105,6 +146,9 @@ class Namespace(DictMixin):
         return self.string_repr()
 
     def execute_template(self, tmpl):
+        """
+        Executes the given template in this namespace.  Does error handling.
+        """
         global _in_broken_ns
         try:
             return tmpl.substitute(self.dict)
@@ -180,6 +224,15 @@ class Namespace(DictMixin):
                 _in_broken_ns = False
 
 class SectionNamespace(DictMixin):
+    """
+    Represents a section in a config object, where all values are
+    recursively interpolated by the namespace object ``self.ns``
+
+    If you use dictionary methods, the uninterpolated values are
+    given.  Attributes are interpolated.  Thus if you get
+    ``section.foo`` the value of ``foo`` is interpolated.  If you get
+    ``section['foo']`` it is not interpolated.
+    """
 
     def __init__(self, ns, config, section, name=None):
         self.ns = ns
@@ -223,6 +276,9 @@ class SectionNamespace(DictMixin):
         return value
 
     def string_repr(self, detail=0):
+        """
+        The string representation of this object, for human consumption and debugging.
+        """
         lines = ['Section: [%s]' % self.section]
         options = sorted(self.config.options(self.section))
         for option in options:
