@@ -88,6 +88,10 @@ def main(options, args):
         raise CommandError(
             "You must provide at least one project")
     base_path = options.base_path
+    if base_path.startswith('ase=') or base_path == 'ase':
+        # Sign that you used -base instead of --base
+        raise CommandError(
+            "You gave -b%s; did you mean --base?" % base_path, show_usage=False)
     if not base_path:
         script_path = os.path.abspath(sys.argv[0])
         base_path = os.path.dirname(os.path.dirname(script_path))
@@ -121,6 +125,8 @@ def main(options, args):
         try:
             errors.extend(project.confirm_settings())
         except KeyboardInterrupt:
+            raise
+        except CommandError:
             raise
         except Exception, e:
             logger.fatal('Error in project %s' % project.project_name, color='bold red')

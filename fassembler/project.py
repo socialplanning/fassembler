@@ -9,6 +9,7 @@ from cStringIO import StringIO
 from fassembler.namespace import Namespace
 from fassembler.text import indent, underline, dedent
 from cmdutils import CommandError
+from tempita import Template
 
 class Project(object):
     """
@@ -64,7 +65,7 @@ class Project(object):
                     task.run()
                 finally:
                     self.logger.indent -= 2
-            except KeyboardInterrupt:
+            except (KeyboardInterrupt, CommandError):
                 raise
             except:
                 should_continue = self.maker.handle_exception(sys.exc_info(), can_continue=True)
@@ -110,6 +111,29 @@ class Project(object):
             print >> out, indent(desc, '    ')
             print >> out
         return out.getvalue()
+
+    def interpolate(self, string, stacklevel=1, name=None):
+        return self.interpolate_ns(string, self.create_namespace(), stacklevel=stacklevel+1, name=name)
+
+    def interpolate_ns(self, string, ns, stacklevel=1, name=None):
+        if string is None:
+            return None
+        if isinstance(string, (list, tuple)):
+            new_items = []
+            for item in string:
+                new_items.append(self.interpolate_ns(item, ns, stacklevel+1, name=name))
+            return new_items
+        if isinstance(string, dict):
+            new_dict = {}
+            for key in string:
+                new_dict[self.interpolate_ns(key, ns, stacklevel+1, name=name)] = self.interpolate_ns(
+                    string[key], ns, stacklevel+1, name=name)
+            return new_dict
+        if not isinstance(string, Template):
+            tmpl = Template(string, name=name, stacklevel=stacklevel+1)
+        else:
+            tmpl = string
+        return ns.execute_template(tmpl)
 
     def create_namespace(self):
         ns = Namespace(self.config_section)

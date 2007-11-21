@@ -43,25 +43,8 @@ class Task(object):
         raise NotImplementedError
 
     def interpolate(self, string, stacklevel=1, name=None):
-        if string is None:
-            return None
-        if isinstance(string, (list, tuple)):
-            new_items = []
-            for item in string:
-                new_items.append(self.interpolate(item, stacklevel+1, name=name))
-            return new_items
-        if isinstance(string, dict):
-            new_dict = {}
-            for key in string:
-                new_dict[self.interpolate(key, stacklevel+1, name=name)] = self.interpolate(
-                    string[key], stacklevel+1, name=name)
-            return new_dict
-        if not isinstance(string, Template):
-            tmpl = Template(string, name=name, stacklevel=stacklevel+1)
-        else:
-            tmpl = string
-        ns = self.create_namespace()
-        return ns.execute_template(tmpl)
+        return self.project.interpolate_ns(
+            string, self.create_namespace(), stacklevel=stacklevel+1, name=name)
 
     def create_namespace(self):
         ns = self.project.create_namespace()
