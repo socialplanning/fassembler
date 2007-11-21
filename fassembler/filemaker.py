@@ -159,7 +159,6 @@ class Maker(object):
         """
         Fill the content as a template, using the given variables.
         """
-        ## FIXME: catch expected errors here, show available variables
         tmpl = tempita.Template(contents, name=filename)
         return tmpl.substitute(template_vars)
 
@@ -274,10 +273,14 @@ class Maker(object):
 
         Anything like ``+var+`` will be treated as a substitution in
         the filename.
+
+        The special variables ``+dot+`` and ``+plus+`` are available,
+        the first for hidden files that you want to actually copy, the
+        second for putting ``+`` in a filename.
         """
-        ## FIXME: should add (more?) standard variables
         vars = template_vars.copy()
-        vars['dot'] = '.'
+        vars.setdefault('dot', '.')
+        vars.setdefault('plus', '+')
         def subber(match):
             name = match.group(1)
             if name not in vars:
@@ -362,16 +365,8 @@ class Maker(object):
             if executable and not os.stat(filename).st_mode&0111:
                 self.make_executable(filename)
             return
-        ## FIXME: use ask_difference
         if not overwrite:
             self.logger.notify('Warning: file %s does not match expected content' % filename)
-            diff = context_diff(
-                content.splitlines(),
-                old_content.splitlines(),
-                'expected ' + filename,
-                filename)
-            ## FIXME: replace with ask_difference
-            print '\n'.join(diff)
             if self.interactive:
                 response = self.ask_difference(filename, None, content, old_content)
             else:

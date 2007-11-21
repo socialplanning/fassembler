@@ -133,14 +133,16 @@ class Namespace(DictMixin):
         return '\n'.join(lines)
 
     def _quote(self, value):
-        ## FIXME: should handle cases when a value is really long
         try:
-            return str(value)
+            value = str(value)
         except Exception, e:
             try:
                 return 'Error doing str(%r): %s' % (value, e)
             except Exception, e:
                 return 'Error doing repr(value): %s' % e
+        else:
+            if len(value) > 100:
+                return value[:60]+'...'+value[-20:]
 
     def __str__(self):
         return self.string_repr()

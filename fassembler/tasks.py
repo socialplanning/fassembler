@@ -368,7 +368,6 @@ class SvnCheckout(Task):
             self.logger.debug('repository directory %s exists' % repo)
 
 
-## FIXME: I need to find a way to make this faster, and avoid recreating a perfectly fine virtualenv
 class VirtualEnv(Task):
     """
     Create a virtualenv environment
@@ -405,7 +404,7 @@ class VirtualEnv(Task):
             else:
                 self.logger.notify('Forcing virtualenv recreation')
         import virtualenv
-        ## FIXME: kind of a nasty hack
+        ## FIXME: kind of a nasty hack, but maybe it's okay?
         virtualenv.logger = self.logger
         self.logger.level_adjust -= 2
         try:
@@ -671,11 +670,7 @@ class CheckMySQLDatabase(Task):
             conn = self.root_connection()
         except MySQLdb.OperationalError, e:
             code = e.args[0]
-            if code == self.password_error:
-                self.logger.fatal("The root password %r is incorrect" % (self.db_root_password or '(no password)'))
-                ## FIXME: I don't like raise here:
-                raise
-            elif code == self.unknown_database:
+            if code == self.unknown_database:
                 pass
             else:
                 self.logger.fatal("Error connecting as root: %s" % e)
@@ -713,18 +708,36 @@ class CheckMySQLDatabase(Task):
                 logger.warn('Note: no password set for %s@localhost; login may not work' % self.db_name)
             conn.cursor().execute(plan, args)
         conn.close()
+        
+    _root_password_override = None
 
     def root_connection(self):
         """
         Returns a connection to the MySQL database, as root.
         """
         import MySQLdb
-        return MySQLdb.connect(
-            host=self.db_host,
-            db=self.db_name,
-            user='root',
-            **self.passkw(self.db_root_password))
-        
+        try:
+            return MySQLdb.connect(
+                host=self.db_host,
+                db=self.db_name,
+                user='root',
+                **self.passkw(self._root_password_override or self.db_root_password))
+        except MySQLdb.OperationalError, e:
+            exc_info = sys.exc_info()
+            code = e.args[0]
+            if code == self.password_error:
+                self.logger.fatal("The root password %r is incorrect" % (self.db_root_password or '(no password)'))
+                if self.maker.interactive:
+                    ## FIXME: this could use getpass.  But I hate
+                    ## getpass.  Personal bias that I never have
+                    ## anyone looking over my shoulder?
+                    try:
+                        self._root_password_override = raw_input('Please enter the correct password (^C to abort): ')
+                    except KeyboardInterrupt:
+                        print '^C'
+                        raise exc_info[0], exc_info[1], exc_info[2]
+                    return self.root_connection()
+            raise
         
 class SaveSetting(Task):
     """
@@ -883,7 +896,6 @@ class Patch(Task):
                             finally:
                                 self.logger.indent -= 2
                         raise OSError('Patch failed')
-                ## FIXME: on failure, it would be nice to show the patch and dest file
             finally:
                 self.logger.indent -= 2
 
