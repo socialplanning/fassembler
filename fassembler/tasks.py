@@ -188,7 +188,7 @@ class EnsureFile(Task):
     """
 
     description = """
-    Write the file {{task.dest}} with the given content ({{len(task.content)}} bytes/{{len(task.content.splitlines())}} lines).
+    Write the file {{task.dest}} with the given content ({{len(task.resolved_content)}} bytes/{{len(task.resolved_content.splitlines())}} lines){{if task.content_path}} loaded from {{task.content_path}}{{endif}}.
     {{if not task.overwrite:}}
     If {{task.dest}} already exists{{if maker.exists(task.dest)}} (and it does){{endif}}, do not overwrite it.
     {{endif}}
@@ -202,21 +202,33 @@ class EnsureFile(Task):
 
     dest = interpolated('dest')
     content = interpolated('content')
+    content_path = interpolated('content_path')
 
-    def __init__(self, name, dest, content, overwrite=False, svn_add=False,
-                 executable=False, stacklevel=1):
+    def __init__(self, name, dest, content=None, content_path=None, overwrite=False,
+                 svn_add=False, executable=False, stacklevel=1):
         super(EnsureFile, self).__init__(name, stacklevel=stacklevel+1)
         self.dest = dest
         self.content = content
+        self.content_path = content_path
+        assert content or content_path, (
+            "You must give a value for content or content_path")
         self.overwrite = overwrite
         self.svn_add = svn_add
         self.executable = executable
+
+    @property
+    def resolved_content(self):
+        if self.content_path:
+            tmpl = Template.from_filename(self.maker.path(self.content_path))
+            return self.interpolate(tmpl)
+        else:
+            return self.content
 
     def run(self):
         if not self.overwrite and self.maker.exists(self.dest):
             self.logger.notify('File %s already exists; not overwriting' % self.dest)
             return
-        self.maker.ensure_file(self.dest, self.content, svn_add=self.svn_add,
+        self.maker.ensure_file(self.dest, self.resolved_content, svn_add=self.svn_add,
                                overwrite=self.overwrite, executable=self.executable)
 
 class SvnCheckout(Task):
@@ -580,11 +592,11 @@ class CheckMySQLDatabase(Task):
             elif code == self.password_error:
                 # Could be a database name problem, or access
                 self.logger.notify(
-                    "Cannot connect to %s@%s"
+                    "Cannot connect to %s@%s, will try to create"
                     % (self.db_name, self.db_host))
             elif code == self.unknown_database:
                 self.logger.notify(
-                    "Database %s does not exist" % self.db_name)
+                    "Database %s does not exist, will try to create" % self.db_name)
             else:
                 self.logger.fatal(
                     "Unexpected MySQL connection error: %s"
@@ -630,14 +642,18 @@ class CheckMySQLDatabase(Task):
 
     def change_permissions(self):
         conn = self.root_connection()
-        plan = "GRANT ALL PRIVILEGES ON %s.* TO %s IDENTIFIED BY %r" % (
+        plan = "GRANT ALL PRIVILEGES ON %s.* TO %s@localhost IDENTIFIED BY %r" % (
             self.db_name, self.db_username, self.db_password)
         self.logger.info('Executing %s' % plan)
         if not self.maker.simulate:
-            conn.cursor().execute(
-                "GRANT ALL PRIVILEGES ON %s.* TO %s IDENTIFIED BY %%s"
-                % (self.db_name, self.db_username),
-                (self.db_password,))
+            plan = "GRANT ALL PRIVILEGES ON %s.* TO %s@localhost" % (self.db_name, self.db_username)
+            if self.db_password:
+                plan += " IDENTIFIED BY %s"
+                args = (self.db_password,)
+            else:
+                args = ()
+                logger.warn('Note: no password set for %s@localhost; login may not work' % self.db_name)
+            conn.cursor().execute(plan, args)
         conn.close()
 
     def root_connection(self):
