@@ -41,5 +41,6 @@ setup(name='fassembler',
       tasktracker = fassembler.topp_products:TaskTrackerProject
       deliverance = fassembler.topp_products:DeliveranceProject
       opencore = fassembler.topp_opencore:OpenCoreProject
+      wordpress = fassembler.topp_wordpress:WordPressProject
       """,
       )

@@ -1,0 +1,119 @@
+ServerRoot {{env.base_path}}/wordpress
+LockFile var/apache2/accept.lock
+PidFile var/apache2.pid
+
+# Boilerplate, but potentially we could tweak:
+Timeout 300
+KeepAlive On
+MaxKeepAliveRequests 100
+KeepAliveTimeout 15
+
+## Process Management ##
+
+<IfModule prefork.c>
+StartServers         5
+MinSpareServers      5
+MaxSpareServers     10
+MaxClients          20
+MaxRequestsPerChild  0
+</IfModule>
+<IfModule worker.c>
+StartServers         2
+MaxClients         150 
+MinSpareThreads     25
+MaxSpareThreads     75
+ThreadsPerChild     25
+MaxRequestsPerChild  0
+</IfModule>
+<IfModule perchild.c>
+NumServers           5
+StartThreads         5
+MinSpareThreads      5
+MaxSpareThreads     10
+MaxThreadsPerChild  20
+MaxRequestsPerChild  0
+AcceptMutex fcntl
+</IfModule>
+
+## End process management
+
+Listen {{config.port}}
+
+# Boilerplate:
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+
+{{project.extra_modules()}}
+LoadModule php5_module {{config.apache_module_dir}}/libphp5.so
+<IfModule mod_php5.c>
+  AddType application/x-httpd-php .php .phtml .php3
+  AddType application/x-httpd-php-source .phps
+</IfModule>
+
+# Boilerplate:
+DirectoryIndex index.html index.cgi index.pl index.php index.xhtml index.phtml
+AccessFileName .htaccess
+<Files ~ "^\.ht">
+    Order allow,deny
+    Deny from all
+</Files>
+UseCanonicalName Off
+TypesConfig {{project.mimetypes_file()}}
+DefaultType application/octet-stream
+HostnameLookups Off
+
+# FIXME: Should we do this?
+AddDefaultCharset UTF8
+
+<VirtualHost *>
+    ServerAdmin {{config.server_admin}}
+    DocumentRoot {{env.base_path}}/wordpress/src/wordpress-mu
+
+    ErrorLog {{env.base_path}}/logs/wordpress/error.log
+    LogLevel warn
+    CustomLog {{env.base_path}}/logs/wordpress/access.log combined
+
+    <Directory />
+        Options FollowSymLinks Indexes
+        AllowOverride None
+    </Directory>
+    <Directory {{env.base_path}}/wordpress/src/wordpress-mu>
+        Options Indexes FollowSymlinks
+        AllowOverride All
+        DirectoryIndex index.php index.html
+    </Directory>
+
+    RewriteEngine On
+    # Increase this number to see log messages:
+    RewriteLogLevel 0
+    RewriteLog {{env.base_path}}/logs/wordpress/rewrite.log
+
+    ## Rules taken from WordPress MU's .htaccess:
+
+    # Uploaded files
+    ## FIXME: I think these can be absolute like this in an .htaccess, because all paths are "local" in
+    ## some fashion under .htaccess.  But they won't work in a conf file like here, because the paths
+    ## should be under to DocumentRoot once they are resolved.
+    RewriteRule ^(.*/)?files/$ /index.php [L,PT]
+    RewriteRule ^(.*/)?files/(.*) /wp-content/blogs.php?file=$2 [L]
+
+    # Apache's normal directory redirect doesn't work correctly, because it thinks the request is
+    # for http://localhost:8090/dir, when really it is http://openplans.org/projects/projectname/dir
+    # (or something like that).  So we have to do this directory redirect ourselves.  Other redirects
+    # inside WordPress should use the proper values.
+    RewriteCond %{DOCUMENT_ROOT}%{REQUEST_FILENAME} -d
+    RewriteRule (.*[^/])$ http://%{HTTP:X-Forwarded-Server}%{HTTP:X-Forwarded-Path}%{REQUEST_URI}/ [R=permanent,L]
+
+    # If the file exists, don't mess with it:
+    RewriteCond %{DOCUMENT_ROOT}%{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{DOCUMENT_ROOT}%{REQUEST_FILENAME} -d
+    RewriteRule . - [L,PT]
+
+    RewriteRule ^([_0-9a-zA-Z-]+/)?(wp-.*) /$2 [L,PT]
+    RewriteRule ^([_0-9a-zA-Z-]+/)?(.*\.php)$ /$2 [L,PT]
+    RewriteRule . /index.php [L,PT]
+
+    php_flag register_globals 0
+    #php_flag display_errors 0
+    ## FIXME: turn on PHP error logging to somewhere
+
+</VirtualHost>
