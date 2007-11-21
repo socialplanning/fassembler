@@ -66,8 +66,10 @@ class WordPressProject(Project):
         tasks.EnsureFile('Fill in wp-config.php',
                          '{{env.base_path}}/wordpress/src/wordpress-mu/wp-config.php',
                          content_path='{{env.base_path}}/wordpress/src/wordpress-mu/wp-config.php_tmpl',
-                         svn_add=False),
+                         svn_add=False, overwrite=True),
         tasks.CheckMySQLDatabase('Check database'),
+        tasks.Script('Setup database tables',
+                     '{{env.base_path}}/wordpress/bin/setup-database.sh'),
         tasks.InstallSupervisorConfig(),
         tasks.SaveURI(path='/blog'),
         ]
