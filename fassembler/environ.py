@@ -57,7 +57,9 @@ class Environment(object):
         self.config.write(f)
         f.close()
 
-    def random_string(self, length=20, chars=string.printable.strip()):
+    secret_chars = string.ascii_letters + string.digits + '!@#$%^&*()[]|_-+=;:.,<>'
+
+    def random_string(self, length=20, chars=secret_chars):
         """
         Return a random string of the given length, taken from the given characters.
 
