@@ -27,7 +27,8 @@ class Environment(object):
 
     @property
     def fq_hostname(self):
-        return socket.gethostbyaddr(socket.gethostname())
+        ## FIXME: this seems to return localhost.localdomain and other useless stuff
+        return socket.gethostbyaddr(socket.gethostname())[0]
 
     @property
     def config_filename(self):
