@@ -107,6 +107,6 @@ exec {{env.base_path}}/bin/zopectl fg
                       path='/'),
         tasks.SaveURI(uri_template='${uri}/VirtualHostBase/http/${HTTP_HOST}/openplans/VirtualHostRoot',
                       path='/',
-                      require_project=False)
+                      project_local=False)
         # ZEO doesn't really have a uri
         ]
