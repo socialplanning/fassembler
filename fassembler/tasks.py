@@ -444,8 +444,8 @@ class EasyInstall(Script):
             find_links = kw.pop('find_links')
             if isinstance(find_links, basestring):
                 find_links = [find_links]
-            for find_link in find_links:
-                self.reqs[:0] = ['-f', find_link]
+            if find_links:
+                self.reqs[:0] = ['-f', ','.join(find_links)]
         kw['stacklevel'] = kw.get('stacklevel', 1)+1
         super(EasyInstall, self).__init__(name, ['easy_install'] + list(self.reqs), use_virtualenv=True, **kw)
 
