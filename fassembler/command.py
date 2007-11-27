@@ -97,7 +97,7 @@ def main(options, args):
         raise CommandError(
             "You must provide at least one project")
     base_path = options.base_path
-    if base_path.startswith('ase=') or base_path == 'ase':
+    if base_path and base_path.startswith('ase=') or base_path == 'ase':
         # Sign that you used -base instead of --base
         raise CommandError(
             "You gave -b%s; did you mean --base?" % base_path, show_usage=False)
