@@ -24,7 +24,7 @@
 
 %define ZOPE_PORT {{config.port}}
 %define ZEO_PORT {{config.zeo_port}}
-%define DEBUG_MODE {{config.debug}}
+%define DEBUG_MODE {{if config.debug:}}True{{else}}False{{endif}}
 %define INSTANCE {{config.zope_instance}}
 
 # Directive: instancehome
