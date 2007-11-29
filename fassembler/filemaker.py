@@ -510,7 +510,8 @@ class Maker(object):
                     self.logger.warn(stderr)
                 finally:
                     self.logger.indent -= 2
-            raise RunCommandError("Error executing command %s" % self._format_command(cmd),
+            raise RunCommandError("Error executing command %s (code %s)" %
+                                  (self._format_command(cmd), proc.returncode),
                                   command=cmd, stdout=stdout, stderr=stderr,
                                   returncode=proc.returncode)
         if stderr:
