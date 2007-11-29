@@ -29,6 +29,11 @@ class RunCommandError(OSError):
         self.stderr = stderr
         self.returncode = returncode
 
+    def __str__(self):
+        return '%s running %s (code: %s)' % (self.args[0],
+                                             self.command,
+                                             self.returncode)
+
 class Maker(object):
     """
     Instances of Maker are abstractions of several pieces of context:
@@ -449,6 +454,9 @@ class Maker(object):
             If given, the script will be looked for in the given path
             exactly.  You can also just give an absolute path for the
             first argument.
+
+        ``log_error``:
+            If true (the default) then errors will be logged
         """
         cwd = popdefault(kw, 'cwd', self.base_path) or self.base_path
         cwd = self.path(cwd)
@@ -458,6 +466,7 @@ class Maker(object):
         extra_path = popdefault(kw, 'extra_path', [])
         env = popdefault(kw, 'env', os.environ)
         script_abspath = popdefault(kw, 'script_abspath', None)
+        log_error = popdefault(kw, 'log_error', True)
         if extra_path:
             env = env.copy()
             path_parts = env.get('PATH', '').split(os.path.pathsep)
@@ -493,23 +502,24 @@ class Maker(object):
             return None
         stdout, stderr = proc.communicate()
         if proc.returncode and not expect_returncode:
-            self.logger.log(slice(self.logger.WARN, self.logger.FATAL),
-                            'Running %s' % self._format_command(cmd), color='bold red')
-            self.logger.warn('Error (exit code: %s)' % proc.returncode, color='bold red')
-            if stdout:
-                self.logger.warn('stdout:')
-                self.logger.indent += 2
-                try:
-                    self.logger.warn(stdout)
-                finally:
-                    self.logger.indent -= 2
-            if stderr:
-                self.logger.warn('stderr:')
-                self.logger.indent += 2
-                try:
-                    self.logger.warn(stderr)
-                finally:
-                    self.logger.indent -= 2
+            if log_error:
+                self.logger.log(slice(self.logger.WARN, self.logger.FATAL),
+                                'Running %s' % self._format_command(cmd), color='bold red')
+                self.logger.warn('Error (exit code: %s)' % proc.returncode, color='bold red')
+                if stdout:
+                    self.logger.warn('stdout:')
+                    self.logger.indent += 2
+                    try:
+                        self.logger.warn(stdout)
+                    finally:
+                        self.logger.indent -= 2
+                if stderr:
+                    self.logger.warn('stderr:')
+                    self.logger.indent += 2
+                    try:
+                        self.logger.warn(stderr)
+                    finally:
+                        self.logger.indent -= 2
             raise RunCommandError("Error executing command %s (code %s)" %
                                   (self._format_command(cmd), proc.returncode),
                                   command=cmd, stdout=stdout, stderr=stderr,
@@ -636,7 +646,8 @@ class Maker(object):
         ## can get i18n'd
         try:
             stdout = self.run_command(
-                ['svn', 'info', path])
+                ['svn', 'info', path],
+                log_error=False)
         except RunCommandError, e:
             if 'is not a working copy' in e.stderr:
                 # Not really a problem
