@@ -4,7 +4,7 @@ PYTHON="{{project.build_properties['virtualenv_python']}}"
 INSTANCE_HOME="{{config.zope_instance}}"
 CONFIG_FILE="${INSTANCE_HOME}/etc/zope.conf"
 ZOPE_HOME="{{config.zope_source}}"
-SOFTWARE_HOME="{{project.build_properties['virtualenv_lib_python']}}"
+SOFTWARE_HOME="{{config.zope_source}}/lib/python"
 PYTHONPATH="$SOFTWARE_HOME:$PYTHONPATH"
 export PYTHONPATH INSTANCE_HOME SOFTWARE_HOME
 

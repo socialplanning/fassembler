@@ -1,7 +1,6 @@
--f http://dist.repoze.org/simple/PIL/
 -f https://svn.openplans.org/eggs/
+-f http://dist.repoze.org/PIL-1.1.6.tar.gz
 PIL
-Zope==2.98_final
 -e https://svn.openplans.org/svn/opencore/trunk
 -e https://svn.openplans.org/svn/topp.featurelets/trunk
 -e https://svn.openplans.org/svn/topp.utils/trunk

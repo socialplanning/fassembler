@@ -82,7 +82,7 @@ import sys, os
 
 # these are replacements from mkzopeinstance
 PYTHON = {{repr(project.build_properties["virtualenv_python"])}}
-SOFTWARE_HOME={{repr(project.build_properties['virtualenv_lib_python'])}}
+SOFTWARE_HOME="{{config.zope_source}}/lib/python"
 INSTANCE_HOME = {{repr(config.zope_instance)}}
 ZOPE_HOME = {{repr(config.zope_source)}}
 
