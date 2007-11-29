@@ -288,6 +288,7 @@ class EnsureDir(Task):
     Ensure that the directory {{task.dest}} exists.
     {{if task.svn_add}}
     If the parent directory {{os.path.dirname(task.dest)}} is an svn repository, also svn add this directory.
+    {{endif}}
     """
 
     dest = interpolated('dest')
