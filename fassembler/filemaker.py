@@ -173,7 +173,7 @@ class Maker(object):
         ``self.base_path``
         """
         assert isinstance(path, basestring), "Bad path: %r" % (path, )
-        return os.path.join(self.base_path, path)
+        return self._normpath(os.path.join(self.base_path, path))
 
     def display_path(self, path):
         """
@@ -407,6 +407,70 @@ class Maker(object):
             if not self._svn_failed:
                 self.logger.warn('Unable to run svn command (%s); proceeding anyway' % e)
                 self._svn_failed = True
+
+    def ensure_symlink(self, source, dest, overwrite=False):
+        """
+        Ensure that source is symlinked to dest.  If overwrite is
+        false, and the symlink is wrong, correct it (otherwise ask).
+
+        Even if overwrite is true, this will not overwrite
+        non-symlinks.
+        """
+        source = self.path(source)
+        dest = self.path(dest)
+        if not os.path.exists(dest) and os.path.lexists(dest):
+            # Sign of a broken symlink
+            self.logger.info('Removing broken link %s' % dest)
+            if not self.simulate:
+                os.unlink(dest)
+        if os.path.exists(dest) and overwrite:
+            if os.path.islink(dest):
+                # It's a symlink, and we should overwrite it
+                self.logger.notify('Removing symlink %s (-> %s)'
+                                   % (dest, os.path.realpath(dest)))
+                if not self.simulate:
+                    os.unlink(dest)
+            else:
+                self.logger.warn('Cannot remove symlink destination %s because it is not a symlink'
+                                 % dest)
+        if not os.path.exists(dest):
+            self.logger.info('Symlinking %s to %s' % (source, dest))
+            if not self.simulate:
+                os.symlink(source, dest)
+            return
+        if os.path.islink(dest):
+            msg = 'At %s there is a symlink from %s; it should be a symlink from %s' % (
+                dest, os.path.realpath(dest), dest)
+        else:
+            if os.path.isdir(dest):
+                noun = 'directory'
+            else:
+                noun = 'file'
+            msg = 'At %s there is a %s; this should be a symlink from %s' % (
+                dest, noun, source)
+        response = self.ask(
+            message,
+            responses=['(i)gnore',
+                       '(b)ackup',
+                       '(w)ipe'],
+            first_char=True)
+        if response == 'i':
+            self.logger.notify('Skipping symlinking %s to %s' % (source, dest))
+            return
+        elif response == 'b':
+            self.backup(dest)
+        elif response == 'w':
+            if os.path.islink(dest):
+                self.logger.notify('Removing symlink at %s' % dest)
+                os.unlink(dest)
+            else:
+                self.logger.notify('Removing dir/file at %s' % dest)
+                shutil.rmtree(dest)
+        else:
+            assert 0
+        self.logger.info('Symlinking %s to %s' % (source, dest))
+        if not self.simulate:
+            os.symlink(source, dest)
 
     def rmtree(self, filename):
         """
