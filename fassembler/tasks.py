@@ -250,8 +250,9 @@ class EnsureFile(Task):
     content = interpolated('content')
     content_path = interpolated('content_path')
 
-    def __init__(self, name, dest, content=None, content_path=None, overwrite=False,
-                 svn_add=False, executable=False, stacklevel=1):
+    def __init__(self, name, dest, content=None, content_path=None, overwrite=True,
+                 svn_add=False, executable=False, stacklevel=1,
+                 force_overwrite=False):
         super(EnsureFile, self).__init__(name, stacklevel=stacklevel+1)
         self.dest = dest
         self.content = content
@@ -259,6 +260,7 @@ class EnsureFile(Task):
         assert content or content_path, (
             "You must give a value for content or content_path")
         self.overwrite = overwrite
+        self.force_overwrite = force_overwrite
         self.svn_add = svn_add
         self.executable = executable
 
@@ -278,7 +280,25 @@ class EnsureFile(Task):
             self.logger.notify('File %s already exists; not overwriting' % self.dest)
             return
         self.maker.ensure_file(self.dest, self.resolved_content, svn_add=self.svn_add,
-                               overwrite=self.overwrite, executable=self.executable)
+                               overwrite=self.force_overwrite, executable=self.executable)
+
+class EnsureDir(Task):
+
+    description = """
+    Ensure that the directory {{task.dest}} exists.
+    {{if task.svn_add}}
+    If the parent directory {{os.path.dirname(task.dest)}} is an svn repository, also svn add this directory.
+    """
+
+    dest = interpolated('dest')
+
+    def __init__(self, name, dest, svn_add=True, stacklevel=1):
+        super(EnsureDir, self).__init__(name, stacklevel=stacklevel+1)
+        self.dest = dest
+        self.svn_add = svn_add
+
+    def run(self):
+        self.maker.ensure_dir(self.dest)
 
 class SvnCheckout(Task):
     """
