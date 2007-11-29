@@ -37,12 +37,15 @@ class InstallZope(tasks.Task):
                 self.logger.notify('Version %s up-to-date' % version)
                 return
         url = tarball_url
-        tmp_fn = os.path.dirname(url)
+        tmp_fn = os.path.abspath(os.path.basename(url))
         delete_tmp_fn = False
         try:
-            self.logger.notify('Downloading %s' % url)
-            if not self.maker.simulate:
-                urllib.urlretrieve(url, tmp_fn)
+            if os.path.exists(tmp_fn):
+                self.logger.notify('Zope source %s already exists' % tmp_fn)
+            else:
+                self.logger.notify('Downloading %s to %s' % (url, tmp_fn))
+                if not self.maker.simulate:
+                    urllib.urlretrieve(url, tmp_fn)
             self.maker.run_command(
                 'tar', 'jfx', tmp_fn,
                 cwd=os.path.dirname(self.dest_path))
@@ -164,11 +167,13 @@ class OpenCoreProject(Project):
     ## Supervisor:
     start_script_template = """\
 #!/bin/sh
-exec {{env.base_path}}/bin/zopectl fg
+cd {{env.base_path}}
+exec {{env.base_path}}/var/opencore/zope/bin/zopectl fg
 """
 
     actions = [
         tasks.VirtualEnv(),
+        tasks.EnsureDir('Create src/ directory', '{{project.name}}/src'),
         InstallZope(),
         tasks.InstallSpec('Install OpenCore',
                           '{{config.spec}}'),
@@ -177,8 +182,13 @@ exec {{env.base_path}}/bin/zopectl fg
         #tasks.Script('Configure Zope', [
         #'./configure', '--prefix', '{{project.build_properties["virtualenv_path"]}}'],
         #cwd='{{config.zope_source}}'),
-        #tasks.Script('Make Zope', ['make'], cwd='{{config.zope_source}}'),
-        #tasks.Script('Install Zope', ['make', 'inplace'], cwd='{{config.zope_source}}'),
+        tasks.Script('Configure Zope', [
+        './configure', '--with-python={{project.build_properties["virtualenv_bin_path"]}}/python',
+        '--prefix={{project.build_properties["virtualenv_path"]}}'],
+                     cwd='{{config.zope_source}}'),
+        tasks.Script('Make Zope', ['make'], cwd='{{config.zope_source}}'),
+        tasks.Script('Install Zope', ['make', 'inplace'], cwd='{{config.zope_source}}'),
+        ## FIXME: this doesn't overwrite files sometimes:
         tasks.Script('Make Zope Instance', [
         'python', '{{config.zope_source}}/bin/mkzopeinstance.py', '--dir', '{{config.zope_instance}}',
         '--user', '{{config.zope_user}}:{{config.zope_password}}',
@@ -193,8 +203,7 @@ exec {{env.base_path}}/bin/zopectl fg
         tasks.EnsureFile('Write the start script',
                          '{{env.base_path}}/bin/start-{{project.name}}',
                          content=start_script_template,
-                         svn_add=True,
-                         executable=True),
+                         svn_add=True, executable=True, overwrite=True),
         tasks.SaveURI(uri_template='${uri}/VirtualHostBase/http/${HTTP_HOST}/openplans/projects/${project}/VirtualHostRoot',
                       path='/'),
         tasks.SaveURI(project_name='opencore_global',
