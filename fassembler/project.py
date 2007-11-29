@@ -186,7 +186,8 @@ class Project(object):
                 and not self.config.has_option('DEFAULT', setting.name)):
                 if not setting.has_default(self.environ):
                     raise ValueError(
-                        "The setting [%s] %s must be set" % (self.config_section, setting.name))
+                        "The setting [%s] %s (%s) must be set.  Use \"%s=VALUE\" on the command-line to set it"
+                        % (self.config_section, setting.name, setting.help, setting.name))
                 self.config.set(self.config_section, setting.name, setting.get_default(self.environ))
 
 class Setting(object):
