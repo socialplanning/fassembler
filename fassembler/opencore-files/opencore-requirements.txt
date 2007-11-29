@@ -1,6 +1,8 @@
 -f https://svn.openplans.org/eggs/
 -f http://dist.repoze.org/PIL-1.1.6.tar.gz
 PIL
+-f https://svn.openplans.org/svn/vendor/ClockServer/openplans/#egg=ClockServer-0.1
+ClockServer
 -e https://svn.openplans.org/svn/opencore/trunk
 -e https://svn.openplans.org/svn/topp.featurelets/trunk
 -e https://svn.openplans.org/svn/topp.utils/trunk
