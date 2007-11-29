@@ -1,6 +1,9 @@
 -f https://svn.openplans.org/eggs/
--f http://dist.repoze.org/PIL-1.1.6.tar.gz
-PIL
+## FIXME: this would be ideal:
+#-f http://dist.repoze.org/PIL-1.1.6.tar.gz
+#PIL
+## But this works (but reinstalls each time):
+http://dist.repoze.org/PIL-1.1.6.tar.gz
 -f https://svn.openplans.org/svn/vendor/ClockServer/openplans/#egg=ClockServer-0.1
 ClockServer
 -e https://svn.openplans.org/svn/opencore/trunk
