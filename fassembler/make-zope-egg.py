@@ -14,6 +14,7 @@ import urllib
 import shutil
 import atexit
 import subprocess
+from glob import glob
 
 DEFAULT_USERNAME = os.environ.get('OPENPLANS_USER', getpass.getuser())
 DIST_LOCATION = 'lib/python/dist'
@@ -94,6 +95,20 @@ def main(options, args):
     subprocess.call(cmd,
                     cwd=tar_dest)
     pkg_dest = os.path.join(tar_dest, os.listdir(tar_dest)[0])
+    util_dir = os.path.join(pkg_dest, 'utilities')
+    if os.path.exists(util_dir):
+        new_util_dir = os.path.join(pkg_dest, 'zope_utilities')
+        logger.notify('Moving %s to %s' % (util_dir, new_util_dir))
+        print 'pkg_dest, util_dir, new_util_dir, cwd', [pkg_dest, util_dir, new_util_dir, os.getcwd()]
+        shutil.move(util_dir, new_util_dir)
+        logger.notify('Creating __init__.py')
+        f = open(os.path.join(new_util_dir, '__init__.py'), 'w')
+        f.write('#')
+        f.close()
+    for filename in glob(os.path.join(os.path.dirname(__file__), 'opencore-files', 'patches', '*.diff')):
+        cmd = ['patch', '-p', '0', '--forward', '-i', filename]
+        logger.info('Calling %s in %s' % (cmd, pkg_dest))
+        subprocess.call(cmd, cwd=pkg_dest)
     logger.notify('Creating egg')
     cmd = [sys.executable, '-c',
            'import setuptools, os; __file__=os.path.abspath("setup.py"); execfile("setup.py")',
