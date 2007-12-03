@@ -449,7 +449,7 @@ class Maker(object):
             msg = 'At %s there is a %s; this should be a symlink from %s' % (
                 dest, noun, source)
         response = self.ask(
-            message,
+            msg,
             responses=['(i)gnore',
                        '(b)ackup',
                        '(w)ipe'],
