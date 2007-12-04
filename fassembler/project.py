@@ -115,11 +115,16 @@ class Project(object):
         print >> out, dedent(doc)
         print >> out
         print >> out, indent(underline('Settings', '='), '  ')
+        ns = self.create_namespace()
         if not self.settings:
             print >> out, indent('No settings', '    ')
         else:
             for setting in self.settings:
-                print >> out, indent(str(setting), '    ')
+                try:
+                    setting_value = getattr(ns['config'], setting.name)
+                except Exception, e:
+                    setting_value = 'Cannot calculate value: %s %s' % (e.__class__.__name__, e)
+                print >> out, indent(setting.description(value=setting_value), '    ')
         print >> out
         print >> out, indent(underline('Tasks', '='), '  ')
         for task in self.actions:
@@ -239,10 +244,27 @@ class Setting(object):
         assert 0, 'no default'
 
     def __str__(self):
-        msg = '%s: (default: %r)' % (self.name, self.default)
+        return self.description(value=self.default)
+        
+    def description(self, value=None):
+        msg = '%s:' % self.name
+        msg += '\n  Default: %s' % self.description_repr(self.default)
+        if value != self.default:
+            msg += '\n  Value:   %s' % self.description_repr(value)
         if self.help:
-            msg += '\n' + indent(self.help, '  ')
+            msg += '\n'+indent(self.help, '    ')
         return msg
         
-            
+    def description_repr(self, value):
+        if isinstance(value, basestring):
+            if value == '':
+                return "''"
+            if value.strip() != value or value.strip('"\'') != value:
+                return repr(value)
+            if isinstance(value, unicode):
+                value = value.encode('unicode_escape')
+            else:
+                value = value.encode('string_escape')
+            return value
+        return repr(value)
             
