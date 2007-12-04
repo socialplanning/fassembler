@@ -561,12 +561,16 @@ class InstallSupervisorConfig(Task):
     Install standard supervisor template into {{task.conf_path}}
     """
 
-    def __init__(self, name='Install supervisor startup script', stacklevel=1):
+    script_name = interpolated('script_name')
+
+    def __init__(self, name='Install supervisor startup script',
+                 script_name='{{project.name}}', stacklevel=1):
         super(InstallSupervisorConfig, self).__init__(name, stacklevel=stacklevel+1)
+        self.script_name = script_name
 
     @property
     def conf_path(self):
-        return os.path.join('etc', 'supervisor.d', self.project.name + '.ini')
+        return os.path.join('etc', 'supervisor.d', self.script_name + '.ini')
 
     def run(self):
         self.maker.ensure_file(
@@ -584,13 +588,13 @@ class InstallSupervisorConfig(Task):
         return self.interpolate(self.content_template, name=__name__+'.InstallSupervisorConfig.content_template')
 
     content_template = """\
-[program:{{task.project.name}}]
-command = {{env.base_path}}/bin/start-{{task.project.name}}
+[program:{{task.script_name}}]
+command = {{env.base_path}}/bin/start-{{task.script_name}}
 {{#FIXME: should set user=username}}
-stdout_logfile = {{env.base_path}}/logs/{{task.project.name}}/{{task.project.name}}-supervisor.log
+stdout_logfile = {{env.base_path}}/logs/{{project.name}}/{{task.script_name}}-supervisor.log
 stdout_logfile_maxbytes = 1MB
 stdout_logfile_backups = 10
-stderr_logfile = {{env.base_path}}/logs/{{task.project.name}}/{{task.project.name}}-supervisor-errors.log
+stderr_logfile = {{env.base_path}}/logs/{{project.name}}/{{task.script_name}}-supervisor-errors.log
 stderr_logfile_maxbytes = 1MB
 stderr_logfile_backups = 10
 """

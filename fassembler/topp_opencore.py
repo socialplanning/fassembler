@@ -219,12 +219,16 @@ class OpenCoreProject(Project):
     patch_dir = os.path.join(files_dir, 'patches')
     skel_dir = os.path.join(files_dir, 'zope_skel')
 
-    ## FIXME: I don't think this is the right way to start Zope, even under
-    ## Supervisor:
     start_script_template = """\
 #!/bin/sh
 cd {{env.base_path}}
 exec {{env.base_path}}/var/opencore/zope/bin/runzope -X debug-mode=off
+"""
+
+    zeo_script_template = """\
+#!/bin/sh
+cd {{env.base_path}}
+exec {{env.base_path}}/var/opencore/zeo/bin/runzeo
 """
 
     actions = [
@@ -262,9 +266,14 @@ exec {{env.base_path}}/var/opencore/zope/bin/runzope -X debug-mode=off
                         exclude_glob='{{env.base_path}}/opencore/src/opencore-bundle/ClockServer'),
         ## FIXME: linkzope and linkzopebinaries?
         tasks.InstallSupervisorConfig(),
+        tasks.InstallSupervisorConfig(script_name='opencore-zeo'),
         tasks.EnsureFile('Write the start script',
                          '{{env.base_path}}/bin/start-{{project.name}}',
                          content=start_script_template,
+                         svn_add=True, executable=True, overwrite=True),
+        tasks.EnsureFile('Write the ZEO start script',
+                         '{{env.base_path}}/bin/start-{{project.name}}-zeo',
+                         content=zeo_script_template,
                          svn_add=True, executable=True, overwrite=True),
         tasks.SaveURI(uri_template='${uri}/VirtualHostBase/http/${HTTP_HOST}/openplans/projects/${project}/VirtualHostRoot',
                       path='/'),
