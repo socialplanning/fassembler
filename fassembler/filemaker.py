@@ -418,6 +418,8 @@ class Maker(object):
         """
         source = self.path(source)
         dest = self.path(dest)
+        assert source != dest, (
+            "Symlink from %s to itself is wrong! (source==dest)" % source)
         if not os.path.exists(dest) and os.path.lexists(dest):
             # Sign of a broken symlink
             self.logger.info('Removing broken link %s' % dest)
@@ -437,6 +439,9 @@ class Maker(object):
             self.logger.info('Symlinking %s to %s' % (source, dest))
             if not self.simulate:
                 os.symlink(source, dest)
+            return
+        if os.path.realpath(dest) == source:
+            self.logger.info('Symlink %s -> %s already exists and is correct' % (dest, source))
             return
         if os.path.islink(dest):
             msg = 'At %s there is a symlink from %s; it should be a symlink from %s' % (
