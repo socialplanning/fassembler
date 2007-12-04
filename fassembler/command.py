@@ -23,7 +23,7 @@ subdirectory for the project.
 To get a list of PROJECTs you can install, use %prog --list-projects
 
 To set a configuration variable, use VARIABLE=VALUE, or
-[SECTION]VARIABLE=VALUE.  If you do not use [SECTION] then the
+SECTION.VARIABLE=VALUE.  If you do not use SECTION then the
 variable will be set globally.
 """
 
@@ -119,10 +119,12 @@ def main(options, args):
         if not config.has_section(section):
             config.add_section(section)
         config.set(section, name, value, filename='<cmdline>')
+    environ = Environment(base_path, logger=logger)
+    merge_config(environ.config, config)
     maker = Maker(base_path, simulate=options.simulate,
                   interactive=not options.no_interactive, logger=logger,
                   quick=options.quick)
-    environ = Environment(base_path, logger=logger)
+    
     projects = []
     for project_name in project_names:
         logger.debug('Finding package %s' % project_name)
@@ -179,12 +181,23 @@ def main(options, args):
     if not options.project_help:
         if success:
             logger.notify('Installation successful.')
+            if variables:
+                logger.notify('Adding command line settings to build.ini')
+            for section, name, value in variables:
+                section = section or 'DEFAULT'
+                if not environ.config.has_section(section):
+                    environ.config.add_section(section)
+                environ.config.set(section, name, value)
             environ.save()
         else:
             logger.notify('Installation not completely successful.')
+            logger.notify('Note: the build.ini file was not updated')
+            if variables:
+                logger.notify('Note: command line settings not updated')
     ## FIXME: commit etc/?
 
 _var_re = re.compile(r'^(?:\[(\w+)\])?\s*(\w+)=(.*)$')
+_dot_var_re = re.compile(r'^(\w+)\.(\w+)=([^=>].*)$')
 
 def parse_positional(args):
     """
@@ -198,7 +211,11 @@ def parse_positional(args):
         if match:
             variables.append((match.group(1), match.group(2), match.group(3)))
         else:
-            project_names.append(arg)
+            match = _dot_var_re.search(arg)
+            if match:
+                variables.append((match.group(1), match.group(2), match.group(3)))
+            else:
+                project_names.append(arg)
     return project_names, variables
 
 def find_project_class(project_name, logger):
@@ -245,6 +262,18 @@ def load_configs(configs):
     ## FIXME: test that all configs exist
     conf.read(configs)
     return conf
+
+def merge_config(source, dest):
+    """
+    Merge configuration from config source to config dest; values
+    already set in dest are not overwritten.
+    """
+    for section in source.sections():
+        for option in source.options(section):
+            if not dest.has_option(section, option):
+                if not dest.has_section(section):
+                    dest.add_section(section)
+                dest.set(section, option, source.get(section, option))
 
 ############################################################
 ## Project listing
