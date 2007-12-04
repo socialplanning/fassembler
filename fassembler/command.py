@@ -103,11 +103,14 @@ def main(options, args):
             "You gave -b%s; did you mean --base?" % base_path, show_usage=False)
     if not base_path:
         script_path = os.path.abspath(sys.argv[0])
-        base_path = os.path.dirname(os.path.dirname(script_path))
-        build_ini = os.path.join(base_path, 'etc', 'build.ini')
-        if not os.path.exists(build_ini):
+        for possible_base_path in os.path.dirname(os.path.dirname(script_path)), os.getcwd():
+            build_ini = os.path.join(possible_base_path, 'etc', 'build.ini')
+            if os.path.exists(build_ini):
+                base_path = possible_base_path
+                break
+        else:
             raise CommandError(
-                "%s not found; you must provide the --base value" % build_ini)
+                "you must provide the --base value or run fassembler from a build base path")
     project_names, variables = parse_positional(args)
     logger = options.logger
     config = load_configs(options.configs)
