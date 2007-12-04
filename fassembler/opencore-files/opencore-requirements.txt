@@ -1,3 +1,4 @@
+-Z
 -f https://svn.openplans.org/eggs/
 ## FIXME: this would be ideal:
 #-f http://dist.repoze.org/PIL-1.1.6.tar.gz

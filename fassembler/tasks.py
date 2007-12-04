@@ -983,7 +983,8 @@ class InstallSpec(Task):
         self.logger.debug('Reading spec %s' % filename)
         f = open(filename)
         context = dict(find_links=[],
-                       src_base=os.path.join(self.project.build_properties['virtualenv_path'], 'src'))
+                       src_base=os.path.join(self.project.build_properties['virtualenv_path'], 'src'),
+                       always_unzip=False)
         commands = []
         uneditable_eggs = []
         for line in f:
@@ -996,6 +997,9 @@ class InstallSpec(Task):
                 else:
                     line = line[len('--find-links'):].lstrip('=')
                 context['find_links'].append(line.strip())
+                continue
+            if line.startswith('--always-unzip') or line.startswith('-Z'):
+                context['always_unzip'] = True
                 continue
             if line.startswith('-e') or line.startswith('--editable'):
                 if uneditable_eggs:
@@ -1061,6 +1065,8 @@ class InstallSpec(Task):
         cmd = ['python', 'setup.py', 'develop']
         for link in context['find_links']:
             cmd.extend(['-f', link])
+        if context['always_unzip']:
+            cmd.append('--always-unzip')
         self.maker.run_command(
             cmd,
             cwd=src_dir,
@@ -1073,6 +1079,8 @@ class InstallSpec(Task):
         cmd = ['easy_install']
         for link in context['find_links']:
             cmd.extend(['-f', link])
+        if context['always_unzip']:
+            cmd.append('--always-unzip')
         cmd.extend(eggs)
         self.maker.run_command(
             cmd,
