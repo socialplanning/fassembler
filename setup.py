@@ -21,7 +21,7 @@ setup(name='fassembler',
           'CmdUtils',
           #'ScriptTest',
           'Tempita==dev,>=0.1.1dev',
-          'INITools==dev,>=0.2.1dev',
+          'INITools==dev,>=0.2.1dev-r3168',
           'virtualenv',
       ],
       ## FIXME: release all of these once fassembler stabilizes:

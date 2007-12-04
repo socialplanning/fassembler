@@ -70,7 +70,8 @@ class Environment(object):
         """
         if self._parser is None:
             self._parser = ConfigParser()
-            self._parser.read(self.config_filename)
+            if os.path.exists(self.config_filename):
+                self._parser.read(self.config_filename)
         return self._parser
 
     def save(self):

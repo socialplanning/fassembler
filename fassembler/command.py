@@ -43,7 +43,7 @@ parser.add_option(
 
 parser.add_option(
     '-c', '--config',
-    metavar='CONFIG_FILE',
+    metavar='CONFIG_FILE_OR_URL',
     dest='configs',
     action='append',
     default=[],
@@ -120,7 +120,9 @@ def main(options, args):
             config.add_section(section)
         config.set(section, name, value, filename='<cmdline>')
     environ = Environment(base_path, logger=logger)
+    # Merge both ways:
     merge_config(environ.config, config)
+    merge_config(config, environ.config, overwrite=True)
     maker = Maker(base_path, simulate=options.simulate,
                   interactive=not options.no_interactive, logger=logger,
                   quick=options.quick)
@@ -151,6 +153,7 @@ def main(options, args):
             errors.append(e)
     if errors:
         logger.fatal('Errors in configuration:\n%s' % '\n'.join(['  * %s' % e for e in errors]))
+        config.write(sys.stdout)
         raise CommandError('Errors in configuration', show_usage=False)
     for project in projects:
         if options.project_help:
@@ -181,13 +184,6 @@ def main(options, args):
     if not options.project_help:
         if success:
             logger.notify('Installation successful.')
-            if variables:
-                logger.notify('Adding command line settings to build.ini')
-            for section, name, value in variables:
-                section = section or 'DEFAULT'
-                if not environ.config.has_section(section):
-                    environ.config.add_section(section)
-                environ.config.set(section, name, value)
             environ.save()
         else:
             logger.notify('Installation not completely successful.')
@@ -259,21 +255,23 @@ def load_configs(configs):
     (Configuration files aren't being used for much of anything currently)
     """
     conf = ConfigParser()
-    ## FIXME: test that all configs exist
     conf.read(configs)
     return conf
 
-def merge_config(source, dest):
+def merge_config(source, dest, overwrite=False):
     """
-    Merge configuration from config source to config dest; values
-    already set in dest are not overwritten.
+    Merge configuration from config source to config dest
+
+    If overwrite is false then values already set in dest are not
+    overwritten.
     """
     for section in source.sections():
         for option in source.options(section):
-            if not dest.has_option(section, option):
-                if not dest.has_section(section):
-                    dest.add_section(section)
-                dest.set(section, option, source.get(section, option))
+            if not overwrite and dest.has_option(section, option):
+                continue
+            if not dest.has_section(section):
+                dest.add_section(section)
+            dest.set(section, option, source.get(section, option))
 
 ############################################################
 ## Project listing
