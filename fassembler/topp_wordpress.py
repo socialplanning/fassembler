@@ -5,6 +5,7 @@ Builder for TOPP WordPress MU
 import os
 from fassembler.project import Project, Setting
 from fassembler import tasks
+from subprocess import Popen
 
 class WordPressProject(Project):
     """
