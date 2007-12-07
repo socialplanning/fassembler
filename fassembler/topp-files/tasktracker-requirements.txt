@@ -1,2 +1,3 @@
 -e https://svn.openplans.org/svn/TaskTracker/trunk
 PasteScript
+mysql-python
