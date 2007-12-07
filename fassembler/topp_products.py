@@ -110,7 +110,145 @@ class TaskTrackerProject(Project):
         tasks.SaveURI(path='/tasks'),
         ]
 
+class CabochonProject(Project):
+    """
+    Install Cabochon
+    """
     depends_on_projects = ['fassembler:topp']
+
+    name = 'cabochon'
+    title = 'Install Cabochon'
+    settings = [
+        Setting('db_sqlobject',
+                default='mysql://{{config.db_username}}:{{config.db_password}}@{{config.db_host}}/{{config.db_name}}',
+                help='Full SQLObject connection string for database'),
+        Setting('db_username',
+                default='cabochon',
+                help='Database connection username'),
+        Setting('db_password',
+                default='cabochon',
+                help='Database connection password'),
+        Setting('db_host',
+                default='localhost',
+                help='Host where database is running'),
+        Setting('db_name',
+                default='{{env.config.getdefault("general", "db_prefix", "")}}cabochon',
+                help='Name of database'),
+        Setting('db_test_sqlobject',
+                default='mysql://{{config.db_username}}:{{config.db_password}}@{{config.db_host}}/{{config.db_test_name}}',
+                help='Full SQLObject connection string for test database'),
+        Setting('db_test_name',
+                default='cabochon_test',
+                help='Name of the test database'),
+        Setting('db_root_password',
+                default=None,
+                help='Database root password'),
+        #Setting('cabochon_repo',
+        #        default='https://svn.openplans.org/svn/Cabochon/trunk',
+        #        help='svn location to install Cabochon from'),
+        Setting('port',
+                default='{{env.config.getint("general", "base_port")+int(config.port_offset)}}',
+                help='Port to install Cabochon on'),
+        Setting('port_offset',
+                default='5',
+                help='Offset from base_port for Cabochon'),
+        Setting('host',
+
+
+                default='127.0.0.1',
+                help='Host to serve on'),
+        Setting('spec',
+                default=os.path.join(os.path.dirname(__file__), 'topp-files', 'cabochon-requirements.txt'),
+                help='Specification of packages to install'),
+         Setting('cabochon_user_info',
+                 default='{{env.base_path}}/var/cabochon-admin.txt',
+                 help='The cabochon admin user info'),
+        ]
+
+    actions = [
+        tasks.VirtualEnv(),
+        tasks.InstallSpec('Install Cabochon',
+                          '{{config.spec}}'),
+        tasks.InstallPasteConfig(path='cabochon/src/cabochon/fassembler_config.ini_tmpl'),
+        tasks.InstallPasteStartup(),
+        tasks.InstallSupervisorConfig(),
+        tasks.CheckMySQLDatabase('Check database exists'),
+        tasks.Script('Run setup-app',
+                     ['paster', 'setup-app', '{{env.base_path}}/etc/{{project.name}}/{{project.name}}.ini'],
+                     use_virtualenv=True,
+                     cwd='{{env.base_path}}/{{project.name}}/src/{{project.name}}'),
+        tasks.EnsureFile('Write cabochon_user_info.txt if necessary', '{{config.cabochon_user_info}}',
+                         'cabochon:{{env.random_string(12, "alphanumeric")}}',
+                         overwrite=False),
+        tasks.SaveSetting('save setting', {'cabochon_user_info':
+                                           '{{config.cabochon_user_info}}'}),
+        tasks.SaveURI(path='/', theme=False),
+        ]
+
+
+class TwirlipProject(Project):
+    """
+    Install Twirlip
+    """
+
+    name = 'twirlip'
+    title = 'Install Twirlip'
+    settings = [
+        Setting('db_sqlobject',
+                default='mysql://{{config.db_username}}:{{config.db_password}}@{{config.db_host}}/{{config.db_name}}',
+                help='Full SQLObject connection string for database'),
+        Setting('db_username',
+                default='twirlip',
+                help='Database connection username'),
+        Setting('db_password',
+                default='twirlip',
+                help='Database connection password'),
+        Setting('db_host',
+                default='localhost',
+                help='Host where database is running'),
+        Setting('db_name',
+                default='{{env.config.getdefault("general", "db_prefix", "")}}twirlip',
+                help='Name of database'),
+        Setting('db_test_sqlobject',
+                default='mysql://{{config.db_username}}:{{config.db_password}}@{{config.db_host}}/{{config.db_test_name}}',
+                help='Full SQLObject connection string for test database'),
+        Setting('db_test_name',
+                default='twirlip_test',
+                help='Name of the test database'),
+        Setting('db_root_password',
+                default=None,
+                help='Database root password'),
+        #Setting('twirlip_repo',
+        #        default='https://svn.openplans.org/svn/Twirlip/trunk',
+        #        help='svn location to install Twirlip from'),
+        Setting('port',
+                default='{{env.config.getint("general", "base_port")+int(config.port_offset)}}',
+                help='Port to install Twirlip on'),
+        Setting('port_offset',
+                default='6',
+                help='Offset from base_port for Twirlip'),
+        Setting('host',
+                default='127.0.0.1',
+                help='Host to serve on'),
+        Setting('spec',
+                default=os.path.join(os.path.dirname(__file__), 'topp-files', 'twirlip-requirements.txt'),
+                help='Specification of packages to install'),
+        ]
+
+    actions = [
+        tasks.VirtualEnv(),
+        tasks.InstallSpec('Install Twirlip',
+                          '{{config.spec}}'),
+        tasks.InstallPasteConfig(path='twirlip/src/twirlip/fassembler_config.ini_tmpl'),
+        tasks.InstallPasteStartup(),
+        tasks.InstallSupervisorConfig(),
+        tasks.CheckMySQLDatabase('Check database exists'),
+        tasks.Script('Run setup-app',
+                     ['paster', 'setup-app', '{{env.base_path}}/etc/{{project.name}}/{{project.name}}.ini'],
+                     use_virtualenv=True,
+                     cwd='{{env.base_path}}/{{project.name}}/src/{{project.name}}'),
+        tasks.SaveURI(path='/', theme=False),
+        ]
 
 
 class DeliveranceProject(Project):
