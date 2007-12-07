@@ -4,6 +4,7 @@ from fassembler.config import ConfigParser
 import string
 import random
 import subprocess
+from datetime import datetime
 
 class bunch(object):
     """
@@ -32,6 +33,8 @@ class Environment(object):
         self.base_path = os.path.abspath(base_path)
         self.logger = logger
         self._parser = None
+        # Gets set later:
+        self.maker = None
 
     @property
     def hostname(self):
@@ -118,3 +121,30 @@ class Environment(object):
         f.close()
         username, password = line.split(':', 1)
         return bunch(username=username, password=password)
+
+    def add_built_project(self, name, time=None):
+        if time is None:
+            time = datetime.now()
+        if self.maker.simulate:
+            # Didn't really build at all
+            return
+        dest = self.maker.path('etc/projects.txt')
+        if os.path.exists(dest):
+            f = open(dest, 'r')
+            lines = f.readlines()
+            f.close()
+        else:
+            lines = []
+        new_lines = []
+        for line in lines:
+            if not line.strip() or line.strip().startswith('#'):
+                new_lines.append(line)
+                continue
+            if line.split()[0] != name:
+                new_lines.append(line)
+        new_lines.append('%s %s\n' % (name, time.strftime('%Y-%m-%d %H:%M:%S')))
+        self.logger.info('Writing build info for %s to %s' % (name, dest))
+        f = open(dest, 'w')
+        f.writelines(new_lines)
+        f.close()
+        

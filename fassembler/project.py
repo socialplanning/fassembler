@@ -85,6 +85,7 @@ class Project(object):
                 if not should_continue:
                     self.logger.fatal('Project %s aborted.' % self.title, color='red')
                     raise CommandError('Aborted', show_usage=False)
+        self.environ.add_built_project(self.name)
 
     def bind_tasks(self):
         """
