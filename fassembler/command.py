@@ -230,7 +230,7 @@ def find_project_class(project_name, logger):
             ## FIXME: log something?
             return None
         logger.debug('Could not get distribution %s: %s' % (project_name, e))
-        options = pkg_resources.iter_entry_points('fassembler.project', project_name)
+        options = list(pkg_resources.iter_entry_points('fassembler.project', project_name))
         if not options:
             logger.fatal('NO entry points in [fassembler.project] found with name %s' % project_name)
             return None
