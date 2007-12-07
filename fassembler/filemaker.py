@@ -199,6 +199,7 @@ class Maker(object):
         A more thorough normalization of a path than just what ``os.path.normpath`` does.
         """
         assert isinstance(path, basestring), "Bad path: %r" % (path, )
+        path = os.path.expanduser(path)
         return os.path.normcase(os.path.abspath(path))
     
     def copy_dir(self, src, dest, sub_filenames=True, template_vars=None, interpolater=None, include_hidden=False,
