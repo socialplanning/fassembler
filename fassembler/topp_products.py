@@ -44,6 +44,7 @@ class ScriptTranscluderProject(Project):
                       trailing_slash=False),
         ]
 
+    depends_on_projects = ['fassembler:topp']
 
 class TaskTrackerProject(Project):
     """
@@ -109,6 +110,8 @@ class TaskTrackerProject(Project):
         tasks.SaveURI(path='/tasks'),
         ]
 
+    depends_on_projects = ['fassembler:topp']
+
 
 class DeliveranceProject(Project):
     """
@@ -145,3 +148,5 @@ class DeliveranceProject(Project):
         tasks.InstallSupervisorConfig(),
         tasks.SaveURI(path='/', theme=False),
         ]
+
+    depends_on_projects = ['fassembler:topp']

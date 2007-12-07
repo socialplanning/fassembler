@@ -21,12 +21,17 @@ class Project(object):
     Subclasses should also define an actions attribute, which is a
     list of tasks, and a settings attribute, which is a list of
     Setting instances.
+
+    Subclasses may set depends_on_projects to a list of strings that
+    give projects that must be installed before installing this
+    project.
     """
 
     name = None
     title = None
     actions = None
     settings = []
+    depends_on_projects = []
 
     def __init__(self, project_name, maker, environ, logger, config):
         self.project_name = project_name
@@ -46,7 +51,7 @@ class Project(object):
         """
         return self.name
 
-    def confirm_settings(self):
+    def confirm_settings(self, all_projects=()):
         """
         This is run to confirm that all the required settings have
         been set, for this project and all its tasks.
@@ -56,6 +61,11 @@ class Project(object):
             self.setup_config()
         except ValueError, e:
             errors.append(e)
+        if self.depends_on_projects:
+            for project in self.depends_on_projects:
+                if (project not in all_projects
+                    and not self.environ.is_project_built(project)):
+                    errors.append('Project %s is not installed and is required' % project)
         return errors
 
     def run(self):
@@ -85,7 +95,7 @@ class Project(object):
                 if not should_continue:
                     self.logger.fatal('Project %s aborted.' % self.title, color='red')
                     raise CommandError('Aborted', show_usage=False)
-        self.environ.add_built_project(self.name)
+        self.environ.add_built_project(self.project_name)
 
     def bind_tasks(self):
         """
@@ -133,6 +143,10 @@ class Project(object):
             print >> out, indent(underline(task.title, '-'), '    ')
             print >> out, indent(desc, '    ')
             print >> out
+        if self.depends_on_projects:
+            print >> out, indent(underline('Dependencies', '='), '  ')
+            for project in self.depends_on_projects:
+                print >> out, indent('* %s' % project, '  ')
         return out.getvalue()
 
     def interpolate(self, string, stacklevel=1, name=None):
@@ -194,7 +208,9 @@ class Project(object):
                     raise ValueError(
                         "The setting [%s] %s (%s) must be set.  Use \"%s=VALUE\" on the command-line to set it"
                         % (self.config_section, setting.name, setting.help, setting.name))
-                self.config.set(self.config_section, setting.name, setting.get_default(self.environ))
+                default = setting.get_default(self.environ)
+                if default is not None:
+                    self.config.set(self.config_section, setting.name, default)
 
 class Setting(object):
     """

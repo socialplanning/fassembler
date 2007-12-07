@@ -79,6 +79,8 @@ class WordPressProject(Project):
         tasks.SaveURI(path='/blog'),
         ]
 
+    depends_on_projects = ['fassembler:topp']
+
     def extra_modules(self):
         dist, version = get_platform()
         if dist == 'Ubuntu':

@@ -140,7 +140,7 @@ def main(options, args):
     errors = []
     for project in projects:
         try:
-            errors.extend(project.confirm_settings())
+            errors.extend(project.confirm_settings(all_projects=projects))
         except KeyboardInterrupt:
             raise
         except CommandError:
@@ -154,7 +154,8 @@ def main(options, args):
             errors.append(e)
     if errors:
         logger.fatal('Errors in configuration:\n%s' % '\n'.join(['  * %s' % e for e in errors]))
-        config.write(sys.stdout)
+        ## FIXME: maybe ask if they want to see effective configuration here?
+        #config.write(sys.stdout)
         raise CommandError('Errors in configuration', show_usage=False)
     for project in projects:
         if options.project_help:

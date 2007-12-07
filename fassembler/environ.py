@@ -35,6 +35,7 @@ class Environment(object):
         self._parser = None
         # Gets set later:
         self.maker = None
+        self.simulated_built_projects = []
 
     @property
     def hostname(self):
@@ -123,10 +124,14 @@ class Environment(object):
         return bunch(username=username, password=password)
 
     def add_built_project(self, name, time=None):
+        """
+        Adds the named project to etc/projects.txt, so that it is listed as built
+        """
         if time is None:
             time = datetime.now()
         if self.maker.simulate:
             # Didn't really build at all
+            self.simulated_built_projects.append(name)
             return
         dest = self.maker.path('etc/projects.txt')
         if os.path.exists(dest):
@@ -148,3 +153,21 @@ class Environment(object):
         f.writelines(new_lines)
         f.close()
         
+    def is_project_built(self, name):
+        """
+        Checks if the given project is built.  If this is a simulated run, this
+        will take into account projects that were simulated/built.
+        """
+        if name in self.simulated_built_projects:
+            return True
+        dest = self.maker.path('etc/projects.txt')
+        if os.path.exists(dest):
+            f = open(dest, 'r')
+            lines = f.readlines()
+            for line in lines:
+                if not line.strip() or line.strip().startswith('#'):
+                    continue
+                if line.split()[0] == name:
+                    return True
+        return False
+
