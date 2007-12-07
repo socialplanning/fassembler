@@ -655,6 +655,7 @@ class Maker(object):
         to).  If ``self.quick`` is false, the repository will also be
         updated.
         """
+        dest = self.path(dest)
         if self.exists(dest):
             if self.quick:
                 self.logger.notify('Checkout %s exists; skipping update' % dest)
