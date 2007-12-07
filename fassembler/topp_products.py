@@ -191,6 +191,8 @@ class TwirlipProject(Project):
     Install Twirlip
     """
 
+    depends_on_projects = ['fassembler:topp']
+
     name = 'twirlip'
     title = 'Install Twirlip'
     settings = [
