@@ -18,6 +18,10 @@ class ToppProject(Project):
 
     settings = [
         ## FIXME: this *should* draw from the global settings if it is not set
+        Setting('requirements_svn_repo',
+                inherit_config=('general', 'requirement_profile'),
+                default='https://svn.openplans.org/svn/build/requirements/trunk',
+                help="Location where requirement files will be found for all builds"),
         Setting('base_port',
                 inherit_config=('general', 'base_port'),
                 help='The base port to use for application (each application is an offset from this port)'),
@@ -42,6 +46,8 @@ class ToppProject(Project):
                           'etc/',
                           base_repository='{{config.etc_svn_repository}}',
                           create_if_necessary=True),
+        tasks.SvnCheckout('checkout out requirements/', '{{config.requirements_svn_repo}}',
+                          'requirements'),
         tasks.EnsureFile('Write secret.txt if necessary', '{{env.base_path}}/var/secret.txt', '{{env.random_string(40)}}',
                          overwrite=False),
         tasks.EnsureFile('Write admin.txt if necessary', '{{env.base_path}}/var/admin.txt',
@@ -67,7 +73,7 @@ class SupervisorProject(Project):
 
     settings = [
         Setting('spec',
-                default=os.path.join(os.path.dirname(__file__), 'topp-files', 'supervisor-requirements.txt'),
+                default='requirements/supervisor-req.txt',
                 help='Specification for installing Supervisor'),
         ]
     

@@ -212,7 +212,7 @@ class OpenCoreProject(Project):
 
     settings = [
         Setting('spec',
-                default=os.path.join(os.path.dirname(__file__), 'opencore-files', 'opencore-requirements.txt'),
+                default='requirements/opencore-req.txt',
                 help='Specification of packages to install'),
         Setting('zope_instance',
                 default='{{env.base_path}}/var/opencore/zope',

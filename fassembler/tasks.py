@@ -988,7 +988,7 @@ class InstallSpec(Task):
         if filename is None:
             filename = self.spec_filename
         self.logger.debug('Reading spec %s' % filename)
-        f = open(filename)
+        f = open(self.maker.path(filename))
         context = dict(find_links=[],
                        src_base=os.path.join(self.project.build_properties['virtualenv_path'], 'src'),
                        always_unzip=False)

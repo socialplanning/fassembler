@@ -18,7 +18,7 @@ class ScriptTranscluderProject(Project):
         ## FIXME: there should be some higher-level sense of
         ## tag/branch/trunk, and maybe latest too:
         Setting('spec',
-                default=os.path.join(os.path.dirname(__file__), 'topp-files', 'scripttranscluder-requirements.txt'),
+                default='requirements/scripttranscluder-req.txt',
                 help='Specification of packages to install'),
         Setting('port',
                 default='{{env.config.getint("general", "base_port")+int(config.port_offset)}}',
@@ -91,7 +91,7 @@ class TaskTrackerProject(Project):
                 default='127.0.0.1',
                 help='Host to serve on'),
         Setting('spec',
-                default=os.path.join(os.path.dirname(__file__), 'topp-files', 'tasktracker-requirements.txt'),
+                default='requirements/tasktracker-req.txt',
                 help='Specification of packages to install'),
         ]
 
@@ -122,7 +122,7 @@ class DeliveranceProject(Project):
     title = 'Install Deliverance/DeliveranceVHoster'
     settings = [
         Setting('spec',
-                default=os.path.join(os.path.dirname(__file__), 'topp-files', 'deliverance-requirements.txt'),
+                default='requirements/deliverance-req.txt',
                 help='Specification of packages to install'),
         Setting('openplans_hooks_repo',
                 default='https://svn.openplans.org/svn/config/dvhoster/trunk',

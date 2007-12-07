@@ -1,1 +1,0 @@
--e https://svn.openplans.org/svn/vendor/supervisor/openplans#egg=supervisor

@@ -1,2 +1,0 @@
--e https://svn.openplans.org/svn/ScriptTranscluder/trunk
-PasteScript
