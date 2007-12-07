@@ -14,6 +14,7 @@ class ConfigParser(configparser.RawConfigParser):
     extendable = True
     default_extend_section_name = '__name__'
     ignore_missing_files = False
+    safe_set = True
 
     def getdefault(self, section, option, default=None):
         try:
