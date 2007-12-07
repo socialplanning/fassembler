@@ -79,7 +79,7 @@ class Project(object):
                 % self)
         self.setup_config()
         self.bind_tasks()
-        for task in self.actions:
+        for task in self.iter_actions():
             self.logger.set_section(self.name+'.'+task.name)
             self.logger.notify('== %s ==' % task.name, color='bold green')
             self.logger.indent += 2
@@ -149,7 +149,7 @@ class Project(object):
                 print >> out, indent(setting.description(value=setting_value), '    ')
         print >> out
         print >> out, indent(underline('Tasks', '='), '  ')
-        for task in self.actions:
+        for task in self.iter_actions():
             desc = str(task)
             print >> out, indent(underline(task.title, '-'), '    ')
             print >> out, indent(desc, '    ')

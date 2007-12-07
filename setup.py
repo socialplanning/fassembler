@@ -23,7 +23,7 @@ setup(name='fassembler',
           'Tempita==dev,>=0.1.1dev',
           'INITools==dev,>=0.2.1dev-r3168',
           'virtualenv',
-          'mysql-python', # At least, some projects require MySQL access
+          'MySQL-python', # At least, some projects require MySQL access
       ],
       ## FIXME: release all of these once fassembler stabilizes:
       dependency_links=[

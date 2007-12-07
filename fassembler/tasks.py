@@ -1121,12 +1121,12 @@ class ConditionalTask(Task):
             cond, task = self.conditions[i]
             cond_resolved = asbool(self.interpolate(cond))
             if cond_resolved:
-                self.logger.info('%s is True: running %s' % (
+                self.logger.debug('%s is True: running %s' % (
                     cond, task.name))
                 yield task
-                for missed_cond, missed_task in self.conditions[i:]:
-                    self.logger.info('Skipping %s' % missed_task.name)
+                for missed_cond, missed_task in self.conditions[i+1:]:
+                    self.logger.debug('Skipping %s' % missed_task.name)
                 break
             else:
-                self.logger.info('%s is False: not running %s' % (
+                self.logger.debug('%s is False: not running %s' % (
                     cond, task.name))

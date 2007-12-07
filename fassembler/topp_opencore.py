@@ -108,12 +108,58 @@ def make_tarball():
 
 class GetBundleTarball(tasks.Task):
 
-    def __init__(self):
-        super(GetBundleTarball, self).__init__(
-            'Get opencore bundle tarball', stacklevel=1)
+    dest = interpolated('dest')
+
+    def __init__(self, name='Get opencore bundle tarball',
+                 dest='{{env.base_path}}/{{project.name}}/src/opencore-bundle'):
+        super(GetBundleTarball, self).__init__(name, stacklevel=1)
+        self.dest = dest
 
     def run(self):
-        pass
+        url = self.interpolate('{{config.opencore_bundle_tar_info}}')
+        self.logger.debug('Getting tarball info at %s' % url)
+        f = urllib.urlopen(url)
+        latest_id = f.read().strip()
+        f.close()
+        tarball_id_fn = os.path.join(self.dest, 'tarball-id.txt')
+        if os.path.exists(tarball_id_fn):
+            f = open(tarball_id_fn)
+            tarball_name, current_id = f.read().strip().split(':', 1)
+            f.close()
+            if tarball_name != self.interpolate('{{config.opencore_bundle_name}}'):
+                response = self.maker.ask(
+                    'Current bundle is named "%s"; the build wants to install "%s"\n'
+                    'Overwrite current bundle?')
+                if response == 'n':
+                    self.logger.notify('Aborting bundle installation')
+                    return
+            self.logger.info('Checked id in %s: %s' % (tarball_id_fn, current_id))
+            if current_id == latest_id:
+                self.logger.notify('Current bundle is up-to-date (%s)' % latest_id)
+                return
+            else:
+                self.logger.notify('Current bundle is not up-to-date (currently: %s; latest: %s)'
+                                   % (current_id, latest_id))
+        else:
+            self.logger.info('No tarball-id.txt file in %s' % tarball_id_fn)
+        url = self.interpolate('{{config.opencore_bundle_tar_dir}}/openplans-bundle-{{config.opencore_bundle_name}}-%s.tar.bz2' % latest_id)
+        tmp_fn = os.path.abspath(os.path.basename(url))
+        self.logger.notify('Downloading tarball from %s to %s' % (url, tmp_fn))
+        delete_tmp_fn = False
+        try:
+            if not self.maker.simulate:
+                urllib.urlretrieve(url, tmp_fn)
+            self.logger.notify('Unpacking into %s' % self.dest)
+            ## FIXME: is it really okay just to unpack right over whatever might already be there?
+            ## Should we warn or something?
+            self.maker.run_command(
+                'tar', 'jfx', tmp_fn,
+                cwd=self.dest)
+            delete_tmp_fn = True
+        finally:
+            if delete_tmp_fn and os.path.exists(tmp_fn):
+                self.logger.info('Deleting %s' % tmp_fn)
+        
 
 class SymlinkProducts(tasks.Task):
 
@@ -304,6 +350,8 @@ exec {{env.base_path}}/var/opencore/zeo/bin/runzeo
                       header_name='zope')
         # ZEO doesn't really have a uri
         ]
+
+    depends_on_projects = ['fassembler:topp']
 
 if __name__ == '__main__':
     make_tarball()
