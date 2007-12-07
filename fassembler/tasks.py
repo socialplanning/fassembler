@@ -10,6 +10,7 @@ from tempita import Template
 import re
 from glob import glob
 from fassembler.filemaker import RunCommandError
+from fassembler.util import asbool
 
 class Task(object):
     """
@@ -140,6 +141,9 @@ class Task(object):
             return self.interpolate(self.description, name='description of %s' % self.__class__.__name__)
         except Exception, e:
             return '%s (error in description: %s)>' % (repr(self).rstrip('>'), e)
+
+    def iter_subtasks(self):
+        return []
 
 class interpolated(object):
     """
@@ -830,6 +834,7 @@ class SaveURI(SaveSetting):
                  uri_template=None,
                  theme=True,
                  trailing_slash=True,
+                 header_name=None,
                  stacklevel=1):
         assert path is not None, (
             "You must give a value for path")
@@ -844,6 +849,8 @@ class SaveURI(SaveSetting):
             variables['{{task.project_name}} theme'] = 'false'
         if not trailing_slash:
             variables['{{task.project_name}} trailing_slash'] = 'false'
+        if header_name:
+            variables['{{task.project_name}} header_name'] = header_name
         self.project_name = project_name
         super(SaveURI, self).__init__(
             name, variables, section='applications',
@@ -1087,3 +1094,39 @@ class InstallSpec(Task):
             cwd=self.venv_property('path'),
             script_abspath=self.venv_property('bin_path'))
             
+class ConditionalTask(Task):
+
+    description = """
+    Run subtasks based on a condition.  The tasks are:
+    {{for cond, subtask in task.conditions}}
+    {{if (cond, subtask) != task.conditions[0]}}el{{endif}}if {{cond}} ({{asbool(task.interpolate(cond))}}) {{subtask.name}}
+    {{indent(str(subtask), '  ')}}
+    {{endfor}}
+    """
+
+    def __init__(self, name, *conditions):
+        super(ConditionalTask, self).__init__(name, stacklevel=2)
+        self.conditions = conditions
+
+    def run(self):
+        pass
+
+    def bind(self, *args, **kw):
+        super(ConditionalTask, self).bind(*args, **kw)
+        for cond, subtask in self.conditions:
+            subtask.bind(*args, **kw)
+
+    def iter_subtasks(self):
+        for i in range(len(self.conditions)):
+            cond, task = self.conditions[i]
+            cond_resolved = asbool(self.interpolate(cond))
+            if cond_resolved:
+                self.logger.info('%s is True: running %s' % (
+                    cond, task.name))
+                yield task
+                for missed_cond, missed_task in self.conditions[i:]:
+                    self.logger.info('Skipping %s' % missed_task.name)
+                break
+            else:
+                self.logger.info('%s is False: not running %s' % (
+                    cond, task.name))

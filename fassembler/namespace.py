@@ -6,6 +6,8 @@ from UserDict import DictMixin
 from tempita import Template
 from cmdutils import CommandError
 import sys
+from fassembler.util import asbool
+from fassembler.text import indent, underline, dedent
 
 _in_broken_ns = False
 
@@ -22,6 +24,14 @@ class Namespace(DictMixin):
     interpolation.
     """
 
+    # Always available in templates:
+    builtins = {
+        'asbool': asbool,
+        'indent': indent,
+        'underline': underline,
+        'dedent': dedent,
+        }
+
     ## FIXME: probably this should have access to the maker, for
     ## error handling.
     def __init__(self, name=None):
@@ -29,6 +39,7 @@ class Namespace(DictMixin):
         self.dict = {}
         if name:
             self.dict['__name__'] = self.name
+        self.dict.update(self.builtins)
 
     ## All the UserDict abstract methods:
 

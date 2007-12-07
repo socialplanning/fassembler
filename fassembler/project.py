@@ -51,7 +51,7 @@ class Project(object):
         """
         return self.name
 
-    def confirm_settings(self, all_projects=()):
+    def confirm_settings(self, all_projects=None):
         """
         This is run to confirm that all the required settings have
         been set, for this project and all its tasks.
@@ -61,7 +61,7 @@ class Project(object):
             self.setup_config()
         except ValueError, e:
             errors.append(e)
-        if self.depends_on_projects:
+        if self.depends_on_projects and all_projects is not None:
             for project in self.depends_on_projects:
                 if (project not in all_projects
                     and not self.environ.is_project_built(project)):
@@ -102,12 +102,23 @@ class Project(object):
         Bind all the task instances to the context in which they will
         be run (with this project, the maker, etc).
         """
-        for task in self.actions:
+        for task in self.iter_actions():
             task.bind(maker=self.maker, environ=self.environ,
                       logger=self.logger, config=self.config,
                       project=self)
             task.confirm_settings()
             task.setup_build_properties()
+
+    def iter_actions(self, iter_from=None):
+        """
+        Yield all the actions, and sub-actions
+        """
+        if iter_from is None:
+            iter_from = self.actions
+        for task in iter_from:
+            yield task
+            for subtask in self.iter_actions(task.iter_subtasks()):
+                yield subtask
 
     def make_description(self):
         """
@@ -173,6 +184,9 @@ class Project(object):
                     string[key], ns, stacklevel+1, name=name)
             return new_dict
         if not isinstance(string, Template):
+            if not isinstance(string, basestring):
+                # Not a template at all, don't substitute
+                return string
             tmpl = Template(string, name=name, stacklevel=stacklevel+1)
         else:
             tmpl = string
@@ -285,3 +299,4 @@ class Setting(object):
             return value
         return repr(value)
             
+        

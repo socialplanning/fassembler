@@ -106,6 +106,15 @@ def make_tarball():
     print 'You may want to run this now:'
     print '  scp %s flow.openplans.org:/www/svn.openplans.org/eggs/' % os.path.join(dir, filename)
 
+class GetBundleTarball(tasks.Task):
+
+    def __init__(self):
+        super(GetBundleTarball, self).__init__(
+            'Get opencore bundle tarball', stacklevel=1)
+
+    def run(self):
+        pass
+
 class SymlinkProducts(tasks.Task):
 
     source_glob = interpolated('source_glob')
@@ -192,12 +201,6 @@ class OpenCoreProject(Project):
         Setting('zope_source',
                 default='{{project.build_properties["virtualenv_path"]}}/src/Zope',
                 help='Location of Zope source'),
-        Setting('zope_svn_repo',
-                default='http://svn.zope.de/zope.org/Zope/branches/2.9',
-                help='Location of Zope svn'),
-        Setting('zope_egg',
-                default='Zope==2.98_final',
-                help='Requirement for installing Zope'),
         ## FIXME: not sure if this is right:
         ## FIXME: should also be more global
         ## FIXME: also, type check on bool-ness
@@ -210,9 +213,24 @@ class OpenCoreProject(Project):
         ## FIXME: this could differ for different profiles
         ## e.g., there's another bundle at:
         ##   https://svn.openplans.org/svn/deployment/products-plone25
-        Setting('opencore_bundle_repo',
-                default='https://svn.openplans.org/svn/bundles/opencore-plone25',
-                help='The location of the svn bundle which contains all our products'),
+        Setting('opencore_bundle_name',
+                default='opencore-plone25',
+                help='Name of the bundle to use'),
+        Setting('opencore_bundle_tar_dir',
+                default='https://svn.openplans.org/eggs/',
+                help='Directory/URL where the bundle tarball is kept'),
+        Setting('opencore_bundle_svn_repo_dir',
+                default='https://svn.openplans.org/svn/bundles',
+                help='SVN location of bundles'),
+        Setting('opencore_bundle_use_svn',
+                default='false',
+                help='Use the svn repo instead of a tarball to install the bundle'),
+        Setting('opencore_bundle_tar_info',
+                default='{{config.opencore_bundle_tar_dir}}/openplans-bundle-{{config.opencore_bundle_name}}.txt',
+                help='Location of the pointer to the real tarball'),
+        Setting('opencore_bundle_svn_repo',
+                default='{{config.opencore_bundle_svn_repo_dir}}/{{config.opencore_bundle_name}}',
+                help='Full svn repository for checkouts'),
         ]
 
     files_dir = os.path.join(os.path.dirname(__file__), 'opencore-files')
@@ -239,9 +257,6 @@ exec {{env.base_path}}/var/opencore/zeo/bin/runzeo
                           '{{config.spec}}'),
         tasks.CopyDir('Create custom skel',
                       skel_dir, '{{project.name}}/src/Zope/custom_skel'),
-        #tasks.Script('Configure Zope', [
-        #'./configure', '--prefix', '{{project.build_properties["virtualenv_path"]}}'],
-        #cwd='{{config.zope_source}}'),
         tasks.Script('Configure Zope', [
         './configure', '--with-python={{project.build_properties["virtualenv_bin_path"]}}/python',
         '--prefix={{project.build_properties["virtualenv_path"]}}'],
@@ -257,9 +272,13 @@ exec {{env.base_path}}/var/opencore/zeo/bin/runzeo
         tasks.Script('Make ZEO Instance', [
         'python', '{{config.zope_source}}/bin/mkzeoinstance.py', '{{config.zeo_instance}}', '{{config.zeo_port}}'],
                      use_virtualenv=True),
-        tasks.SvnCheckout('Check out bundle',
-                          '{{config.opencore_bundle_repo}}',
-                          '{{env.base_path}}/opencore/src/opencore-bundle'),
+        tasks.ConditionalTask('Create bundle',
+                              ('{{config.opencore_bundle_use_svn}}',
+                               tasks.SvnCheckout('Check out bundle',
+                                                 '{{config.opencore_bundle_svn_repo}}',
+                                                 '{{env.base_path}}/opencore/src/opencore-bundle')),
+                              (True,
+                               GetBundleTarball())),
         SymlinkProducts('Symlink Products',
                         '{{env.base_path}}/opencore/src/opencore-bundle/*',
                         '{{config.zope_instance}}/Products',
@@ -276,11 +295,13 @@ exec {{env.base_path}}/var/opencore/zeo/bin/runzeo
                          content=zeo_script_template,
                          svn_add=True, executable=True, overwrite=True),
         tasks.SaveURI(uri_template='${uri}/VirtualHostBase/http/${HTTP_HOST}/openplans/projects/${project}/VirtualHostRoot',
-                      path='/'),
+                      path='/',
+                      header_name='zope'),
         tasks.SaveURI(project_name='opencore_global',
                       uri_template='${uri}/VirtualHostBase/http/${HTTP_HOST}/openplans/VirtualHostRoot',
                       path='/',
-                      project_local=False)
+                      project_local=False,
+                      header_name='zope')
         # ZEO doesn't really have a uri
         ]
 

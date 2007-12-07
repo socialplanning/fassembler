@@ -140,7 +140,8 @@ def main(options, args):
     errors = []
     for project in projects:
         try:
-            errors.extend(project.confirm_settings(all_projects=projects))
+            errors.extend(project.confirm_settings(
+                all_projects=[p.project_name for p in projects]))
         except KeyboardInterrupt:
             raise
         except CommandError:
