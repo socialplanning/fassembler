@@ -76,7 +76,7 @@ class TaskTrackerProject(Project):
                 default='tasktracker_test',
                 help='Name of the test database'),
         Setting('db_root_password',
-                default=None,
+                default='',
                 help='Database root password'),
         #Setting('tasktracker_repo',
         #        default='https://svn.openplans.org/svn/TaskTracker/trunk',

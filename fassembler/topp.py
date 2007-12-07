@@ -29,10 +29,10 @@ class ToppProject(Project):
                 default='{{env.hostname}}-{{os.path.basename(env.base_path)}}',
                 help='svn subdirectory where data configuration is kept (will be created if necessary)'),
         Setting('admin_password',
-                default=None,
+                default='',
                 help='The admin password (will be auto-generated if not provided)'),
         Setting('db_prefix',
-                default=None,
+                default='',
                 help='The prefix to use for all database names'),
         ]
 

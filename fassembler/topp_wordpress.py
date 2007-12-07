@@ -54,7 +54,7 @@ class WordPressProject(Project):
                 default='localhost',
                 help='Database host'),
         Setting('db_root_password',
-                default=None,
+                default='',
                 help='Database root password'),
         ]
 
