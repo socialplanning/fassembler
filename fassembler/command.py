@@ -126,6 +126,7 @@ def main(options, args):
     maker = Maker(base_path, simulate=options.simulate,
                   interactive=not options.no_interactive, logger=logger,
                   quick=options.quick)
+    environ.maker = maker
     
     projects = []
     for project_name in project_names:
