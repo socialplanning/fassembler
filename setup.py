@@ -43,5 +43,7 @@ setup(name='fassembler',
       deliverance = fassembler.topp_products:DeliveranceProject
       opencore = fassembler.topp_opencore:OpenCoreProject
       wordpress = fassembler.topp_wordpress:WordPressProject
+      cabochon = fassembler.topp_products:CabochonProject
+      twirlip = fassembler.topp_products:TwirlipProject
       """,
       )
