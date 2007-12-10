@@ -123,37 +123,3 @@ class WordPressProject(Project):
                 return option
         raise OSError(
             "Cannot find %s (tried %s)" % (name, ', '.join(options)))
-
-
-def get_platform():
-    """
-    Returns (distribution, version)
-
-    Guesses this from looking in different files on the system.
-    """
-    if os.path.exists('/etc/lsb-release'):
-        # Probably Ubuntu-ish
-        vars = {}
-        f = open('/etc/lsb-release')
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
-            var, value = line.split('=', 1)
-            vars[var] = value
-        f.close()
-        return (vars['DISTRIB_ID'], vars['DISTRIB_RELEASE'])
-    if os.path.exists('/etc/gentoo-release'):
-        f = open('/etc/gentoo-release')
-        parts = f.readline().split()
-        f.close()
-        return (parts[0], parts[-1])
-
-    # detect Mac OS X
-    platform, version = Popen(["uname", "-sr"], stdout=PIPE).communicate()[0].split()
-    if platform == 'Darwin':
-        if os.path.exists('/Applications/MAMP'):
-            return platform, version
-        raise OSError('Mac build requires MAMP installed to /Applications/MAMP (www.mamp.info)')
-    raise OSError(
-        "Cannot determine the platform")
