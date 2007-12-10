@@ -266,6 +266,7 @@ def filter_ez_setup(line):
 
 def main():
     parser = optparse.OptionParser(
+        version="0.9.2",
         usage="%prog [OPTIONS] DEST_DIR")
 
     parser.add_option(
@@ -300,11 +301,6 @@ def main():
 
     options, args = parser.parse_args()
 
-    if not args:
-        print 'You must provide a DEST_DIR'
-        parser.print_help()
-        sys.exit(2)
-
     global logger
 
     if 'adjust_options' in globals():
@@ -313,6 +309,10 @@ def main():
     verbosity = options.verbose - options.quiet
     logger = Logger([(Logger.level_for_integer(2-verbosity), sys.stdout)])
 
+    if not args:
+        print 'You must provide a DEST_DIR'
+        parser.print_help()
+        sys.exit(2)
     if len(args) > 1:
         print 'There must be only one argument: DEST_DIR (you gave %s)' % (
             ' '.join(args))
@@ -471,26 +471,34 @@ def create_environment(home_dir, site_packages=True, clear=False):
     if 'Python.framework' in prefix:
         logger.debug('MacOSX Python framework detected')
 
-        # Create a dummy framework tree
-        frmdir = os.path.join(home_dir, 'lib', 'Python.framework', 'Versions', 
-            '%s.%s'%(sys.version_info[0], sys.version_info[1]))
-        mkdir(frmdir)
+        # Copy the framework's dylib into the virtual 
+        # environment
+        virtual_lib = os.path.join(home_dir, '.Python')
+
+        if os.path.exists(virtual_lib):
+            os.unlink(virtual_lib)
         copyfile(
             os.path.join(prefix, 'Python'),
-            os.path.join(frmdir, 'Python'))
+            virtual_lib)
 
-        # And then change the install_name of the cpied python executable
+        # And then change the install_name of the copied python executable
         try:
             call_subprocess(
                 ["install_name_tool", "-change",
                  os.path.join(prefix, 'Python'),
-                 '@executable_path/../lib/Python.framework/Versions/%s.%s/Python' %
-                 (sys.version_info[0], sys.version_info[1]),
+                 '@executable_path/../.Python',
                  py_executable])
         except:
             logger.fatal(
                 "Could not call install_name_tool -- you must have Apple's development tools installed")
             raise
+
+        # Some tools depend on pythonX.Y being present
+        pth = py_executable + '%s.%s' % (
+                sys.version_info[0], sys.version_info[1])
+        if os.path.exists(pth):
+            os.unlink(pth)
+        os.symlink('python', pth)
 
     cmd = [py_executable, '-c', 'import sys; print sys.prefix']
     logger.info('Testing executable with %s %s "%s"' % tuple(cmd))
@@ -614,6 +622,9 @@ def extend_parser(parser):
         help='Location of a svn directory or URL to use for the installation')
 
 def adjust_options(options, args):
+    if not args:
+        return # caller will raise error
+    
     # We're actually going to build the venv in a subdirectory
     base_dir = args[0]
     args[0] = join(base_dir, 'fassembler')
@@ -626,6 +637,7 @@ def after_install(options, home_dir):
         # A directory
         logger.debug('Using svn checkout in directory %s' % fassembler_svn)
         fassembler_dir = os.path.abspath(fassembler_svn)
+        logger.info('Using existing svn checkout at %s' % fassembler_dir)
     else:
         fassembler_dir = join(src_dir, 'fassembler')
         logger.notify('Installing fassembler from %s to %s' % (fassembler_svn, fassembler_dir))

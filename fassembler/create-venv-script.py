@@ -29,6 +29,9 @@ def extend_parser(parser):
         help='Location of a svn directory or URL to use for the installation')
 
 def adjust_options(options, args):
+    if not args:
+        return # caller will raise error
+    
     # We're actually going to build the venv in a subdirectory
     base_dir = args[0]
     args[0] = join(base_dir, 'fassembler')
