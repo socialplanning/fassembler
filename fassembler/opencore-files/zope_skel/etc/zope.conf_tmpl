@@ -1050,7 +1050,8 @@ zserver-threads 6
 
 %import Products.ClockServer
 <clock-server>
-  method /<<openplans>>/portal_catalog_queue/manage_process
+  {{# FIXME: should /openplans/ be a variable?  It used to be in topp.build.opencore}}
+  method /openplans/portal_catalog_queue/manage_process
   period 300
   user {{config.zope_user}}
   password {{config.zope_password}}
