@@ -300,6 +300,11 @@ def main():
 
     options, args = parser.parse_args()
 
+    if not args:
+        print 'You must provide a DEST_DIR'
+        parser.print_help()
+        sys.exit(2)
+
     global logger
 
     if 'adjust_options' in globals():
@@ -308,10 +313,6 @@ def main():
     verbosity = options.verbose - options.quiet
     logger = Logger([(Logger.level_for_integer(2-verbosity), sys.stdout)])
 
-    if not args:
-        print 'You must provide a DEST_DIR'
-        parser.print_help()
-        sys.exit(2)
     if len(args) > 1:
         print 'There must be only one argument: DEST_DIR (you gave %s)' % (
             ' '.join(args))
