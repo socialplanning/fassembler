@@ -27,7 +27,7 @@ class WordPressProject(Project):
                 help='Interface/host to serve Apache/WordPress on'),
         ## FIXME: this repo should be moved sometime
         Setting('wordpress_repo',
-                default='https://svn.openplans.org/svn/build/topp.build.wordpress/trunk/topp/build/wordpress/wordpress-mu',
+                default='https://svn.openplans.org/svn/vendor/wordpress-mu/openplans/trunk',
                 help='Location of WordPress MU repository'),
         Setting('wordpress_scripts_repo',
                 default='https://svn.openplans.org/svn/build/wordpress/trunk/scripts',
