@@ -5,7 +5,7 @@ Builder for TOPP WordPress MU
 import os
 from fassembler.project import Project, Setting
 from fassembler import tasks
-from subprocess import Popen
+from subprocess import Popen, PIPE
 
 class WordPressProject(Project):
     """
@@ -82,36 +82,20 @@ class WordPressProject(Project):
     depends_on_projects = ['fassembler:topp']
 
     def extra_modules(self):
-        dist, version = get_platform()
-        if dist == 'Ubuntu':
-            if version == '6.10':
-                # Edgy:
-                return self.interpolate('LoadModule rewrite_module {{config.apache_module_dir}}/mod_rewrite.so')
-            else:
-                # Feisty, probably
-                return self.interpolate('''\
-    LoadModule mime_module {{config.apache_module_dir}}/mod_mime.so 
-    LoadModule dir_module {{config.apache_module_dir}}/mod_dir.so
-    LoadModule authz_host_module {{config.apache_module_dir}}/mod_authz_host.so
-    LoadModule rewrite_module {{config.apache_module_dir}}/mod_rewrite.so''')
-        elif dist == 'Gentoo':
-            # If apache isn't built with the static-modules USE flag, we need these.
-                return self.interpolate('''\
-    LoadModule mime_module {{config.apache_module_dir}}/mod_mime.so 
-    LoadModule dir_module {{config.apache_module_dir}}/mod_dir.so
-    LoadModule authz_host_module {{config.apache_module_dir}}/mod_authz_host.so
-    LoadModule rewrite_module {{config.apache_module_dir}}/mod_rewrite.so
-    LoadModule log_config_module {{config.apache_module_dir}}/mod_log_config.so''')
-        elif dist == 'Darwin': # Mac OS X
-            return self.interpolate('''\
-    LoadModule mime_module {{config.apache_module_dir}}/mod_mime.so 
-    LoadModule dir_module {{config.apache_module_dir}}/mod_dir.so
-    LoadModule access_module {{config.apache_module_dir}}/mod_access.so
-    LoadModule rewrite_module {{config.apache_module_dir}}/mod_rewrite.so
-    LoadModule log_config_module {{config.apache_module_dir}}/mod_log_config.so''')
-        else:
-            raise OSError(
-                "Cannot automatically determine extra_modules from OS")
+        required_modules = ['mime', 'dir', 'rewrite', 'log_config']
+        apache_version = Popen([self.apache_exec(), "-v"], stdout=PIPE).communicate()[0].split()[2].split('/')[1].split('.')
+        major, minor, revision = map(lambda x: int(x), apache_version)
+        if major == 2 and minor >= 2:
+            required_modules.append('authz_host')
+        elif major == 1 or (major == 2 and minor < 2):
+            required_modules.append('access')
+        compiled_in_modules = set(Popen([self.apache_exec(), "-l"], stdout=PIPE).communicate()[0].split()[3:])
+        modules_to_load = []
+        for r in required_modules:
+            rc = 'mod_%s.c' % r
+            if rc not in compiled_in_modules:
+                modules_to_load.append('LoadModule %s_module ${apache_modules}/mod_%s.so' % (r, r))
+        return self.interpolate('\n'.join(modules_to_load))
 
     def apache_module_dir(self):
         return self.search(
