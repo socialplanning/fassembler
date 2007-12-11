@@ -149,6 +149,7 @@ class GetBundleTarball(tasks.Task):
         try:
             if not self.maker.simulate:
                 urllib.urlretrieve(url, tmp_fn)
+            self.maker.ensure_dir(self.dest)
             self.logger.notify('Unpacking into %s' % self.dest)
             ## FIXME: is it really okay just to unpack right over whatever might already be there?
             ## Should we warn or something?
