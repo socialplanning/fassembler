@@ -1,3 +1,0 @@
--e https://svn.openplans.org/svn/Twirlip/trunk
-PasteScript
-mysql-python

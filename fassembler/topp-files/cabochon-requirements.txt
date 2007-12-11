@@ -1,3 +1,0 @@
--e https://svn.openplans.org/svn/Cabochon/trunk
-PasteScript
-mysql-python
