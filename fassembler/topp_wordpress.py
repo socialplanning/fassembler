@@ -72,10 +72,10 @@ class WordPressProject(Project):
                          '{{env.base_path}}/wordpress/src/wordpress-mu/wp-config.php',
                          content_path='{{env.base_path}}/wordpress/src/wordpress-mu/wp-config.php_tmpl',
                          svn_add=False, overwrite=True),
+        tasks.InstallSupervisorConfig(),
         tasks.CheckMySQLDatabase('Check database'),
         tasks.Script('Setup database tables',
                      '{{env.base_path}}/wordpress/bin/setup-database.sh'),
-        tasks.InstallSupervisorConfig(),
         tasks.SaveURI(path='/blog'),
         ]
 
@@ -94,7 +94,7 @@ class WordPressProject(Project):
         for r in required_modules:
             rc = 'mod_%s.c' % r
             if rc not in compiled_in_modules:
-                modules_to_load.append('LoadModule %s_module ${apache_modules}/mod_%s.so' % (r, r))
+                modules_to_load.append('LoadModule %s_module {{config.apache_module_dir}}/mod_%s.so' % (r, r))
         return self.interpolate('\n'.join(modules_to_load))
 
     def apache_module_dir(self):
