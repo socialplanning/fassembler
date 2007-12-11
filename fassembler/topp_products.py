@@ -150,7 +150,7 @@ class CabochonProject(Project):
                 default='{{env.config.getint("general", "base_port")+int(config.port_offset)}}',
                 help='Port to install Cabochon on'),
         Setting('port_offset',
-                default='5',
+                default='6',
                 help='Offset from base_port for Cabochon'),
         Setting('host',
 
@@ -227,7 +227,7 @@ class TwirlipProject(Project):
                 default='{{env.config.getint("general", "base_port")+int(config.port_offset)}}',
                 help='Port to install Twirlip on'),
         Setting('port_offset',
-                default='6',
+                default='7',
                 help='Offset from base_port for Twirlip'),
         Setting('host',
                 default='127.0.0.1',
