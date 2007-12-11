@@ -320,16 +320,15 @@ exec {{env.base_path}}/var/opencore/zope/bin/runzope -X debug-mode=off
                         exclude_glob='{{env.base_path}}/opencore/src/opencore-bundle/ClockServer'),
         ## FIXME: linkzope and linkzopebinaries?
         tasks.InstallSupervisorConfig(),
-        tasks.InstallSupervisorConfig(script_name='opencore-zeo'),
         tasks.EnsureFile('Write the start script',
                          '{{env.base_path}}/bin/start-{{project.name}}',
                          content=start_script_template,
                          svn_add=True, executable=True, overwrite=True),
-        tasks.SaveURI(uri_template='${uri}/VirtualHostBase/http/${HTTP_HOST}/openplans/projects/${project}/VirtualHostRoot',
+        tasks.SaveURI(uri_template='{uri}/VirtualHostBase/http/{HTTP_HOST}/openplans/projects/{project}/VirtualHostRoot',
                       path='/',
                       header_name='zope'),
         tasks.SaveURI(project_name='opencore_global',
-                      uri_template='${uri}/VirtualHostBase/http/${HTTP_HOST}/openplans/VirtualHostRoot',
+                      uri_template='{uri}/VirtualHostBase/http/{HTTP_HOST}/openplans/VirtualHostRoot',
                       path='/',
                       project_local=False,
                       header_name='zope')
@@ -376,9 +375,10 @@ exec {{env.base_path}}/var/opencore/zeo/bin/runzeo
         'python', '{{config.zope_source}}/bin/mkzeoinstance.py', '{{config.zeo_instance}}', '{{config.zeo_port}}'],
                      use_virtualenv=True),
         tasks.EnsureFile('Write the ZEO start script',
-                         '{{env.base_path}}/bin/start-{{project.name}}',
+                         '{{env.base_path}}/bin/start-opencore-{{project.name}}',
                          content=start_script_template,
                          svn_add=True, executable=True, overwrite=True),
+        tasks.InstallSupervisorConfig(script_name='opencore-zeo'),
         # ZEO doesn't really have a uri
         ]
 
