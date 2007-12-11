@@ -25,6 +25,11 @@ To get a list of PROJECTs you can install, use %prog --list-projects
 To set a configuration variable, use VARIABLE=VALUE, or
 SECTION.VARIABLE=VALUE.  If you do not use SECTION then the
 variable will be set globally.
+
+If you give 'all' for a project, then all projects listed in
+requirements/all-projects.txt will be built/updated.  If you give
+'missing' then just unbuilt projects from all-projects.txt will be
+built.
 """
 
 parser = OptionParser(
@@ -113,6 +118,16 @@ def main(options, args):
                 "you must provide the --base value or run fassembler from a build base path")
     project_names, variables = parse_positional(args)
     logger = options.logger
+    if 'all' in project_names:
+        project_names.remove('all')
+        extra_projects = get_all_projects(base_path)
+        logger.notify('Building projects: %s' % ', '.join(extra_projects))
+        project_names += extra_projects
+    if 'missing' in project_names:
+        project_names.remove('missing')
+        extra_projects = get_missing_projects(base_path)
+        logger.notify('Building projects: %s' % ', '.join(extra_projects))
+        project_names += extra_projects
     config = load_configs(options.configs)
     for section, name, value in variables:
         section = section or 'DEFAULT'
@@ -170,6 +185,7 @@ def main(options, args):
                 try:
                     project.run()
                     logger.notify('Done with project %s' % project_name)
+                    environ.save()
                 finally:
                     if len(projects) > 1:
                         logger.indent -= 2
@@ -184,15 +200,12 @@ def main(options, args):
                     continue
                 else:
                     break
+                ## FIXME: should revert environ here
     if not options.project_help:
         if success:
             logger.notify('Installation successful.')
-            environ.save()
         else:
             logger.notify('Installation not completely successful.')
-            logger.notify('Note: the build.ini file was not updated')
-            if variables:
-                logger.notify('Note: command line settings not updated')
     ## FIXME: commit etc/?
 
 _var_re = re.compile(r'^(?:\[(\w+)\])?\s*(\w+)=(.*)$')
@@ -216,6 +229,40 @@ def parse_positional(args):
             else:
                 project_names.append(arg)
     return project_names, variables
+
+def get_all_projects(base_path):
+    path = os.path.join(base_path, 'requirements', 'all-projects.txt')
+    if not os.path.exists(path):
+        raise CommandError(
+            'You cannot use the project "all" because %s does not exist (maybe you have to do the base build?)' % path,
+            show_usage=False)
+    f = open(path)
+    all_projects = []
+    for line in f:
+        line = line.strip()
+        if not line or line.startswith('#'):
+            continue
+        all_projects.append(line)
+    f.close()
+    return all_projects
+
+def get_missing_projects(base_path):
+    try:
+        all = get_all_projects(base_path)
+    except CommandError, e:
+        raise CommandError(str(e).replace('"all"', '"missing"'))
+    path = os.path.join(base_path, 'etc', 'projects.txt')
+    if os.path.exists(path):
+        f = open(path)
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            name = line.split()[0]
+            if name in all:
+                all.remove(name)
+        f.close()
+    return all
 
 def find_project_class(project_name, logger):
     """
