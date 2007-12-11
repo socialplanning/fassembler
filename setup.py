@@ -42,6 +42,7 @@ setup(name='fassembler',
       tasktracker = fassembler.topp_products:TaskTrackerProject
       deliverance = fassembler.topp_products:DeliveranceProject
       opencore = fassembler.topp_opencore:OpenCoreProject
+      zeo = fassembler.topp_opencore:ZEOProject
       wordpress = fassembler.topp_wordpress:WordPressProject
       cabochon = fassembler.topp_products:CabochonProject
       twirlip = fassembler.topp_products:TwirlipProject

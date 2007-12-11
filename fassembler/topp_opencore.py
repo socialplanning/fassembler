@@ -218,9 +218,6 @@ class OpenCoreProject(Project):
         Setting('zope_instance',
                 default='{{env.base_path}}/var/opencore/zope',
                 help='Instance home for Zope'),
-        Setting('zeo_instance',
-                default='var/opencore/zeo',
-                help='Instance home for ZEO'),
         Setting('zope_user',
                 default='{{env.parse_auth(env.config.get("general", "admin_info_filename")).username}}',
                 help='Default admin username'),
@@ -290,12 +287,6 @@ cd {{env.base_path}}
 exec {{env.base_path}}/var/opencore/zope/bin/runzope -X debug-mode=off
 """
 
-    zeo_script_template = """\
-#!/bin/sh
-cd {{env.base_path}}
-exec {{env.base_path}}/var/opencore/zeo/bin/runzeo
-"""
-
     actions = [
         tasks.VirtualEnv(),
         tasks.EnsureDir('Create src/ directory', '{{project.name}}/src'),
@@ -316,9 +307,6 @@ exec {{env.base_path}}/var/opencore/zeo/bin/runzeo
         '--user', '{{config.zope_user}}:{{config.zope_password}}',
         '--skelsrc', '{{config.zope_source}}/custom_skel'],
                      use_virtualenv=True),
-        tasks.Script('Make ZEO Instance', [
-        'python', '{{config.zope_source}}/bin/mkzeoinstance.py', '{{config.zeo_instance}}', '{{config.zeo_port}}'],
-                     use_virtualenv=True),
         tasks.ConditionalTask('Create bundle',
                               ('{{config.opencore_bundle_use_svn}}',
                                tasks.SvnCheckout('Check out bundle',
@@ -337,10 +325,6 @@ exec {{env.base_path}}/var/opencore/zeo/bin/runzeo
                          '{{env.base_path}}/bin/start-{{project.name}}',
                          content=start_script_template,
                          svn_add=True, executable=True, overwrite=True),
-        tasks.EnsureFile('Write the ZEO start script',
-                         '{{env.base_path}}/bin/start-{{project.name}}-zeo',
-                         content=zeo_script_template,
-                         svn_add=True, executable=True, overwrite=True),
         tasks.SaveURI(uri_template='${uri}/VirtualHostBase/http/${HTTP_HOST}/openplans/projects/${project}/VirtualHostRoot',
                       path='/',
                       header_name='zope'),
@@ -349,10 +333,57 @@ exec {{env.base_path}}/var/opencore/zeo/bin/runzeo
                       path='/',
                       project_local=False,
                       header_name='zope')
-        # ZEO doesn't really have a uri
         ]
 
     depends_on_projects = ['fassembler:topp']
+
+class ZEOProject(Project):
+    """
+    Install ZEO
+    """
+
+    name = 'zeo'
+    title = 'Install ZEO'
+
+    settings = [
+        Setting('zeo_instance',
+                default='var/opencore/zeo',
+                help='Instance home for ZEO'),
+        Setting('zeo_port',
+                default='{{env.config.getint("general", "base_port")+int(config.zeo_port_offset)}}',
+                help="Port to install ZEO on"),
+        Setting('zeo_port_offset',
+                default='2',
+                help='Offset from base_port for ZEO'),
+        Setting('zeo_host',
+                default='localhost',
+                help='Interface/host to serve ZEO on'),
+        Setting('zope_source',
+                default='opencore/src/Zope',
+                help='Location of Zope source'),
+        ]
+
+    start_script_template = """\
+#!/bin/sh
+cd {{env.base_path}}
+exec {{env.base_path}}/var/opencore/zeo/bin/runzeo
+"""
+
+    actions = [
+        ## FIXME: this is kind of lame (recreating a venv we know exists), but needed for later steps:
+        tasks.VirtualEnv(path='opencore'),
+        tasks.Script('Make ZEO Instance', [
+        'python', '{{config.zope_source}}/bin/mkzeoinstance.py', '{{config.zeo_instance}}', '{{config.zeo_port}}'],
+                     use_virtualenv=True),
+        tasks.EnsureFile('Write the ZEO start script',
+                         '{{env.base_path}}/bin/start-{{project.name}}',
+                         content=start_script_template,
+                         svn_add=True, executable=True, overwrite=True),
+        # ZEO doesn't really have a uri
+        ]
+
+    depends_on_projects = ['fassembler:opencore']
+
 
 if __name__ == '__main__':
     make_tarball()
