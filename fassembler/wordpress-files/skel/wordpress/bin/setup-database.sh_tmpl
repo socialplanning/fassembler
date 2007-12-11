@@ -8,7 +8,7 @@ else
 fi
 DATA="`cat "$BASE_PATH/var/secret.txt" | python -c 'import sys, urllib; sys.stdout.write("secret=%s" % urllib.quote(sys.stdin.read()))'`"
 echo "Setting up database..."
-wget -q http://localhost.localdomain:{{config.port}}/dbsetup.php --post-data="$DATA" -O - || exit 2
+wget http://127.0.01:{{config.port}}/dbsetup.php --post-data="$DATA" -O - || exit 2
 echo "database setup done."
 if {{config.apache_exe}} -f "$BASE_PATH"/etc/wordpress/httpd-wordpress.conf -k stop ; then
     echo "Apache stopped."

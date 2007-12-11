@@ -633,6 +633,7 @@ class CheckMySQLDatabase(Task):
         self.db_root_password = db_root_password
 
     password_error = 1045
+    access_denied_error = 1044
     unknown_database = 1049
     unknown_server = 2005
     server_cant_connect = 2003
@@ -669,7 +670,7 @@ class CheckMySQLDatabase(Task):
                     "Cannot connect to MySQL server at %s: %s"
                     % (self.db_host, e))
                 raise
-            elif code == self.password_error:
+            elif code == self.password_error or code == self.access_denied_error:
                 # Could be a database name problem, or access
                 self.logger.notify(
                     "Cannot connect to %s@%s, will try to create"
