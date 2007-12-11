@@ -530,6 +530,9 @@ class Maker(object):
         """
         cwd = popdefault(kw, 'cwd', self.base_path) or self.base_path
         cwd = self.path(cwd)
+        if not os.path.exists(cwd):
+            raise ValueError(
+                "cwd for script (%r) does not exist" % cwd)
         capture_stderr = popdefault(kw, 'capture_stderr', False)
         expect_returncode = popdefault(kw, 'expect_returncode', False)
         return_full = popdefault(kw, 'return_full')
