@@ -68,9 +68,9 @@ AddDefaultCharset UTF8
     ServerAdmin {{config.server_admin}}
     DocumentRoot {{env.base_path}}/wordpress/src/wordpress-mu
 
-    ErrorLog {{env.base_path}}/logs/wordpress/error.log
+    ErrorLog {{env.var}}/logs/wordpress/error.log
     LogLevel warn
-    CustomLog {{env.base_path}}/logs/wordpress/access.log combined
+    CustomLog {{env.var}}/logs/wordpress/access.log combined
 
     <Directory />
         Options FollowSymLinks Indexes
@@ -85,7 +85,7 @@ AddDefaultCharset UTF8
     RewriteEngine On
     # Increase this number to see log messages:
     RewriteLogLevel 0
-    RewriteLog {{env.base_path}}/logs/wordpress/rewrite.log
+    RewriteLog {{env.var}}/logs/wordpress/rewrite.log
 
     ## Rules taken from WordPress MU's .htaccess:
 

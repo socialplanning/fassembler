@@ -26,6 +26,10 @@
 %define ZEO_PORT {{config.zeo_port}}
 %define DEBUG_MODE {{if config.debug:}}True{{else}}False{{endif}}
 %define INSTANCE {{config.zope_instance}}
+%define VAR {{env.var}}
+{{#FIXME: should this be $VAR/opencore/zope?}}
+%define OPENCORE_VAR $VAR/opencore
+%define LOGS $VAR_BASE/logs/opencore
 
 # Directive: instancehome
 #
@@ -740,7 +744,7 @@ zserver-threads 6
 <eventlog>
   level info
   <logfile>
-    path $INSTANCE/log/event.log
+    path $LOGS/event.log
     level info
   </logfile>
 </eventlog>
@@ -748,7 +752,7 @@ zserver-threads 6
 <logger access>
   level WARN
   <logfile>
-    path $INSTANCE/log/Z2.log
+    path $LOGS/Z2.log
     format %(message)s
   </logfile>
 </logger>
@@ -756,7 +760,7 @@ zserver-threads 6
 # <logger trace>
 #   level WARN
 #   <logfile>
-#     path $INSTANCE/log/trace.log
+#     path $LOGS/trace.log
 #     format %(message)s
 #   </logfile>
 # </logger>
@@ -982,7 +986,7 @@ zserver-threads 6
     server localhost:$ZEO_PORT
     storage 1
     name zeostorage
-    var $INSTANCE/var
+    var $OPENCORE_VAR
     # ZEO client cache, in bytes
     cache-size 20MB
     # Uncomment to have a persistent disk cache

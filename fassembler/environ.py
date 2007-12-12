@@ -78,6 +78,14 @@ class Environment(object):
                 self._parser.read(self.config_filename)
         return self._parser
 
+    @property
+    def base_port(self):
+        return self.config.getint('general', 'base_port')
+
+    @property
+    def var(self):
+        return self.config.get('general', 'var')
+
     def save(self):
         """
         Save the configuration in etc/build.ini

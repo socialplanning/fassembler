@@ -3,6 +3,7 @@ Patch distutils files
 """
 
 import os
+import re
 
 def find_distutils_file(logger):
     """

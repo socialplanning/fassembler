@@ -1,12 +1,14 @@
 #!/bin/sh
 BASE_PATH="{{env.base_path}}"
+VAR_PATH="{{env.var}}"
 if {{config.apache_exe}} -f "$BASE_PATH"/etc/wordpress/httpd-wordpress.conf -k start ; then
     echo 'Apache started'
 else
     echo 'Apache failed to start'
     exit 1
 fi
-DATA="`cat "$BASE_PATH/var/secret.txt" | python -c 'import sys, urllib; sys.stdout.write("secret=%s" % urllib.quote(sys.stdin.read()))'`"
+{{#FIXME: use proper configured location of secret.txt:}}
+DATA="`cat "$VAR_PATH/secret.txt" | python -c 'import sys, urllib; sys.stdout.write("secret=%s" % urllib.quote(sys.stdin.read()))'`"
 echo "Setting up database..."
 wget http://127.0.0.1:{{config.port}}/dbsetup.php --post-data="$DATA" -O - || exit 2
 echo "database setup done."

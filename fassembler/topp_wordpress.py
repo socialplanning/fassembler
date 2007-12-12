@@ -17,7 +17,7 @@ class WordPressProject(Project):
 
     settings = [
         Setting('port',
-                default='{{env.config.getint("general", "base_port")+int(config.port_offset)}}',
+                default='{{env.base_port+int(config.port_offset)}}',
                 help="Port to install Apache/WordPress on"),
         Setting('port_offset',
                 default='3',

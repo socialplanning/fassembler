@@ -587,7 +587,7 @@ class InstallSupervisorConfig(Task):
         ## FIXME: is this really the proper place to be making a log directory?
         ## I don't really think so.
         self.maker.ensure_dir(
-            os.path.join('logs', self.project.name))
+            os.path.join(self.environ.var, 'logs', self.project.name))
         self.logger.notify('Supervisor config written to %s' % self.conf_path)
 
     @property
@@ -598,10 +598,10 @@ class InstallSupervisorConfig(Task):
 [program:{{task.script_name}}]
 command = {{env.base_path}}/bin/start-{{task.script_name}}
 {{#FIXME: should set user=username}}
-stdout_logfile = {{env.base_path}}/logs/{{project.name}}/{{task.script_name}}-supervisor.log
+stdout_logfile = {{env.var}}/logs/{{project.name}}/{{task.script_name}}-supervisor.log
 stdout_logfile_maxbytes = 1MB
 stdout_logfile_backups = 10
-stderr_logfile = {{env.base_path}}/logs/{{project.name}}/{{task.script_name}}-supervisor-errors.log
+stderr_logfile = {{env.var}}/logs/{{project.name}}/{{task.script_name}}-supervisor-errors.log
 stderr_logfile_maxbytes = 1MB
 stderr_logfile_backups = 10
 """

@@ -216,7 +216,7 @@ class OpenCoreProject(Project):
                 default='requirements/opencore-req.txt',
                 help='Specification of packages to install'),
         Setting('zope_instance',
-                default='{{env.base_path}}/var/opencore/zope',
+                default='{{env.var}}/opencore/zope',
                 help='Instance home for Zope'),
         Setting('zope_user',
                 default='{{env.parse_auth(env.config.get("general", "admin_info_filename")).username}}',
@@ -225,7 +225,7 @@ class OpenCoreProject(Project):
                 default='{{env.parse_auth(env.config.get("general", "admin_info_filename")).password}}',
                 help='Admin password'),
         Setting('port',
-                default='{{env.config.getint("general", "base_port")+int(config.port_offset)}}',
+                default='{{env.base_port+int(config.port_offset)}}',
                 help="Port to install Zope on"),
         Setting('port_offset',
                 default='1',
@@ -234,7 +234,7 @@ class OpenCoreProject(Project):
                 default='localhost',
                 help='Interface/host to serve Zope on'),
         Setting('zeo_port',
-                default='{{env.config.getint("general", "base_port")+int(config.zeo_port_offset)}}',
+                default='{{env.base_port+int(config.zeo_port_offset)}}',
                 help="Port to install ZEO on"),
         Setting('zeo_port_offset',
                 default='2',
@@ -284,7 +284,7 @@ class OpenCoreProject(Project):
     start_script_template = """\
 #!/bin/sh
 cd {{env.base_path}}
-exec {{env.base_path}}/var/opencore/zope/bin/runzope -X debug-mode=off
+exec {{env.var}}/opencore/zope/bin/runzope -X debug-mode=off
 """
 
     actions = [
@@ -350,10 +350,10 @@ class ZEOProject(Project):
 
     settings = [
         Setting('zeo_instance',
-                default='var/opencore/zeo',
+                default='{{env.var}}/opencore/zeo',
                 help='Instance home for ZEO'),
         Setting('zeo_port',
-                default='{{env.config.getint("general", "base_port")+int(config.zeo_port_offset)}}',
+                default='{{env.base_port+int(config.zeo_port_offset)}}',
                 help="Port to install ZEO on"),
         Setting('zeo_port_offset',
                 default='2',
@@ -369,7 +369,7 @@ class ZEOProject(Project):
     start_script_template = """\
 #!/bin/sh
 cd {{env.base_path}}
-exec {{env.base_path}}/var/opencore/zeo/bin/runzeo
+exec {{env.var}}/opencore/zeo/bin/runzeo
 """
 
     actions = [
