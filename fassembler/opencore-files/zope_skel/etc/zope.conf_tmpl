@@ -29,7 +29,7 @@
 %define VAR {{env.var}}
 {{#FIXME: should this be $VAR/opencore/zope?}}
 %define OPENCORE_VAR $VAR/opencore
-%define LOGS $VAR_BASE/logs/opencore
+%define LOGS $VAR/logs/opencore
 
 # Directive: instancehome
 #

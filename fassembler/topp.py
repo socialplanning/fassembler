@@ -46,14 +46,14 @@ class ToppProject(Project):
     actions = [
         tasks.CopyDir('create layout', os.path.join(project_base_dir, 'base-layout'), './'),
         tasks.SaveSetting('Save var setting',
-                          {'var': '{{config.var}}'}),
+                          {'var': '{{os.path.abspath(config.var)}}'}),
         tasks.SaveSetting('Save settings',
                           {'base_port': '{{config.base_port}}',
                            'topp_secret_filename': '{{env.var}}/secret.txt',
                            'admin_info_filename': '{{env.var}}/admin.txt',
                            }),
         tasks.SaveSetting('Save db_prefix', {'db_prefix': '{{config.db_prefix}}'}, overwrite_if_empty=False),
-        tasks.EnsureDir('Make sure var directory exists', '{{env.var}}'),
+        tasks.EnsureDir('Make sure var directory exists', '{{env.var}}', svn_add=False),
         tasks.SvnCheckout('check out etc/', '{{config.etc_svn_subdir}}',
                           'etc/',
                           base_repository='{{config.etc_svn_repository}}',
@@ -88,4 +88,6 @@ class SupervisorProject(Project):
         tasks.InstallSpec('Install Supervisor',
                           '{{config.spec}}'),
         tasks.CopyDir('create config layout', project_base_dir, './'),
+        tasks.EnsureDir('Ensure log directory exists',
+                        '{{env.var}}/logs/supervisor'),
         ]
