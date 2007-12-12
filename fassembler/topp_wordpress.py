@@ -42,7 +42,7 @@ class WordPressProject(Project):
                 default='{{env.environ["USER"]}}@{{env.fq_hostname}}',
                 help='Server admin for Apache'),
         Setting('db_name',
-                default='wordpress',
+                default='{{env.config.getdefault("general", "db_prefix", "")}}wordpress',
                 help='Database name'),
         Setting('db_username',
                 default='wordpress',
