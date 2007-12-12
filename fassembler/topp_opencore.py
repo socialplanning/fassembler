@@ -326,12 +326,14 @@ exec {{env.base_path}}/var/opencore/zope/bin/runzope -X debug-mode=off
                          svn_add=True, executable=True, overwrite=True),
         tasks.SaveURI(uri_template='{uri}/VirtualHostBase/http/{HTTP_HOST}/openplans/projects/{project}/VirtualHostRoot',
                       path='/',
-                      header_name='zope'),
+                      header_name='zope',
+                      theme='not-main-site'),
         tasks.SaveURI(project_name='opencore_global',
                       uri_template='{uri}/VirtualHostBase/http/{HTTP_HOST}/openplans/VirtualHostRoot',
                       path='/',
                       project_local=False,
-                      header_name='zope')
+                      header_name='zope',
+                      theme='not-main-site')
         ]
 
     depends_on_projects = ['fassembler:topp']

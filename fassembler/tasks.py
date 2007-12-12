@@ -850,6 +850,8 @@ class SaveURI(SaveSetting):
             variables['{{task.project_name}} uri_template'] = uri_template
         if not theme:
             variables['{{task.project_name}} theme'] = 'false'
+        elif theme == 'not-main-site':
+            variables['{{task.project_name}} theme'] = theme
         if not trailing_slash:
             variables['{{task.project_name}} trailing_slash'] = 'false'
         if header_name:
