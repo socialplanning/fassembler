@@ -401,6 +401,7 @@ class VirtualEnv(Task):
     description = """
     Create a virtualenv environment in {{maker.path(task.path or project.name)}}
     {{if not task.path}} ({{project.name}} is the project name){{endif}}
+    {{if task.site_packages}}Global site-packages will be available{{else}}Global site-packages will NOT be available{{endif}}
 
     {{if os.path.exists(task.path_resolved):}}
     Directory already exists.
@@ -412,9 +413,10 @@ class VirtualEnv(Task):
     {{endif}}
     """
 
-    def __init__(self, name='Create virtualenv', path=None, stacklevel=1):
+    def __init__(self, name='Create virtualenv', path=None, site_packages=False, stacklevel=1):
         super(VirtualEnv, self).__init__(name, stacklevel=stacklevel+1)
         self.path = path
+        self.site_packages = site_packages
 
     @property
     def path_resolved(self):
@@ -433,7 +435,7 @@ class VirtualEnv(Task):
         virtualenv.logger = self.logger
         self.logger.level_adjust -= 2
         try:
-            virtualenv.create_environment(path)
+            virtualenv.create_environment(path, site_packages=self.site_packages)
         finally:
             self.logger.level_adjust += 2
         self.logger.notify('virtualenv created in %s' % path)
