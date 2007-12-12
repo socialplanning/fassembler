@@ -839,6 +839,7 @@ class SaveURI(SaveSetting):
                  theme=True,
                  trailing_slash=True,
                  header_name=None,
+                 public=True,
                  stacklevel=1):
         assert path is not None, (
             "You must give a value for path")
@@ -857,6 +858,8 @@ class SaveURI(SaveSetting):
             variables['{{task.project_name}} trailing_slash'] = 'false'
         if header_name:
             variables['{{task.project_name}} header_name'] = header_name
+        if not public:
+            variables['{{task.project_name}} public'] = 'false'
         self.project_name = project_name
         super(SaveURI, self).__init__(
             name, variables, section='applications',

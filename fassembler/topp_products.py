@@ -182,7 +182,7 @@ class CabochonProject(Project):
                          overwrite=False),
         tasks.SaveSetting('save setting', {'cabochon_user_info':
                                            '{{config.cabochon_user_info}}'}),
-        tasks.SaveURI(path='/', theme=False),
+        tasks.SaveURI(path='/', public=False),
         ]
 
 
