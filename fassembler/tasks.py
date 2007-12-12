@@ -11,6 +11,7 @@ import re
 from glob import glob
 from fassembler.filemaker import RunCommandError
 from fassembler.util import asbool
+from fassembler.distutilspatch import find_distutils_file, update_distutils_file
 
 class Task(object):
     """
@@ -1135,3 +1136,39 @@ class ConditionalTask(Task):
             else:
                 self.logger.debug('%s is False: not running %s' % (
                     cond, task.name))
+
+class SetDistutilsValue(Task):
+
+    description = """
+    Patch {{task.distutils_cfg}}, setting [{{task.section}}] {{task.key}} = {{task.value}}
+    {{if task.append}}If {{task.key}} is already defined, append to the current value{{endif}}
+    """
+
+    section = interpolated('section')
+    key = interpolated('key')
+    value = interpolated('value')
+
+    def __init__(self, name, section, key, value, append=False, use_virtualenv=True, stacklevel=1):
+        super(SetDistutilsValue, self).__init__(name, stacklevel=stacklevel+1)
+        self.section = section
+        self.key = key
+        self.value = value
+        self.append = append
+        self.use_virtualenv = use_virtualenv
+        self._distutils_filename = None
+
+    def run(self):
+        filename = self.distutils_cfg
+        self.logger.notify('Patching file %s' % filename)
+        if not self.maker.simulate:
+            update_distutils_file(filename, self.section, self.key, self.value, self.logger, append=self.append)
+
+    @property
+    def distutils_cfg(self):
+        if self._distutils_filename is None:
+            if self.use_virtualenv:
+                base = self.project.build_properties['virtualenv_lib_python']
+                self._distutils_filename = os.path.join(base, 'distutils', 'distutils.cfg')
+            else:
+                self._distutils_filename = find_distutils_file(self.logger)
+        return self._distutils_filename

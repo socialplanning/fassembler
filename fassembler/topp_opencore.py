@@ -289,6 +289,8 @@ exec {{env.base_path}}/var/opencore/zope/bin/runzope -X debug-mode=off
 
     actions = [
         tasks.VirtualEnv(),
+        tasks.SetDistutilsValue('Disable zipped eggs',
+                                'easy_install', 'zip_ok', 'False'),
         tasks.EnsureDir('Create src/ directory', '{{project.name}}/src'),
         InstallZope(),
         tasks.InstallSpec('Install OpenCore',
