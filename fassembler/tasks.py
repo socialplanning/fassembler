@@ -759,13 +759,13 @@ class CheckMySQLDatabase(Task):
             exc_info = sys.exc_info()
             code = e.args[0]
             if code == self.password_error:
-                self.logger.fatal("The root password %r is incorrect" % (self.db_root_password or '(no password)'))
+                self.logger.fatal("The root password %r is incorrect" % (self._root_password_override or self.db_root_password or '(no password)'))
                 if self.maker.interactive:
                     ## FIXME: this could use getpass.  But I hate
                     ## getpass.  Personal bias that I never have
                     ## anyone looking over my shoulder?
                     try:
-                        self._root_password_override = raw_input('Please enter the correct password (^C to abort): ')
+                        self.__class__._root_password_override = raw_input('Please enter the correct password (^C to abort): ')
                     except KeyboardInterrupt:
                         print '^C'
                         raise exc_info[0], exc_info[1], exc_info[2]
