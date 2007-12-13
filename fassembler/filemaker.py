@@ -664,8 +664,9 @@ class Maker(object):
                 self.logger.notify('Checkout %s exists; skipping update' % dest)
                 return
             current_repo = self._get_repo_url(dest)
-            self.logger.debug('There is a repository at %s from %s'
-                              % (dest, current_repo))
+            if current_repo:
+                self.logger.debug('There is a repository at %s from %s'
+                                  % (dest, current_repo))
             if current_repo and current_repo != repo:
                 self.logger.debug("The repository at %s isn't from the expected location %s"
                                   % (dest, repo))
@@ -694,7 +695,7 @@ class Maker(object):
                         self.rmtree(dest)
                     else:
                         assert 0, response
-        if os.path.exists(dest):
+        if self.exists(dest) and current_repo:
             cmd = ['svn', 'update']
             if revision:
                 cmd.extend(['-r', str(revision)])
