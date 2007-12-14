@@ -319,19 +319,30 @@ class SvnCheckout(Task):
     {{endif}}
     If the svn directory at {{task.full_repository}} does not exist, it will be created.
     {{endif}}
+    {{if task.on_create_set_props}}
+    If creating the directory, set the properties:
+    {{for name, value in sorted(task.on_create_set_props.items()):}}
+      {{name}} = {{value}}
+    {{endfor}}
+    {{endif}}
     """
 
     repository = interpolated('repository')
     dest = interpolated('dest')
     base_repository = interpolated('base_repository')
+    on_create_set_props = interpolated('on_create_set_props')
 
     def __init__(self, name, repository, dest, base_repository=None,
-                 create_if_necessary=False, stacklevel=1):
+                 create_if_necessary=False, on_create_set_props=None, stacklevel=1):
         super(SvnCheckout, self).__init__(name, stacklevel=stacklevel+1)
         self.repository = repository
         self.dest = dest
         self.base_repository = base_repository
+        if on_create_set_props and not create_if_necessary:
+            raise ValueError(
+                "Setting on_create_set_props when create_if_necessary is false doesn't make sense")
         self.create_if_necessary = create_if_necessary
+        self.on_create_set_props = on_create_set_props
 
     @property
     def full_repository(self):
@@ -352,8 +363,15 @@ class SvnCheckout(Task):
             self.confirm_repository(base)
         full_repo = self.full_repository
         if self.create_if_necessary:
-            self.confirm_directory(full_repo)
+            created = self.confirm_directory(full_repo)
+        else:
+            created = False
         self.maker.checkout_svn(full_repo, self.dest)
+        if created and self.on_create_set_props:
+            for name, value in sorted(self.on_create_set_props.items()):
+                self.logger.notify('Setting property %s to %r' % (name, value))
+                self.maker.run_command(
+                    ['svn', 'ps', name, value, self.dest])
 
     def confirm_repository(self, repo):
         """
@@ -390,8 +408,10 @@ class SvnCheckout(Task):
             self.maker.run_command(
                 ['svn', 'mkdir', '-m', 'Auto-creating directory for %s' % self.project.name,
                  repo])
+            return True
         else:
             self.logger.debug('repository directory %s exists' % repo)
+            return False
 
 
 class VirtualEnv(Task):
