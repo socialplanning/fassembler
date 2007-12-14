@@ -82,6 +82,7 @@ class WordPressProject(Project):
         ]
 
     depends_on_projects = ['fassembler:topp']
+    depends_on_executables = [('httpd', 'apache2')]
 
     def extra_modules(self):
         required_modules = ['mime', 'dir', 'rewrite', 'log_config']

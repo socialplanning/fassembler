@@ -110,6 +110,9 @@ class TaskTrackerProject(Project):
         tasks.SaveURI(path='/tasks'),
         ]
 
+    depends_on_projects = ['fassembler:topp']
+    depends_on_executables = ['mysql_config']
+
 class CabochonProject(Project):
     """
     Install Cabochon
@@ -185,6 +188,9 @@ class CabochonProject(Project):
         tasks.SaveURI(path='/', public=False),
         ]
 
+    depends_on_projects = ['fassembler:topp']
+    depends_on_executables = ['mysql_config']
+
 
 class TwirlipProject(Project):
     """
@@ -251,6 +257,9 @@ class TwirlipProject(Project):
                      cwd='{{env.base_path}}/{{project.name}}/src/{{project.name}}'),
         tasks.SaveURI(path='/', theme=False),
         ]
+
+    depends_on_projects = ['fassembler:topp']
+    depends_on_executables = ['mysql_config']
 
 
 class DeliveranceProject(Project):

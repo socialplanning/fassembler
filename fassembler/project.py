@@ -32,6 +32,9 @@ class Project(object):
     actions = None
     settings = []
     depends_on_projects = []
+    # Set this to a list of executables that must be found; each item in the list
+    # can be a list of options, e.g., [('apache2', 'httpd')]:
+    depends_on_executables = []
 
     def __init__(self, project_name, maker, environ, logger, config):
         self.project_name = project_name
@@ -66,6 +69,13 @@ class Project(object):
                 if (project not in all_projects
                     and not self.environ.is_project_built(project)):
                     errors.append('Project %s is not installed and is required' % project)
+        for executables in self.depends_on_executables:
+            if isinstance(executables, basestring):
+                executables = [executables]
+            try:
+                self.confirm_on_path(*executables)
+            except OSError, e:
+                errors.append(str(e))
         return errors
 
     def run(self):
@@ -225,6 +235,25 @@ class Project(object):
                 default = setting.get_default(self.environ)
                 if default is not None:
                     self.config.set(self.config_section, setting.name, default)
+
+    def confirm_on_path(self, *executables):
+        """
+        This checks that one of the given executables is on $PATH
+        somewhere, and raises an error if not.
+
+        Call from confirm_settings
+        """
+        paths = os.environ['PATH'].split(os.path.pathsep)
+        for executable in executables:
+            for path in paths:
+                full = os.path.join(path, executable)
+                if os.path.exists(full):
+                    self.logger.debug('Found %s in %s' % (executable, full))
+                    return
+        raise OSError(
+            "Could not find any of executable(s) %s in PATH %s"
+            % (', '.join(executables), os.environ['PATH']))
+        
 
 class Setting(object):
     """
