@@ -73,6 +73,8 @@ class WordPressProject(Project):
                          content_path='{{env.base_path}}/wordpress/src/wordpress-mu/wp-config.php_tmpl',
                          svn_add=False, overwrite=True),
         tasks.InstallSupervisorConfig(),
+        tasks.EnsureDir('Create var subdirectory',
+                        '{{env.var}}/wordpress'),
         tasks.CheckMySQLDatabase('Check database'),
         tasks.Script('Setup database tables',
                      '{{env.base_path}}/wordpress/bin/setup-database.sh'),

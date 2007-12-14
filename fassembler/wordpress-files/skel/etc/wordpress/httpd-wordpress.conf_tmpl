@@ -1,6 +1,6 @@
 ServerRoot {{env.base_path}}/wordpress
-LockFile var/apache2/accept.lock
-PidFile var/apache2.pid
+LockFile {{env.var}}/wordpress/accept.lock
+PidFile {{env.var}}/wordpress/apache2.pid
 
 # Boilerplate, but potentially we could tweak:
 Timeout 300
@@ -66,7 +66,7 @@ AddDefaultCharset UTF8
 
 <VirtualHost *>
     ServerAdmin {{config.server_admin}}
-    DocumentRoot {{env.base_path}}/wordpress/src/wordpress-mu
+    DocumentRoot wordpress/src/wordpress-mu
 
     ErrorLog {{env.var}}/logs/wordpress/error.log
     LogLevel warn
@@ -76,6 +76,7 @@ AddDefaultCharset UTF8
         Options FollowSymLinks Indexes
         AllowOverride None
     </Directory>
+    {{#FIXME: can this be a relative path?}}
     <Directory {{env.base_path}}/wordpress/src/wordpress-mu>
         Options Indexes FollowSymlinks
         AllowOverride All
