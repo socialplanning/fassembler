@@ -153,6 +153,11 @@ def main(options, args):
         projects.append(project)
     success = True
     errors = []
+    # Needs to be writable for easy_install:
+    home = os.environ.get('HOME') or os.path.expanduser('~')
+    if not os.access(home, os.W_OK):
+        errors.append(
+            "Cannot write to $HOME directory (%s); change $HOME?" % home)
     for project in projects:
         try:
             errors.extend(project.confirm_settings(
