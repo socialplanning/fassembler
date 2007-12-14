@@ -1,2 +1,3 @@
 #!/bin/sh
-exec {{env.base_path}}/supervisor/bin/supervisord -c {{env.base_path}}/etc/supervisor/supervisor.conf "$@"
+BASE_PATH="{{env.base_path}}"
+exec $BASE_PATH/supervisor/bin/supervisord -c $BASE_PATH/etc/supervisor/supervisor.conf "$@"

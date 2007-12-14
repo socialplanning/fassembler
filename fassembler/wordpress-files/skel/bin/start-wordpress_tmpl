@@ -1,3 +1,4 @@
 #!/bin/sh
-exec {{config.apache_exec}} -f {{env.base_path}}/etc/wordpress/httpd-wordpress.conf -DFOREGROUND -c "ErrorLog /dev/stdout"
-    
+BASE_PATH="{{env.base_path}}"
+APACHE_EXEC="{{config.apache_exec}}"
+exec $APACHE_EXEC -f $BASE_PATH/etc/wordpress/httpd-wordpress.conf -DFOREGROUND -c "ErrorLog /dev/stdout"
