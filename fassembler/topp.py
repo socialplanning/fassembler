@@ -90,4 +90,6 @@ class SupervisorProject(Project):
         tasks.CopyDir('create config layout', project_base_dir, './'),
         tasks.EnsureDir('Ensure log directory exists',
                         '{{env.var}}/logs/supervisor'),
+        tasks.EnsureDir('Ensure pid location exists',
+                        '{{env.var}}/supervisor'),
         ]
