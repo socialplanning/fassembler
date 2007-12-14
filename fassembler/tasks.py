@@ -980,7 +980,7 @@ class InstallSpec(Task):
 
     description = """
     Install the packages from {{task.spec_filename}}:
-    {{for line in open(task.spec_filename):}}
+    {{for line in open(maker.path(task.spec_filename)):}}
     {{py: line = line.strip()}}
     {{if line.startswith('-e') or line.startswith('--editable'):}}* svn checkout {{line.split(None, 1)[1]}}{{else}}* {{line}}{{endif}}{{endfor}}
     """
