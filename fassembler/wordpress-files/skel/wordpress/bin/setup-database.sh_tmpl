@@ -1,7 +1,7 @@
 #!/bin/sh
 BASE_PATH="{{env.base_path}}"
 VAR_PATH="{{env.var}}"
-if {{config.apache_exe}} -f "$BASE_PATH"/etc/wordpress/httpd-wordpress.conf -k start ; then
+if {{config.apache_exec}} -f "$BASE_PATH"/etc/wordpress/httpd-wordpress.conf -k start ; then
     echo 'Apache started'
 else
     echo 'Apache failed to start'
@@ -12,7 +12,7 @@ DATA="`cat "$VAR_PATH/secret.txt" | python -c 'import sys, urllib; sys.stdout.wr
 echo "Setting up database..."
 wget http://127.0.0.1:{{config.port}}/dbsetup.php --post-data="$DATA" -O - || exit 2
 echo "database setup done."
-if {{config.apache_exe}} -f "$BASE_PATH"/etc/wordpress/httpd-wordpress.conf -k stop ; then
+if {{config.apache_exec}} -f "$BASE_PATH"/etc/wordpress/httpd-wordpress.conf -k stop ; then
     echo "Apache stopped."
 else
     echo "Apache shutdown failed."

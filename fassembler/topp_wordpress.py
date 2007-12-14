@@ -32,7 +32,7 @@ class WordPressProject(Project):
         Setting('wordpress_scripts_repo',
                 default='https://svn.openplans.org/svn/build/wordpress/trunk/scripts',
                 help='Location of scripts for WordPress'),
-        Setting('apache_exe',
+        Setting('apache_exec',
                 default='{{project.apache_exec()}}',
                 help='Location of apache executable'),
         Setting('apache_module_dir',
