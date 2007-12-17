@@ -66,7 +66,7 @@ AddDefaultCharset UTF8
 
 <VirtualHost *>
     ServerAdmin {{config.server_admin}}
-    DocumentRoot wordpress/src/wordpress-mu
+    DocumentRoot src/wordpress-mu
 
     ErrorLog {{env.var}}/logs/wordpress/error.log
     LogLevel warn
