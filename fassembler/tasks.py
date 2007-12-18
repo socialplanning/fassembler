@@ -856,7 +856,7 @@ class SaveURI(SaveSetting):
                  uri='http://{{config.host}}:{{config.port}}',
                  project_local=True,
                  uri_template=None,
-                 uri_template_main_site=None
+                 uri_template_main_site=None,
                  theme=True,
                  trailing_slash=True,
                  header_name=None,
