@@ -328,6 +328,7 @@ exec {{env.var}}/opencore/zope/bin/runzope -X debug-mode=off
                          svn_add=True, executable=True, overwrite=True),
         tasks.SaveURI(uri='http://{{config.host}}:{{config.port}}/openplans',
                       uri_template='http://{{config.host}}:{{config.port}}/VirtualHostBase/http/{HTTP_HOST}/openplans/projects/{project}/VirtualHostRoot{vh_SCRIPT_NAME}',
+                      uri_template_main_site='http://{{config.host}}:{{config.port}}/VirtualHostBase/http/{HTTP_HOST}/openplans/VirtualHostRoot/projects/{project}',
                       path='/',
                       header_name='zope',
                       theme='not-main-site'),

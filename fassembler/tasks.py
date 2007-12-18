@@ -856,6 +856,7 @@ class SaveURI(SaveSetting):
                  uri='http://{{config.host}}:{{config.port}}',
                  project_local=True,
                  uri_template=None,
+                 uri_template_main_site=None
                  theme=True,
                  trailing_slash=True,
                  header_name=None,
@@ -870,6 +871,8 @@ class SaveURI(SaveSetting):
             variables['{{task.project_name}} project_local'] = 'false'
         if uri_template:
             variables['{{task.project_name}} uri_template'] = uri_template
+        if uri_template_main_site:
+            variables['{{task.project_name}} uri_template_main_site'] = uri_template_main_site
         if not theme:
             variables['{{task.project_name}} theme'] = 'false'
         elif theme == 'not-main-site':
