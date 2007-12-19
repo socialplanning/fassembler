@@ -116,7 +116,7 @@ class WordPressProject(Project):
         for name in names:
             for path in paths:
                 if os.path.exists(os.path.join(path, name)):
-                    return name
+                    return os.path.join(path, name)
         raise OSError(
             "Cannot find apache_exec")
 
