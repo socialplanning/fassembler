@@ -572,7 +572,10 @@ class Maker(object):
         if cwd != self.base_path:
             self.logger.debug('Running in working directory %s' % self.display_path(cwd))
         if self.simulate:
-            return None
+            if return_full:
+                return (None, None, 0)
+            else:
+                return None
         stdout, stderr = proc.communicate()
         if proc.returncode and not expect_returncode:
             if log_error:
