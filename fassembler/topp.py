@@ -41,6 +41,9 @@ class ToppProject(Project):
         Setting('db_prefix',
                 default='',
                 help='The prefix to use for all database names'),
+        Setting('find_links',
+                default='https://svn.openplans.org/eggs',
+                help='Custom locations for distutils and easy_install to look in'),
         ]
 
     actions = [
@@ -51,6 +54,7 @@ class ToppProject(Project):
                           {'base_port': '{{config.base_port}}',
                            'topp_secret_filename': '{{env.var}}/secret.txt',
                            'admin_info_filename': '{{env.var}}/admin.txt',
+                           'find_links': '{{config.find_links}}',
                            }),
         tasks.SaveSetting('Save db_prefix', {'db_prefix': '{{config.db_prefix}}'}, overwrite_if_empty=False),
         tasks.EnsureDir('Make sure var directory exists', '{{env.var}}', svn_add=False),
