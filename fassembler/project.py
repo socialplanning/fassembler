@@ -88,8 +88,8 @@ class Project(object):
                 "The actions attribute has not been overridden in %r"
                 % self)
         self.setup_config()
-        self.bind_tasks()
-        for task in self.iter_actions():
+        tasks = self.bind_tasks()
+        for task in tasks:
             self.logger.set_section(self.name+'.'+task.name)
             self.logger.notify('== %s ==' % task.name, color='bold green')
             self.logger.indent += 2
@@ -112,12 +112,15 @@ class Project(object):
         Bind all the task instances to the context in which they will
         be run (with this project, the maker, etc).
         """
+        tasks = []
         for task in self.iter_actions():
             task.bind(maker=self.maker, environ=self.environ,
                       logger=self.logger, config=self.config,
                       project=self)
             task.confirm_settings()
             task.setup_build_properties()
+            tasks.append(task)
+        return tasks
 
     def iter_actions(self, iter_from=None):
         """
