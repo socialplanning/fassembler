@@ -457,6 +457,9 @@ class VirtualEnv(Task):
         self.logger.level_adjust -= 2
         try:
             virtualenv.create_environment(path, site_packages=self.site_packages)
+            ## TODO:
+            # find_links_string = ','.join(list_of_find_links_locations)
+            # SetDistutilsValue('Add custom find_links locations', 'easy_install', 'find_links', find_links_string)
         finally:
             self.logger.level_adjust += 2
         self.logger.notify('virtualenv created in %s' % path)
