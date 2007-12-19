@@ -889,9 +889,10 @@ VZoySYfBbmmuIV7SPD9hGu6yYJ9XWDrf
 
 ##file distutils.cfg
 DISTUTILS_CFG = """
-eJxNj00KwkAMhfc9xYNuxe4Ft57AjYiUtDO1wXSmNJnK3N5pdSEEAu8nH6lxHVlRhtDHMPATA4uH
-xJ4EFmGbvfJiicSHFRzUSISMY6hq3GLCRLnIvSTnEefN0FIjw5tF0Hkk9Q5dRunBsVoyFi24aaLg
-9FDOlL0FPGluf4QjcInLlxd6f6rqkgPu/5nHLg0cXCscXoozRrP51DRT3j9QNl99AP53T2Q=
+eJxlj8Fqw0AMRO/+igFfg30P9Jov6KWUEhSv7IjKWmNpHfz3Xac9lBYEgpk3GtTi9S6OOoQh2ygT
+RlGG5oEUkRGHvckahZRtg5gHqVJItqbFWy6Yaa/yoCUx8nIYXmMUeIgqbozinHDbUXNI4lFC1Gvd
+PJMlP9UzdR8Ak+/Xn4YOuOT1u88GPjdt5YD338zHUxrF0lXFPh0vuEcs576f9+cHLsFN8yfzj/ca
+8M26vLAtSuZdXqeep8mbLzudZUs=
 """.decode("base64").decode("zlib")
 
 if __name__ == '__main__':
