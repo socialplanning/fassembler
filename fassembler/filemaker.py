@@ -540,6 +540,7 @@ class Maker(object):
         env = popdefault(kw, 'env', os.environ)
         script_abspath = popdefault(kw, 'script_abspath', None)
         log_error = popdefault(kw, 'log_error', True)
+        simulate = popdefault(kw, 'simulate', self.simulate)
         if extra_path:
             env = env.copy()
             path_parts = env.get('PATH', '').split(os.path.pathsep)
@@ -571,7 +572,7 @@ class Maker(object):
             self.logger.debug('Using environment overrides: %s' % dict_diff(env, os.environ))
         if cwd != self.base_path:
             self.logger.debug('Running in working directory %s' % self.display_path(cwd))
-        if self.simulate:
+        if simulate:
             if return_full:
                 return (None, None, 0)
             else:
@@ -725,7 +726,8 @@ class Maker(object):
         try:
             stdout = self.run_command(
                 ['svn', 'info', path],
-                log_error=False)
+                log_error=False,
+                simulate=False)
         except RunCommandError, e:
             if 'is not a working copy' in e.stderr:
                 # Not really a problem
