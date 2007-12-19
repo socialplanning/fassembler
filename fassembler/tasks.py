@@ -1201,11 +1201,7 @@ class SetDistutilsValue(Task):
     def distutils_cfg(self):
         if self._distutils_filename is None:
             if self.use_virtualenv:
-                try:
-                    base = self.project.build_properties['virtualenv_lib_python']
-                except:
-                    import pdb
-                    pdb.set_trace()
+                base = self.project.build_properties['virtualenv_lib_python']
                 self._distutils_filename = os.path.join(base, 'distutils', 'distutils.cfg')
             else:
                 self._distutils_filename = find_distutils_file(self.logger)
