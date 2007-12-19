@@ -102,7 +102,11 @@ class WordPressProject(Project):
 
     def apache_module_dir(self):
         return self.search(
-            ['/usr/local/apache2/modules', '/usr/lib/apache2/modules', '/Applications/MAMP/Library/modules'],
+            ['/usr/local/apache2/modules',
+             '/usr/lib/apache2/modules',
+             '/usr/libexec/apache2/modules', # Mac OS X 10.5
+             '/Applications/MAMP/Library/modules', # Mac OS X 10.4 + MAMP (not yet tested)
+            ],
             'apache modules/')
 
     def mimetypes_file(self):
