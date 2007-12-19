@@ -111,7 +111,11 @@ class WordPressProject(Project):
 
     def mimetypes_file(self):
         return self.search(
-            ['/usr/local/apache2/conf/mime.types', '/etc/mime.types', '/Applications/MAMP/conf/apache/mime.types'],
+            ['/usr/local/apache2/conf/mime.types',
+             '/etc/mime.types',
+             '/etc/apache2/mime.types', # Mac OS X 10.5
+             '/Applications/MAMP/conf/apache/mime.types' # Mac OS X 10.4 + MAMP (not yet tested)
+             ],
             'mime.types file')
     
     def apache_exec(self):
