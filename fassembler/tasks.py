@@ -462,11 +462,11 @@ class VirtualEnv(Task):
         self.logger.notify('virtualenv created in %s' % path)
 
     def iter_subtasks(self):
+        if self.environ.config.has_option('general', 'find_links'):
+            find_links = self.environ.config.get('general', 'find_links')
+            return [SetDistutilsValue('Add custom find_links locations',
+                    'easy_install', 'find_links', find_links)]
         return []
-        ## TODO:
-        # find_links_string = ','.join(list_of_find_links_locations)
-        # return [SetDistutilsValue('Add custom find_links locations', 'easy_install', 'find_links',
-        #         find_links_string)]
 
 
     def setup_build_properties(self):
@@ -1201,7 +1201,11 @@ class SetDistutilsValue(Task):
     def distutils_cfg(self):
         if self._distutils_filename is None:
             if self.use_virtualenv:
-                base = self.project.build_properties['virtualenv_lib_python']
+                try:
+                    base = self.project.build_properties['virtualenv_lib_python']
+                except:
+                    import pdb
+                    pdb.set_trace()
                 self._distutils_filename = os.path.join(base, 'distutils', 'distutils.cfg')
             else:
                 self._distutils_filename = find_distutils_file(self.logger)
