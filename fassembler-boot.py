@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """Create a "virtual" Python installation
 """
 
@@ -648,8 +646,8 @@ def after_install(options, home_dir):
                         show_stdout=True)
     logger.indent += 2
     try:
-        call_subprocess([os.path.abspath(join(home_dir, 'bin', 'python')),
-                         'setup.py', 'develop'],
+        call_subprocess(['easy_install', '-f', 'https://svn.openplans.org/eggs', 'mysql-python;', 
+                         os.path.abspath(join(home_dir, 'bin', 'python')), 'setup.py', 'develop'],
                         cwd=os.path.abspath(fassembler_dir),
                         filter_stdout=filter_python_develop,
                         show_stdout=False)
@@ -889,10 +887,9 @@ VZoySYfBbmmuIV7SPD9hGu6yYJ9XWDrf
 
 ##file distutils.cfg
 DISTUTILS_CFG = """
-eJxlj8Fqw0AMRO/+igFfg30P9Jov6KWUEhSv7IjKWmNpHfz3Xac9lBYEgpk3GtTi9S6OOoQh2ygT
-RlGG5oEUkRGHvckahZRtg5gHqVJItqbFWy6Yaa/yoCUx8nIYXmMUeIgqbozinHDbUXNI4lFC1Gvd
-PJMlP9UzdR8Ak+/Xn4YOuOT1u88GPjdt5YD338zHUxrF0lXFPh0vuEcs576f9+cHLsFN8yfzj/ca
-8M26vLAtSuZdXqeep8mbLzudZUs=
+eJxNj00KwkAMhfc9xYNuxe4Ft57AjYiUtDO1wXSmNJnK3N5pdSEEAu8nH6lxHVlRhtDHMPATA4uH
+xJ4EFmGbvfJiicSHFRzUSISMY6hq3GLCRLnIvSTnEefN0FIjw5tF0Hkk9Q5dRunBsVoyFi24aaLg
+9FDOlL0FPGluf4QjcInLlxd6f6rqkgPu/5nHLg0cXCscXoozRrP51DRT3j9QNl99AP53T2Q=
 """.decode("base64").decode("zlib")
 
 if __name__ == '__main__':
