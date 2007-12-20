@@ -647,7 +647,7 @@ def after_install(options, home_dir):
                         show_stdout=True)
     logger.indent += 2
     try:
-        call_subprocess(['easy_install', '-f', 'https://svn.openplans.org/eggs', 'mysql-python'],
+        call_subprocess([os.path.abspath(join(home_dir, 'bin', 'easy_install')), '-f', 'https://svn.openplans.org/eggs', 'mysql-python'],
                         cwd=os.path.abspath(fassembler_dir),
                         filter_stdout=filter_python_develop,
                         show_stdout=False)
