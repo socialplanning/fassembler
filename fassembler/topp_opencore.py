@@ -3,6 +3,7 @@ Installation of the TOPP OpenCore environment.
 """
 
 import os
+import sys
 import subprocess
 import urllib
 import shutil
@@ -292,7 +293,6 @@ class OpenCoreProject(Project):
 cd {{env.base_path}}
 exec {{config.zope_instance}}/bin/runzope -X debug-mode=off
 """
-    import pdb
     actions = [
         tasks.VirtualEnv(),
         tasks.SetDistutilsValue('Disable zipped eggs',
@@ -376,13 +376,19 @@ class ZEOProject(Project):
                 help='Interface/host to serve ZEO on'),
         Setting('zope_install',
                 default='opencore/lib/zope',
-                help='Location of Zope source'),
+                help='Location of Zope software'),
+        Setting('python',
+                default=sys.executable,
+                help='Location of python executable'),
         ]
+
+    files_dir = os.path.join(os.path.dirname(__file__), 'opencore-files')
+    skel_dir = os.path.join(files_dir, 'zeo_skel')
 
     start_script_template = """\
 #!/bin/sh
 cd {{env.base_path}}
-exec {{env.var}}/opencore/zeo/bin/runzeo
+exec {{config.zeo_instance}}/bin/runzeo
 """
 
     actions = [
@@ -392,10 +398,16 @@ exec {{env.var}}/opencore/zeo/bin/runzeo
         tasks.Script('Make ZEO Instance', [
         'python', '{{config.zope_install}}/bin/mkzeoinstance.py', '{{config.zeo_instance}}', '{{config.zeo_port}}'],
                      use_virtualenv=True),
+        tasks.EnsureFile('Overwrite the zeo.conf file',
+                         '{{config.zeo_instance}}/etc/zeo.conf',
+                         content_path='%s/etc/zeo.conf' % skel_dir,
+                         force_overwrite=True),
         tasks.EnsureFile('Write the ZEO start script',
                          '{{env.base_path}}/bin/start-opencore-{{project.name}}',
                          content=start_script_template,
                          svn_add=True, executable=True, overwrite=True),
+        tasks.EnsureDir('Create var/zeo directory for Data.fs file',
+                        '{{env.var}}/zeo'),
         tasks.InstallSupervisorConfig(script_name='opencore-zeo'),
         # ZEO doesn't really have a uri
         ]
