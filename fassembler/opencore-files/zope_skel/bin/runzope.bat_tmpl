@@ -1,4 +1,4 @@
-@set ZOPE_HOME={{config.zope_source}}
+@set ZOPE_HOME={{config.zope_install}}
 @set INSTANCE_HOME={{config.zope_instance}}
 @set PYTHON={{project.build_properties['virtualenv_python']}}
 @set SOFTWARE_HOME=%ZOPE_HOME%\lib\python

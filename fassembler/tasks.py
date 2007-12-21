@@ -30,11 +30,13 @@ class Task(object):
         """
         A human-readable summary of this task.
         """
-        return '%s  (%s.%s)' % (self.name, self.__class__.__module__, self.__class__.__name__)
+        return '%s  (%s.%s)' % (self.name, self.__class__.__module__,
+                                self.__class__.__name__)
 
     def bind(self, maker, environ, logger, config, project):
         """
-        This is called by the project to bind this task instance to a running environment.
+        This is called by the project to bind this task instance to a
+        running environment.
         """
         self.maker = maker
         self.environ = environ
@@ -52,7 +54,8 @@ class Task(object):
 
     def setup_build_properties(self):
         """
-        Called early on to set any project.build_properties that other tasks might need.
+        Called early on to set any project.build_properties that other
+        tasks might need.
         """
 
     def run(self):

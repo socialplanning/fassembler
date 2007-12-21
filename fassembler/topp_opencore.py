@@ -216,7 +216,7 @@ class OpenCoreProject(Project):
                 default='requirements/opencore-req.txt',
                 help='Specification of packages to install'),
         Setting('zope_instance',
-                default='{{env.var}}/opencore/zope',
+                default='{{project.build_properties["virtualenv_path"]}}/zope',
                 help='Instance home for Zope'),
         Setting('zope_user',
                 default='{{env.parse_auth(env.config.get("general", "admin_info_filename")).username}}',
@@ -245,6 +245,12 @@ class OpenCoreProject(Project):
         Setting('zope_source',
                 default='{{project.build_properties["virtualenv_path"]}}/src/Zope',
                 help='Location of Zope source'),
+        Setting('zope_install',
+                default='{{project.build_properties["virtualenv_path"]}}/lib/zope',
+                help='Location of Zope installation'),
+        Setting('zope_instance',
+                default='{{project.build_properties["virtualenv_path"]}}/zope',
+                help='Location of Zope instance home'),
         ## FIXME: not sure if this is right:
         ## FIXME: should also be more global
         ## FIXME: also, type check on bool-ness
@@ -284,9 +290,9 @@ class OpenCoreProject(Project):
     start_script_template = """\
 #!/bin/sh
 cd {{env.base_path}}
-exec {{env.var}}/opencore/zope/bin/runzope -X debug-mode=off
+exec {{config.zope_instance}}/bin/runzope -X debug-mode=off
 """
-
+    import pdb
     actions = [
         tasks.VirtualEnv(),
         tasks.SetDistutilsValue('Disable zipped eggs',
@@ -299,13 +305,17 @@ exec {{env.var}}/opencore/zope/bin/runzope -X debug-mode=off
                       skel_dir, '{{project.name}}/src/Zope/custom_skel'),
         tasks.Script('Configure Zope', [
         './configure', '--with-python={{project.build_properties["virtualenv_bin_path"]}}/python',
-        '--prefix={{project.build_properties["virtualenv_path"]}}'],
+        '--prefix={{config.zope_install}}'],
                      cwd='{{config.zope_source}}'),
         tasks.Script('Make Zope', ['make'], cwd='{{config.zope_source}}'),
-        tasks.Script('Install Zope', ['make', 'inplace'], cwd='{{config.zope_source}}'),
-        ## FIXME: this doesn't overwrite files sometimes:
+        tasks.Script('Install Zope', ['make', 'install'], cwd='{{config.zope_source}}'),
+        # this should maybe be a ConditionalTask, but i couldn't quite
+        # get it working, and the -fr ensures that it won't fail
+        tasks.Script('Delete zope instance binaries',
+                     ['rm', '-fr', '{{config.zope_instance}}/bin'],
+                     cwd='{{config.zope_install}}'),
         tasks.Script('Make Zope Instance', [
-        'python', '{{config.zope_source}}/bin/mkzopeinstance.py', '--dir', '{{config.zope_instance}}',
+        'python', '{{config.zope_install}}/bin/mkzopeinstance.py', '--dir', '{{config.zope_instance}}',
         '--user', '{{config.zope_user}}:{{config.zope_password}}',
         '--skelsrc', '{{config.zope_source}}/custom_skel'],
                      use_virtualenv=True),
@@ -353,7 +363,7 @@ class ZEOProject(Project):
 
     settings = [
         Setting('zeo_instance',
-                default='{{env.var}}/opencore/zeo',
+                default='{{project.build_properties["virtualenv_path"]}}/zeo',
                 help='Instance home for ZEO'),
         Setting('zeo_port',
                 default='{{env.base_port+int(config.zeo_port_offset)}}',
@@ -364,8 +374,8 @@ class ZEOProject(Project):
         Setting('zeo_host',
                 default='localhost',
                 help='Interface/host to serve ZEO on'),
-        Setting('zope_source',
-                default='opencore/src/Zope',
+        Setting('zope_install',
+                default='opencore/lib/zope',
                 help='Location of Zope source'),
         ]
 
@@ -376,10 +386,11 @@ exec {{env.var}}/opencore/zeo/bin/runzeo
 """
 
     actions = [
-        ## FIXME: this is kind of lame (recreating a venv we know exists), but needed for later steps:
+        ## FIXME: this is kind of lame (recreating a venv we know exists),
+        #  but needed for later steps:
         tasks.VirtualEnv(path='opencore'),
         tasks.Script('Make ZEO Instance', [
-        'python', '{{config.zope_source}}/bin/mkzeoinstance.py', '{{config.zeo_instance}}', '{{config.zeo_port}}'],
+        'python', '{{config.zope_install}}/bin/mkzeoinstance.py', '{{config.zeo_instance}}', '{{config.zeo_port}}'],
                      use_virtualenv=True),
         tasks.EnsureFile('Write the ZEO start script',
                          '{{env.base_path}}/bin/start-opencore-{{project.name}}',
