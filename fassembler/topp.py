@@ -48,15 +48,14 @@ class ToppProject(Project):
 
     actions = [
         tasks.CopyDir('create layout', os.path.join(project_base_dir, 'base-layout'), './'),
-        tasks.SaveSetting('Save var setting',
-                          {'var': '{{os.path.abspath(config.var)}}'}),
         tasks.SaveSetting('Save settings',
                           {'base_port': '{{config.base_port}}',
                            'topp_secret_filename': '{{env.var}}/secret.txt',
                            'admin_info_filename': '{{env.var}}/admin.txt',
                            'find_links': '{{config.find_links}}',
+                           'var': '{{os.path.abspath(config.var)}}',
+                           'db_prefix': '{{config.db_prefix}}',
                            }),
-        tasks.SaveSetting('Save db_prefix', {'db_prefix': '{{config.db_prefix}}'}, overwrite_if_empty=False),
         tasks.EnsureDir('Make sure var directory exists', '{{env.var}}', svn_add=False),
         tasks.SvnCheckout('check out etc/', '{{config.etc_svn_subdir}}',
                           'etc/',
