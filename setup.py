@@ -27,6 +27,7 @@ setup(name='fassembler',
       ],
       ## FIXME: release all of these once fassembler stabilizes:
       dependency_links=[
+          'http://internap.dl.sourceforge.net/sourceforge/mysql-python/MySQL-python-1.2.2.tar.gz',
           'http://svn.pythonpaste.org/CmdUtils/trunk#egg=CmdUtils-dev',
           'http://svn.colorstudy.com/INITools/trunk#egg=INITools-dev',
           'http://svn.pythonpaste.org/Tempita/trunk#egg=Tempita-dev',
