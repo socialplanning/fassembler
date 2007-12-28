@@ -375,7 +375,7 @@ class ZEOProject(Project):
                 default='localhost',
                 help='Interface/host to serve ZEO on'),
         Setting('zope_install',
-                default='opencore/lib/zope',
+                default='{{project.build_properties["virtualenv_path"]}}/lib/zope',
                 help='Location of Zope software'),
         Setting('python',
                 default=sys.executable,
