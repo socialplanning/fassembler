@@ -189,7 +189,7 @@ def main(options, args):
             try:
                 try:
                     project.run()
-                    logger.notify('Done with project %s' % project_name)
+                    logger.notify('Done with project %s' % project.project_name)
                     environ.save()
                 finally:
                     if len(projects) > 1:
