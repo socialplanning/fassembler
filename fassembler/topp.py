@@ -17,9 +17,8 @@ class ToppProject(Project):
     project_base_dir = os.path.join(os.path.dirname(__file__), 'topp-files')
 
     settings = [
-        ## FIXME: this *should* draw from the global settings if it is not set
         Setting('requirements_svn_repo',
-                inherit_config=('general', 'requirement_profile'),
+                inherit_config=('general', 'requirements_svn_repo'),
                 default='https://svn.openplans.org/svn/build/requirements/trunk',
                 help="Location where requirement files will be found for all builds"),
         Setting('base_port',
@@ -56,7 +55,6 @@ class ToppProject(Project):
                            'admin_info_filename': '{{env.var}}/admin.txt',
                            'find_links': '{{config.find_links}}',
                            'db_prefix': '{{config.db_prefix}}',
-                           'requirements_svn_repo': '{{config.requirements_svn_repo}}',
                            }),
         tasks.EnsureDir('Make sure var directory exists', '{{env.var}}', svn_add=False),
         tasks.SvnCheckout('check out etc/', '{{config.etc_svn_subdir}}',
@@ -64,7 +62,7 @@ class ToppProject(Project):
                           base_repository='{{config.etc_svn_repo}}',
                           on_create_set_props={'svn:ignore': 'projects.txt\n'},
                           create_if_necessary=True),
-        tasks.SvnCheckout('checkout out requirements/', '{{config.requirements_svn_repo}}',
+        tasks.SvnCheckout('check out requirements/', '{{config.requirements_svn_repo}}',
                           'requirements'),
         tasks.EnsureFile('Write secret.txt if necessary', '{{env.var}}/secret.txt', '{{env.random_string(40)}}',
                          overwrite=False),
