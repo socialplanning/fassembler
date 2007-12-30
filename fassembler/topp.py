@@ -56,6 +56,7 @@ class ToppProject(Project):
                            'admin_info_filename': '{{env.var}}/admin.txt',
                            'find_links': '{{config.find_links}}',
                            'db_prefix': '{{config.db_prefix}}',
+                           'requirements_svn_repo': '{{config.requirements_svn_repo}}',
                            }),
         tasks.EnsureDir('Make sure var directory exists', '{{env.var}}', svn_add=False),
         tasks.SvnCheckout('check out etc/', '{{config.etc_svn_subdir}}',
