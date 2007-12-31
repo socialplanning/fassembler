@@ -25,7 +25,6 @@ class WordPressProject(Project):
         Setting('host',
                 default='localhost',
                 help='Interface/host to serve Apache/WordPress on'),
-        ## FIXME: this repo should be moved sometime
         Setting('wordpress_repo',
                 default='https://svn.openplans.org/svn/vendor/wordpress-mu/openplans/trunk',
                 help='Location of WordPress MU repository'),
