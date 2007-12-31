@@ -4,8 +4,45 @@ environment.
 """
 
 import os
+import socket
+from cmdutils import CommandError
 from fassembler.project import Project, Setting
 from fassembler import tasks
+
+class CheckBasePorts(tasks.Task):
+
+    base_port = tasks.interpolated('base_port')
+
+    port_range = 7
+
+    def __init__(self, name='Check base ports', base_port='{{config.base_port}}',
+                 stacklevel=1):
+        super(CheckBasePorts, self).__init__(name, stacklevel=stacklevel+1)
+        self.base_port = base_port
+
+    def run(self):
+        base_port = int(self.base_port)
+        port_range = int(self.port_range)
+        self.logger.info('Checking ports %s-%s' % (base_port, base_port+port_range))
+        bad = []
+        for port in range(base_port, base_port+port_range+1):
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.bind(('127.0.0.1', port))
+            except socket.error, e:
+                self.logger.info('Cannot bind port %s: %s' % (port, e))
+                bad.append(port)
+            else:
+                sock.close()
+        if bad:
+            msg = 'Cannot bind to port(s): %s' % ', '.join(map(str, bad))
+            self.logger.warn(msg)
+            response = self.maker.ask('Continue despite unavailable ports?')
+            if response == 'y':
+                return
+            raise CommandError(msg, show_usage=False)
+        else:
+            self.logger.info('All ports worked')
 
 class ToppProject(Project):
     """
@@ -47,6 +84,7 @@ class ToppProject(Project):
 
     actions = [
         tasks.CopyDir('create layout', os.path.join(project_base_dir, 'base-layout'), './'),
+        CheckBasePorts(),
         tasks.SaveSetting('Save var setting',
                           {'var': '{{os.path.abspath(config.var)}}'}),
         tasks.SaveSetting('Save settings',
