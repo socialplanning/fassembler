@@ -56,8 +56,12 @@ class Environment(object):
 
         This uses reverse DNS to determine the complete domain name.
         """
-        ## this seems to return localhost.localdomain and other useless stuff:
-        return socket.gethostbyaddr(socket.gethostname())[0]
+        ## this seems to return localhost.localdomain and other useless stuff sometimes:
+        try:
+            return socket.gethostbyaddr(socket.gethostname())[0]
+        except socket.error, e:
+            self.logger.debug('Could not get full hostname (using "localhost" instead): %s' % e)
+            return 'localhost'
 
     @property
     def config_filename(self):
