@@ -183,3 +183,38 @@ class Environment(object):
                     return True
         return False
 
+    @property
+    def db_root_password(self):
+        """
+        Return the root password, as best we can figure it out.
+
+        Looks in [general] db_root_password, and also in (or a file
+        location in [general] db_root_password_filename)
+        ~/.mysql-root-pw (the file must have a proper permission to
+        work).
+        """
+        if self.config.getdefault('general', 'db_root_password'):
+            return self.config.get('general', 'db_root_password')
+        filename = self.config.getdefault('general', 'db_root_password_filename', '~/.mysql-root-pw')
+        filename = os.path.expanduser(filename)
+        if os.path.exists(filename):
+            self.check_restricted_permissions(filename)
+            f = open(filename, 'rb')
+            c = f.read().strip()
+            f.close()
+            return c
+        else:
+            self.logger.debug('No root password filename %s (using empty password)' % filename)
+        return ''
+
+    def check_restricted_permissions(self, filename):
+        """
+        Checks that a file is not readable or writable by anyone other than you
+        """
+        mode = os.stat(filename).st_mode
+        # Group or other, readable, writable, executable:
+        bad_modes = 077
+        if mode & bad_modes:
+            raise OSError(
+                "The file %s must not be readable by other users; use \"chmod 600 %s\" to fix"
+                % (filename, filename))
