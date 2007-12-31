@@ -104,7 +104,7 @@ class WordPressProject(Project):
             ['/usr/local/apache2/modules',
              '/usr/lib/apache2/modules',
              '/usr/libexec/apache2', # Mac OS X 10.5
-             '/Applications/MAMP/Library/modules', # Mac OS X 10.4 + MAMP (not yet tested)
+             '/usr/libexec/httpd',   # Mac OS X 10.4
             ],
             'apache modules/')
 
@@ -112,8 +112,11 @@ class WordPressProject(Project):
         return self.search(
             ['/usr/local/apache2/conf/mime.types',
              '/etc/mime.types',
-             '/etc/apache2/mime.types', # Mac OS X 10.5
-             '/Applications/MAMP/conf/apache/mime.types' # Mac OS X 10.4 + MAMP (not yet tested)
+             '/etc/apache2/mime.types', # Mac OS X 10.5 (comes with Apache 2.2.6 installed in /etc/apache2)
+             '/etc/httpd/mime.types',   # Mac OS X 10.4 (comes with Apache 1.3.33 installed in /etc/httpd)
+                                        # XXX upgrade from 10.4 to 10.5 leaves /etc/httpd intact,
+                                        # therefore installing to a 10.5-upgraded machine relies on
+                                        # /etc/apache2 being searched *before* /etc/httpd
              ],
             'mime.types file')
     
