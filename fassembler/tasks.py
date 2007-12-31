@@ -632,9 +632,7 @@ command = {{env.base_path}}/bin/start-{{task.script_name}}
 stdout_logfile = {{env.var}}/logs/{{project.name}}/{{task.script_name}}-supervisor.log
 stdout_logfile_maxbytes = 1MB
 stdout_logfile_backups = 10
-stderr_logfile = {{env.var}}/logs/{{project.name}}/{{task.script_name}}-supervisor-errors.log
-stderr_logfile_maxbytes = 1MB
-stderr_logfile_backups = 10
+redirect_stderr=true
 """
 
 class CheckMySQLDatabase(Task):
