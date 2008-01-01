@@ -204,6 +204,64 @@ class SymlinkProducts(tasks.Task):
             dest = os.path.join(self.dest_dir, os.path.basename(filename))
             self.maker.ensure_symlink(filename, dest)
 
+
+class RunZopectlScript(tasks.Task):
+
+    description = """
+    Given the path of a python file ``script_path``,
+    executes 'zopectl run script_path' from within the opencore virtualenv.
+    """
+
+    def __init__(self, script_path, name='Run zopectl script', stacklevel=1):
+        super(RunZopectlScript, self).__init__(name, stacklevel=stacklevel+1)
+        self.script_path = script_path
+
+    def run(self):
+        self.script_path = self.interpolate(self.script_path)
+        if os.path.exists(self.script_path):
+            # FIXME start zeo
+            # run the zopectl script
+            tasks.Script('Run %s in zopectl' % self.script_path,
+                         ['zopectl', 'run', self.script_path],
+                         use_virtualenv=True)
+            # FIXME stop zeo
+        else:
+            self.logger.warn('Tried to run zopectl script at %s but it ' + \
+                             'cannot be found' % self.script_path)
+
+
+class RunFirstZopectl(RunZopectlScript):
+
+    description = """
+    Runs the do_nothing.py zopectl script to work around the issue where Zope
+    does not start up correctly the first time it is started. Meant to be run
+    before zopectl is used to do anything else.
+    """
+
+    def __init__(self, stacklevel=1):
+        super(RunFirstZopectl, self).__init__(
+            '{{env.base_path}}/opencore/src/opencore/do_nothing.py',
+            name='Run zopectl for the first time',
+            stacklevel=stacklevel+1)
+
+
+class AddOpenPlans(RunZopectlScript):
+
+    description = """
+    Runs the add_openplans.py zopectl script.
+    """
+
+    ## FIXME what happens if we are installing fassembler:opencore on top
+    ## of an existing opencore installation -- does add_openplans.py try to
+    ## detect an existing OpenPlans site?
+
+    def __init__(self, stacklevel=1):
+        super(AddOpenPlans, self).__init__(
+            '{{env.base_path}}/opencore/src/opencore/add_openplans.py',
+            name='Add OpenPlans site',
+            stacklevel=stacklevel+1)
+
+
 class OpenCoreProject(Project):
     """
     Install OpenCore
@@ -348,10 +406,14 @@ exec {{config.zope_instance}}/bin/runzope -X debug-mode=off
                       path='/',
                       project_local=False,
                       header_name='zope',
-                      theme='not-main-site')
+                      theme='not-main-site'),
+        #RunFirstZopectl(),
+        #AddOpenPlans(),
         ]
 
     depends_on_projects = ['fassembler:topp']
+
+
 
 class ZEOProject(Project):
     """
