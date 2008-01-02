@@ -488,9 +488,9 @@ exec {{config.zeo_instance}}/bin/runzeo
         tasks.InstallSupervisorConfig(script_name='opencore-zeo'),
         # ZEO doesn't really have a uri
        #RunZopectlScript('{{env.base_path}}/opencore/src/opencore/do_nothing.py',
-                         name='Run initial zopectl to bypass failure-on-first-start'),
+       #                 name='Run initial zopectl to bypass failure-on-first-start'),
        #RunZopectlScript('{{env.base_path}}/opencore/src/opencore/add_openplans.py',
-                         name='Add OpenPlans site'),
+       #                 name='Add OpenPlans site'),
         ]
 
     depends_on_projects = ['fassembler:opencore']
