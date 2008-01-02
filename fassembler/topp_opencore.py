@@ -273,38 +273,6 @@ class RunZopectlScript(tasks.Task):
                              'cannot be found' % self.script_path)
 
 
-class RunFirstZopectl(RunZopectlScript):
-
-    description = """
-    Runs the do_nothing.py zopectl script to work around the issue where Zope
-    does not start up correctly the first time it is started. Meant to be run
-    before zopectl is used to do anything else.
-    """
-
-    def __init__(self, stacklevel=1):
-        super(RunFirstZopectl, self).__init__(
-            '{{env.base_path}}/opencore/src/opencore/do_nothing.py',
-            name='Run zopectl for the first time',
-            stacklevel=stacklevel+1)
-
-
-class AddOpenPlans(RunZopectlScript):
-
-    description = """
-    Runs the add_openplans.py zopectl script.
-    """
-
-    ## FIXME what happens if we are installing fassembler:opencore on top
-    ## of an existing opencore installation -- does add_openplans.py try to
-    ## detect an existing OpenPlans site?
-
-    def __init__(self, stacklevel=1):
-        super(AddOpenPlans, self).__init__(
-            '{{env.base_path}}/opencore/src/opencore/add_openplans.py',
-            name='Add OpenPlans site',
-            stacklevel=stacklevel+1)
-
-
 class OpenCoreProject(Project):
     """
     Install OpenCore
@@ -452,8 +420,10 @@ exec {{config.zope_instance}}/bin/runzope -X debug-mode=off
                       project_local=False,
                       header_name='zope',
                       theme='not-main-site'),
-        #RunFirstZopectl(),
-        #AddOpenPlans(),
+       #RunZopectlScript('{{env.base_path}}/opencore/src/opencore/do_nothing.py',
+                         name='Run initial zopectl to bypass failure-on-first-start'),
+       #RunZopectlScript('{{env.base_path}}/opencore/src/opencore/add_openplans.py',
+                         name='Add OpenPlans site'),
         ]
 
     depends_on_projects = ['fassembler:topp']
