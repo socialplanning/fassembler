@@ -260,6 +260,8 @@ class RunZopectlScript(tasks.Task):
         self.script_path = script_path
 
     def run(self):
+        if self.maker.simulate:
+            return
         self.script_path = self.interpolate(self.script_path)
         if os.path.exists(self.script_path):
             zeo_proc = None
