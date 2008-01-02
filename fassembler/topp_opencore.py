@@ -251,8 +251,8 @@ class SymlinkZopeConfig(ZopeConfigTask):
 class RunZopectlScript(tasks.Task):
 
     description = """
-    Given the path of a python file ``script_path``,
-    executes 'zopectl run script_path' from within the opencore virtualenv.
+    Given the path of a python file {{task.script_path}},
+    executes 'zopectl run {{task.script_path}}' from within the opencore virtualenv.
     """
 
     def __init__(self, script_path, name='Run zopectl script', stacklevel=1):
@@ -262,20 +262,21 @@ class RunZopectlScript(tasks.Task):
     def run(self):
         self.script_path = self.interpolate(self.script_path)
         if os.path.exists(self.script_path):
-            try: # start zeo
+            zeo_proc = None
+            zeo_path = self.interpolate('{{env.base_path}}/bin/start-opencore-{{project.name}}')
+            zopectl_path = self.interpolate('{{env.base_path}}/opencore/zope/bin/zopectl') 
+            try:
                 self.logger.info('Starting zeo')
-                zeo = self.interpolate('{{env.base_path}}/bin/start-opencore-{{project.name}}')
-                zeo = subprocess.Popen(zeo)
-                # run the zopectl script
+                zeo_proc = subprocess.Popen(zeo_path)
                 self.logger.info('Running zopectl script')
-                zopectl = self.interpolate('{{env.base_path}}/opencore/zope/bin/zopectl') 
-                script = subprocess.Popen([zopectl, 'run', self.script_path])
-            finally: # kill zeo
-                self.logger.info('Stopping zeo')
-                os.kill(zeo.pid)
+                script = subprocess.Popen([zopectl_path, 'run', self.script_path])
+            finally:
+                if zeo_proc:
+                    self.logger.info('Stopping zeo')
+                    os.kill(zeo_proc.pid)
                 
         else:
-            self.logger.warn('Tried to run zopectl script at %s but it ' + \
+            self.logger.warn('Tried to run zopectl script at %s but it '
                              'cannot be found' % self.script_path)
 
 
