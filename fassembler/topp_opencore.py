@@ -205,6 +205,49 @@ class SymlinkProducts(tasks.Task):
             self.maker.ensure_symlink(filename, dest)
 
 
+class ZopeConfigTask(tasks.Task):
+    """
+    Abstract base class that stores the Zope config directories.
+    """
+    zope_etc_path = interpolated('zope_etc_path')
+    build_etc_path = interpolated('build_etc_path')
+
+    def __init__(self, name, stacklevel=1):
+        super(ZopeConfigTask, self).__init__(name, stacklevel=stacklevel+1)
+        self.zope_etc_path = '{{config.zope_instance}}/etc'
+        self.build_etc_path = '{{env.base_path}}/etc/{{project.name}}/zope_etc'
+    
+
+class PlaceZopeConfig(ZopeConfigTask):
+
+    description = """
+    Finds specific Zope configuration files in their default locations
+    and copies these into the build's etc directory for svn
+    management, if this has not already been done.
+    """
+    
+    def run(self):
+        if not os.path.islink(self.zope_etc_path):
+            self.maker.copy_dir(self.zope_etc_path,
+                                self.build_etc_path,
+                                add_dest_to_svn=True)
+
+
+class SymlinkZopeConfig(ZopeConfigTask):
+
+    description = """
+    Delete certain configuration files from the standard Zope location
+    and symlink them back into place from the fassembler location.
+    Assumes files already exist in the fassembler locations, i.e. that
+    PlaceZopeConfig is run first.
+    """
+
+    def run(self):
+        if not os.path.islink(self.zope_etc_path):
+            self.maker.rmtree(self.zope_etc_path)
+        self.maker.ensure_symlink(self.build_etc_path, self.zope_etc_path)
+
+
 class RunZopectlScript(tasks.Task):
 
     description = """
@@ -367,8 +410,8 @@ exec {{config.zope_instance}}/bin/runzope -X debug-mode=off
                      cwd='{{config.zope_source}}'),
         tasks.Script('Make Zope', ['make'], cwd='{{config.zope_source}}'),
         tasks.Script('Install Zope', ['make', 'install'], cwd='{{config.zope_source}}'),
-        # this should maybe be a ConditionalTask, but i couldn't quite
-        # get it working, and the -fr ensures that it won't fail
+        # this could maybe be a ConditionalTask, but the -fr ensures
+        # it won't fail
         tasks.Script('Delete zope instance binaries',
                      ['rm', '-fr', '{{config.zope_instance}}/bin'],
                      cwd='{{config.zope_install}}'),
@@ -389,6 +432,8 @@ exec {{config.zope_instance}}/bin/runzope -X debug-mode=off
                         '{{config.zope_instance}}/Products',
                         exclude_glob='{{env.base_path}}/opencore/src/opencore-bundle/ClockServer'),
         ## FIXME: linkzope and linkzopebinaries?
+        PlaceZopeConfig('Copy Zope etc into build etc'),
+        SymlinkZopeConfig('Symlink Zope configuration'),
         tasks.InstallSupervisorConfig(),
         tasks.EnsureFile('Write the start script',
                          '{{env.base_path}}/bin/start-{{project.name}}',
@@ -439,9 +484,6 @@ class ZEOProject(Project):
         Setting('zope_install',
                 default='{{project.build_properties["virtualenv_path"]}}/lib/zope',
                 help='Location of Zope software'),
-        Setting('python',
-                default=sys.executable,
-                help='Location of python executable'),
         ]
 
     files_dir = os.path.join(os.path.dirname(__file__), 'opencore-files')

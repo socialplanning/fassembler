@@ -516,7 +516,7 @@ class SourceInstall(SvnCheckout):
     ## maybe using the setuptools entry point for version control.
 
     description = """
-    Checkout out {{task.repository}} into src/{{task.checkout_name}}/,
+    Check out {{task.repository}} into src/{{task.checkout_name}}/,
     then run python setup.py develop
     """
 
