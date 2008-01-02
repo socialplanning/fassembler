@@ -262,12 +262,18 @@ class RunZopectlScript(tasks.Task):
     def run(self):
         self.script_path = self.interpolate(self.script_path)
         if os.path.exists(self.script_path):
-            # FIXME start zeo
-            # run the zopectl script
-            tasks.Script('Run %s in zopectl' % self.script_path,
-                         ['zopectl', 'run', self.script_path],
-                         use_virtualenv=True)
-            # FIXME stop zeo
+            try: # start zeo
+                self.logger.info('Starting zeo')
+                zeo = self.interpolate('{{env.base_path}}/bin/start-opencore-{{project.name}}')
+                zeo = subprocess.Popen(zeo)
+                # run the zopectl script
+                self.logger.info('Running zopectl script')
+                zopectl = self.interpolate('{{env.base_path}}/opencore/zope/bin/zopectl') 
+                script = subprocess.Popen([zopectl, 'run', self.script_path])
+            finally: # kill zeo
+                self.logger.info('Stopping zeo')
+                os.kill(zeo.pid)
+                
         else:
             self.logger.warn('Tried to run zopectl script at %s but it ' + \
                              'cannot be found' % self.script_path)
@@ -420,10 +426,6 @@ exec {{config.zope_instance}}/bin/runzope -X debug-mode=off
                       project_local=False,
                       header_name='zope',
                       theme='not-main-site'),
-       #RunZopectlScript('{{env.base_path}}/opencore/src/opencore/do_nothing.py',
-                         name='Run initial zopectl to bypass failure-on-first-start'),
-       #RunZopectlScript('{{env.base_path}}/opencore/src/opencore/add_openplans.py',
-                         name='Add OpenPlans site'),
         ]
 
     depends_on_projects = ['fassembler:topp']
@@ -484,6 +486,10 @@ exec {{config.zeo_instance}}/bin/runzeo
                         '{{env.var}}/zeo'),
         tasks.InstallSupervisorConfig(script_name='opencore-zeo'),
         # ZEO doesn't really have a uri
+       #RunZopectlScript('{{env.base_path}}/opencore/src/opencore/do_nothing.py',
+                         name='Run initial zopectl to bypass failure-on-first-start'),
+       #RunZopectlScript('{{env.base_path}}/opencore/src/opencore/add_openplans.py',
+                         name='Add OpenPlans site'),
         ]
 
     depends_on_projects = ['fassembler:opencore']
