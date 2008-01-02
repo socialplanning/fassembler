@@ -82,6 +82,12 @@ class Environment(object):
                 self._parser.read(self.config_filename)
         return self._parser
 
+    def refresh_config(self):
+        """
+        Get rid of the configuration, so that it will be re-read later
+        """
+        self._parser = None
+        
     @property
     def base_port(self):
         return self.config.getint('general', 'base_port')
@@ -204,7 +210,7 @@ class Environment(object):
             f.close()
             return c
         else:
-            self.logger.debug('No root password filename %s (using empty password)' % filename)
+            self.logger.debug('No root password file %s (using empty password)' % filename)
         return ''
 
     def check_restricted_permissions(self, filename):

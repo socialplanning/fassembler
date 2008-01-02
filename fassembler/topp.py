@@ -11,6 +11,10 @@ from fassembler import tasks
 
 class CheckBasePorts(tasks.Task):
 
+    description = """
+    Check that the ports {{task.base_port}} - {{int(task.base_port)+int(task.port_range)}} are open
+    """
+
     base_port = tasks.interpolated('base_port')
 
     port_range = 7
@@ -44,6 +48,18 @@ class CheckBasePorts(tasks.Task):
         else:
             self.logger.info('All ports worked')
 
+class EnvironRefresh(tasks.Task):
+
+    description = """
+    Update configuration from {{env.config_filename}} if necessary
+    """
+
+    def __init__(self, name='Refresh environ', stacklevel=1):
+        super(EnvironRefresh, self).__init__(name, stacklevel=stacklevel+1)
+
+    def run(self):
+        self.environ.refresh_config()
+
 class ToppProject(Project):
     """
     Create the basic layout used at TOPP for a set of applications.
@@ -62,6 +78,7 @@ class ToppProject(Project):
                 inherit_config=('general', 'base_port'),
                 help='The base port to use for application (each application is an offset from this port)'),
         Setting('var',
+                default='{{env.base_path}}/var',
                 inherit_config=('general', 'var'),
                 help='The location where persistent files (persistent across builds) are kept'),
         Setting('etc_svn_repo',
@@ -83,8 +100,14 @@ class ToppProject(Project):
         ]
 
     actions = [
-        tasks.CopyDir('create layout', os.path.join(project_base_dir, 'base-layout'), './'),
         CheckBasePorts(),
+        tasks.CopyDir('create layout', os.path.join(project_base_dir, 'base-layout'), './'),
+        tasks.SvnCheckout('check out etc/', '{{config.etc_svn_subdir}}',
+                          'etc/',
+                          base_repository='{{config.etc_svn_repo}}',
+                          on_create_set_props={'svn:ignore': 'projects.txt\n'},
+                          create_if_necessary=True),
+        EnvironRefresh(),
         tasks.SaveSetting('Save var setting',
                           {'var': '{{os.path.abspath(config.var)}}'}),
         tasks.SaveSetting('Save settings',
@@ -96,11 +119,6 @@ class ToppProject(Project):
                            'requirements_svn_repo': '{{config.requirements_svn_repo}}',
                            }),
         tasks.EnsureDir('Make sure var directory exists', '{{env.var}}', svn_add=False),
-        tasks.SvnCheckout('check out etc/', '{{config.etc_svn_subdir}}',
-                          'etc/',
-                          base_repository='{{config.etc_svn_repo}}',
-                          on_create_set_props={'svn:ignore': 'projects.txt\n'},
-                          create_if_necessary=True),
         tasks.SvnCheckout('check out requirements/', '{{config.requirements_svn_repo}}',
                           'requirements'),
         tasks.EnsureFile('Write secret.txt if necessary', '{{env.var}}/secret.txt', '{{env.random_string(40)}}',
