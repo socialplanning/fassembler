@@ -12,6 +12,7 @@ from fassembler import tasks
 interpolated = tasks.interpolated
 import warnings
 from glob import glob
+from time import sleep
 
 warnings.filterwarnings('ignore', 'tempnam is .*')
 
@@ -261,6 +262,40 @@ class SymlinkZopeConfig(ZopeConfigTask):
                                   self.zope_profile_path)
 
 
+zeo_proc = None
+zeo_pid = None
+class StartZeo(tasks.Task):
+    def __init__(self, stacklevel=1):
+        super(StartZeo, self).__init__('Start zeo', stacklevel=stacklevel+1)
+
+    def run(self):
+        if self.maker.simulate:
+            return
+        zeo_path = self.interpolate('{{env.base_path}}/bin/start-opencore-{{project.name}}')
+        self.logger.info('Starting zeo...')
+        zeo_proc = subprocess.Popen(zeo_path)
+        zeo_pid = zeo_proc.pid
+        self.logger.info('Zeo started (PID %s)' % zeo_pid)
+        self.logger.info('Sleeping for 3 seconds while zeo starts...')
+        sleep(3)
+
+
+class StopZeo(tasks.Task):
+    def __init__(self, stacklevel=1):
+        super(StopZeo, self).__init__('Stop zeo', stacklevel=stacklevel+1)
+
+    def run(self):
+        if self.maker.simulate:
+            return
+        if zeo_proc:
+            self.logger.info('Stopping zeo')
+            os.kill(zeo_pid, 15)
+            self.logger.info('Zeo stopped')
+        else:
+            self.maker.logger.warn('Tried to run StopZeo task with no zeo_proc')
+
+
+
 class RunZopectlScript(tasks.Task):
 
     description = """
@@ -277,19 +312,11 @@ class RunZopectlScript(tasks.Task):
             return
         self.script_path = self.interpolate(self.script_path)
         if os.path.exists(self.script_path):
-            zeo_proc = None
-            zeo_path = self.interpolate('{{env.base_path}}/bin/start-opencore-{{project.name}}')
             zopectl_path = self.interpolate('{{env.base_path}}/opencore/zope/bin/zopectl') 
-            try:
-                self.logger.info('Starting zeo')
-                zeo_proc = subprocess.Popen(zeo_path)
-                self.logger.info('Running zopectl script')
-                script = subprocess.Popen([zopectl_path, 'run', self.script_path])
-            finally:
-                if zeo_proc:
-                    self.logger.info('Stopping zeo')
-                    os.kill(zeo_proc.pid, 15)
-                
+            self.logger.info('Running zopectl script...')
+            script_proc = subprocess.Popen([zopectl_path, 'run', self.script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            self.logger.info('Script running (PID %s)' % script_proc.pid)
+            script_proc.communicate()
         else:
             self.logger.warn('Tried to run zopectl script at %s but it '
                              'cannot be found' % self.script_path)
@@ -502,12 +529,17 @@ exec {{config.zeo_instance}}/bin/runzeo
                          svn_add=True, executable=True, overwrite=True),
         tasks.EnsureDir('Create var/zeo directory for Data.fs file',
                         '{{env.var}}/zeo'),
-        tasks.InstallSupervisorConfig(script_name='opencore-zeo'),
+
+        # XXX
+        StartZeo(),
+        RunZopectlScript('{{env.base_path}}/opencore/src/opencore/do_nothing.py',
+                         name='Run initial zopectl to bypass failure-on-first-start'),
+        RunZopectlScript('{{env.base_path}}/opencore/src/opencore/add_openplans.py',
+                         name='Add OpenPlans site'),
+        StopZeo(),
+
         # ZEO doesn't really have a uri
-        #RunZopectlScript('{{env.base_path}}/opencore/src/opencore/do_nothing.py',
-        #                 name='Run initial zopectl to bypass failure-on-first-start'),
-        #RunZopectlScript('{{env.base_path}}/opencore/src/opencore/add_openplans.py',
-        #                 name='Add OpenPlans site'),
+        tasks.InstallSupervisorConfig(script_name='opencore-zeo'),
         ]
 
     depends_on_projects = ['fassembler:opencore']
