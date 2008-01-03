@@ -504,7 +504,7 @@ class EasyInstall(Script):
             if isinstance(find_links, basestring):
                 find_links = [find_links]
             if find_links:
-                self.reqs[:0] = ['-f', ','.join(find_links)]
+                self.reqs[:0] = ['-f', ' '.join(find_links)]
         kw['stacklevel'] = kw.get('stacklevel', 1)+1
         super(EasyInstall, self).__init__(name, ['easy_install'] + list(self.reqs), use_virtualenv=True, **kw)
 
@@ -1125,8 +1125,9 @@ class InstallSpec(Task):
         Installs a set of eggs.
         """
         cmd = ['easy_install']
-        for link in context['find_links']:
-            cmd.extend(['-f', link])
+        if context['find_links']:
+            cmd.append('-f')
+            cmd.append(' '.join(context['find_links']))
         if context['always_unzip']:
             cmd.append('--always-unzip')
         cmd.extend(eggs)
