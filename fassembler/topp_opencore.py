@@ -262,8 +262,6 @@ class SymlinkZopeConfig(ZopeConfigTask):
                                   self.zope_profile_path)
 
 
-zeo_proc = None
-zeo_pid = None
 class StartZeo(tasks.Task):
     def __init__(self, stacklevel=1):
         super(StartZeo, self).__init__('Start zeo', stacklevel=stacklevel+1)
@@ -271,13 +269,13 @@ class StartZeo(tasks.Task):
     def run(self):
         if self.maker.simulate:
             return
-        zeo_path = self.interpolate('{{env.base_path}}/bin/start-opencore-{{project.name}}')
+        zeoctl_path = self.interpolate('{{env.base_path}}/opencore/zeo/bin/zeoctl')
         self.logger.info('Starting zeo...')
-        zeo_proc = subprocess.Popen(zeo_path)
-        zeo_pid = zeo_proc.pid
-        self.logger.info('Zeo started (PID %s)' % zeo_pid)
-        self.logger.info('Sleeping for 3 seconds while zeo starts...')
-        sleep(3)
+        subprocess.Popen([zeoctl_path, 'start'], stdout=subprocess.PIPE).communicate()
+        while 'pid' not in subprocess.Popen([zeoctl_path, 'status'], stdout=subprocess.PIPE).communicate()[0]:
+            self.logger.info('Sleeping while zeo starts...')
+            sleep(1)
+        self.logger.info('Zeo started')
 
 
 class StopZeo(tasks.Task):
@@ -287,13 +285,13 @@ class StopZeo(tasks.Task):
     def run(self):
         if self.maker.simulate:
             return
-        if zeo_proc:
-            self.logger.info('Stopping zeo')
-            os.kill(zeo_pid, 15)
-            self.logger.info('Zeo stopped')
-        else:
-            self.maker.logger.warn('Tried to run StopZeo task with no zeo_proc')
-
+        zeoctl_path = self.interpolate('{{env.base_path}}/opencore/zeo/bin/zeoctl')
+        self.logger.info('Stopping zeo...')
+        subprocess.Popen([zeoctl_path, 'stop'], stdout=subprocess.PIPE).communicate()
+        while 'not running' not in subprocess.Popen([zeoctl_path, 'status'], stdout=subprocess.PIPE).communicate()[0]:
+            self.logger.info('Sleeping while zeo stops...')
+            sleep(1)
+        self.logger.info('Zeo stopped')
 
 
 class RunZopectlScript(tasks.Task):
