@@ -288,7 +288,7 @@ class RunZopectlScript(tasks.Task):
             finally:
                 if zeo_proc:
                     self.logger.info('Stopping zeo')
-                    os.kill(zeo_proc.pid)
+                    os.kill(zeo_proc.pid, 15)
                 
         else:
             self.logger.warn('Tried to run zopectl script at %s but it '
