@@ -528,6 +528,12 @@ exec {{config.zeo_instance}}/bin/runzeo
         tasks.EnsureDir('Create var/zeo directory for Data.fs file',
                         '{{env.var}}/zeo'),
 
+
+        # ZEO doesn't really have a uri
+        # the install supervisor config task needs to happen first
+        # to create the proper directory structure
+        tasks.InstallSupervisorConfig(script_name='opencore-zeo'),
+
         # XXX
         StartZeo(),
         RunZopectlScript('{{env.base_path}}/opencore/src/opencore/do_nothing.py',
@@ -535,9 +541,6 @@ exec {{config.zeo_instance}}/bin/runzeo
         RunZopectlScript('{{env.base_path}}/opencore/src/opencore/add_openplans.py',
                          name='Add OpenPlans site'),
         StopZeo(),
-
-        # ZEO doesn't really have a uri
-        tasks.InstallSupervisorConfig(script_name='opencore-zeo'),
         ]
 
     depends_on_projects = ['fassembler:opencore']
