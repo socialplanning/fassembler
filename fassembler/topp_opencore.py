@@ -211,12 +211,17 @@ class ZopeConfigTask(tasks.Task):
     """
     zope_etc_path = interpolated('zope_etc_path')
     build_etc_path = interpolated('build_etc_path')
+    zope_profile_path = interpolated('zope_profile_path')
+    build_profile_path = interpolated('build_profile_path')
 
     def __init__(self, name, stacklevel=1):
         super(ZopeConfigTask, self).__init__(name, stacklevel=stacklevel+1)
         self.zope_etc_path = '{{config.zope_instance}}/etc'
         self.build_etc_path = '{{env.base_path}}/etc/{{project.name}}/zope_etc'
-    
+        # FIXME: is there a better way to get to this directory?
+        relative_profile_path = 'src/opencore/opencore/configuration/profiles/default'
+        self.zope_profile_path = '{{project.build_properties["virtualenv_path"]}}/%s' % relative_profile_path
+        self.build_profile_path = '{{env.base_path}}/etc/{{project.name}}/gs_profile'
 
 class PlaceZopeConfig(ZopeConfigTask):
 
@@ -225,11 +230,15 @@ class PlaceZopeConfig(ZopeConfigTask):
     and copies these into the build's etc directory for svn
     management, if this has not already been done.
     """
-    
+
     def run(self):
         if not os.path.islink(self.zope_etc_path):
             self.maker.copy_dir(self.zope_etc_path,
                                 self.build_etc_path,
+                                add_dest_to_svn=True)
+        if not os.path.islink(self.zope_profile_path):
+            self.maker.copy_dir(self.zope_profile_path,
+                                self.build_profile_path,
                                 add_dest_to_svn=True)
 
 
@@ -246,6 +255,10 @@ class SymlinkZopeConfig(ZopeConfigTask):
         if not os.path.islink(self.zope_etc_path):
             self.maker.rmtree(self.zope_etc_path)
         self.maker.ensure_symlink(self.build_etc_path, self.zope_etc_path)
+        if not os.path.islink(self.zope_profile_path):
+            self.maker.rmtree(self.zope_profile_path)
+        self.maker.ensure_symlink(self.build_profile_path,
+                                  self.zope_profile_path)
 
 
 class RunZopectlScript(tasks.Task):
@@ -376,6 +389,8 @@ exec {{config.zope_instance}}/bin/runzope -X debug-mode=off
         tasks.SetDistutilsValue('Disable zipped eggs',
                                 'easy_install', 'zip_ok', 'False'),
         tasks.EnsureDir('Create src/ directory', '{{project.name}}/src'),
+        tasks.EnsureDir('Create OpenCore var/ directory',
+                        '{{env.var}}/opencore'),
         InstallZope(),
         tasks.InstallSpec('Install OpenCore',
                           '{{config.spec}}'),
