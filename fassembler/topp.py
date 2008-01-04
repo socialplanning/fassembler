@@ -48,6 +48,32 @@ class CheckBasePorts(tasks.Task):
         else:
             self.logger.info('All ports worked')
 
+class DeleteBuildIniIfNecessary(tasks.Task):
+
+    description = """
+    If this is a fresh build from fassembler-boot, delete the empty build.ini file
+    """
+
+    def __init__(self, name='Delete fassembler-boot build.ini', stacklevel=1):
+        super(DeleteBuildIniIfNecessary, self).__init__(name, stacklevel=stacklevel+1)
+
+    def run(self):
+        base_dir = self.maker.path('etc/')
+        if os.path.exists(base_dir) and not os.path.exists(os.path.join(base_dir, '.svn')):
+            build_ini = os.path.join(base_dir, 'build.ini')
+            stat = os.stat(build_ini)
+            if self.maker.simulate:
+                self.logger.notify('Would delete %s' % build_ini)
+                return
+            if stat.st_size:
+                response = self.maker.ask('build.ini is in the way of a checkout, but contains information.  Delete?')
+                if response == 'n':
+                    raise AssertionError(
+                        "Cannot continue; %s exists (must be resolved manually)" % build_ini)
+            else:
+                self.logger.info('%s exists but is empty; deleting' % build_ini)
+                os.unlink(build_ini)
+
 class EnvironRefresh(tasks.Task):
 
     description = """
@@ -101,8 +127,9 @@ class ToppProject(Project):
 
     actions = [
         CheckBasePorts(),
-        tasks.CopyDir('create layout', os.path.join(project_base_dir, 'base-layout'), './'),
-        tasks.SvnCheckout('check out etc/', '{{config.etc_svn_subdir}}',
+        tasks.CopyDir('Create layout', os.path.join(project_base_dir, 'base-layout'), './'),
+        DeleteBuildIniIfNecessary(),
+        tasks.SvnCheckout('Check out etc/', '{{config.etc_svn_subdir}}',
                           'etc/',
                           base_repository='{{config.etc_svn_repo}}',
                           on_create_set_props={'svn:ignore': 'projects.txt\n'},
@@ -148,7 +175,7 @@ class SupervisorProject(Project):
         tasks.VirtualEnv(),
         tasks.InstallSpec('Install Supervisor',
                           '{{config.spec}}'),
-        tasks.CopyDir('create config layout', project_base_dir, './'),
+        tasks.CopyDir('Create config layout', project_base_dir, './'),
         tasks.EnsureDir('Ensure log directory exists',
                         '{{env.var}}/logs/supervisor'),
         tasks.EnsureDir('Ensure pid location exists',
