@@ -281,7 +281,7 @@ class DeliveranceProject(Project):
                 help='Port to install Deliverance on'),
         Setting('port_offset',
                 default='0',
-                help='Offset from base_port for TaskTracker'),
+                help='Offset from base_port for Deliverance'),
         Setting('host',
                 default='127.0.0.1',
                 help='Host to serve on'),
