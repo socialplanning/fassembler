@@ -12,6 +12,8 @@ DATA="`cat "$VAR_PATH/secret.txt" | python -c 'import sys, urllib; sys.stdout.wr
 echo "Setting up database..."
 if wget http://127.0.0.1:{{config.port}}/dbsetup.php --post-data="$DATA" -O - ; then
     echo "database setup done."
+elif curl -d "$DATA" http://127.0.0.1:{{config.port}}/dbsetup.php; then
+    echo "database setup done."
 else
     echo "database setup failed"
     EXIT_CODE=2
