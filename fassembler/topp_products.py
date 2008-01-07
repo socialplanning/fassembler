@@ -164,7 +164,7 @@ class CabochonProject(Project):
                 default='requirements/cabochon-req.txt',
                 help='Specification of packages to install'),
          Setting('cabochon_user_info',
-                 default='{{env.var}}/cabochon-admin.txt',
+                 default='{{env.var}}/cabochon-password.txt',
                  help='The cabochon admin user info'),
         ]
 
