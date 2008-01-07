@@ -253,7 +253,9 @@ class TwirlipProject(Project):
                      ['paster', 'setup-app', '{{env.base_path}}/etc/{{project.name}}/{{project.name}}.ini#main_app'],
                      use_virtualenv=True,
                      cwd='{{env.base_path}}/{{project.name}}/src/{{project.name}}'),
-        tasks.SaveURI(path='/', theme=False),
+        tasks.SaveURI(path='/notification',
+                      project_local=False,
+                      theme=False)
         ]
 
     depends_on_projects = ['fassembler:topp']
