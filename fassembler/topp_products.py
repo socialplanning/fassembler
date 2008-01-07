@@ -290,6 +290,7 @@ class DeliveranceProject(Project):
     actions = [
         tasks.VirtualEnv(),
         tasks.InstallSpec('Install Deliverance', '{{config.spec}}'),
+        tasks.TestLxml('{{env.base_path}}/deliverance'),
         tasks.SvnCheckout('Checkout openplans_hooks',
                           '{{config.openplans_hooks_repo}}', '{{project.name}}/src/openplans_hooks'),
         tasks.InstallPasteConfig(path='deliverance/src/deliverancevhoster/fassembler_config.ini_tmpl'),

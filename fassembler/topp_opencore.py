@@ -270,12 +270,11 @@ class StartZeo(tasks.Task):
         if self.maker.simulate:
             return
         zeoctl_path = self.interpolate('{{env.base_path}}/opencore/zeo/bin/zeoctl')
-        self.logger.info('Starting zeo...')
         subprocess.Popen([zeoctl_path, 'start'], stdout=subprocess.PIPE).communicate()
         while 'pid' not in subprocess.Popen([zeoctl_path, 'status'], stdout=subprocess.PIPE).communicate()[0]:
-            self.logger.info('Sleeping while zeo starts...')
+            self.logger.notify('Sleeping while zeo starts...')
             sleep(1)
-        self.logger.info('Zeo started')
+        self.logger.notify('Zeo started')
 
 
 class StopZeo(tasks.Task):
@@ -286,12 +285,11 @@ class StopZeo(tasks.Task):
         if self.maker.simulate:
             return
         zeoctl_path = self.interpolate('{{env.base_path}}/opencore/zeo/bin/zeoctl')
-        self.logger.info('Stopping zeo...')
         subprocess.Popen([zeoctl_path, 'stop'], stdout=subprocess.PIPE).communicate()
         while 'not running' not in subprocess.Popen([zeoctl_path, 'status'], stdout=subprocess.PIPE).communicate()[0]:
-            self.logger.info('Sleeping while zeo stops...')
+            self.logger.notify('Sleeping while zeo stops...')
             sleep(1)
-        self.logger.info('Zeo stopped')
+        self.logger.notify('Zeo stopped')
 
 
 class RunZopectlScript(tasks.Task):
@@ -306,18 +304,18 @@ class RunZopectlScript(tasks.Task):
         self.script_path = script_path
 
     def run(self):
-        if self.maker.simulate:
-            return
         self.script_path = self.interpolate(self.script_path)
+        if self.maker.simulate:
+            self.logger.notify('Would run zopectl script at %s' % self.script_path)
+            return
         if os.path.exists(self.script_path):
             zopectl_path = self.interpolate('{{env.base_path}}/opencore/zope/bin/zopectl') 
-            self.logger.info('Running zopectl script...')
             script_proc = subprocess.Popen([zopectl_path, 'run', self.script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            self.logger.info('Script running (PID %s)' % script_proc.pid)
+            self.logger.notify('Script running (PID %s)' % script_proc.pid)
             script_proc.communicate()
         else:
-            self.logger.warn('Tried to run zopectl script at %s but it '
-                             'cannot be found' % self.script_path)
+            self.logger.warn('Tried to run zopectl script at %s but the '
+                             'path does not exist' % self.script_path)
 
 
 class OpenCoreProject(Project):
@@ -419,6 +417,7 @@ exec {{config.zope_instance}}/bin/runzope -X debug-mode=off
         InstallZope(),
         tasks.InstallSpec('Install OpenCore',
                           '{{config.spec}}'),
+        tasks.TestLxml('{{env.base_path}}/opencore'),
         tasks.CopyDir('Create custom skel',
                       skel_dir, '{{project.name}}/src/Zope/custom_skel'),
         tasks.Script('Configure Zope', [
@@ -527,14 +526,8 @@ exec {{config.zeo_instance}}/bin/runzeo
                          svn_add=True, executable=True, overwrite=True),
         tasks.EnsureDir('Create var/zeo directory for Data.fs file',
                         '{{env.var}}/zeo'),
-
-
         # ZEO doesn't really have a uri
-        # the install supervisor config task needs to happen first
-        # to create the proper directory structure
         tasks.InstallSupervisorConfig(script_name='opencore-zeo'),
-
-        # XXX
         StartZeo(),
         RunZopectlScript('{{env.base_path}}/opencore/src/opencore/do_nothing.py',
                          name='Run initial zopectl to bypass failure-on-first-start'),

@@ -5,6 +5,7 @@ subclasses that actually do something.
 
 import sys
 import os
+import subprocess
 import urlparse
 from tempita import Template
 import re
@@ -1208,3 +1209,28 @@ class SetDistutilsValue(Task):
             else:
                 self._distutils_filename = find_distutils_file(self.logger)
         return self._distutils_filename
+
+
+class TestLxml(Task):
+    """Tests that lxml was built properly within a given virtualenv."""
+
+    def __init__(self, path, stacklevel=1):
+        super(TestLxml, self).__init__('Test lxml build', stacklevel+1)
+        self.path = path
+    
+    def run(self):
+        self.path = self.interpolate(self.path)
+        if self.maker.simulate:
+            self.logger.notify('Would test lxml build in %s' % self.path)
+            return
+        if os.path.exists(self.path):
+            proc = subprocess.Popen([os.path.join(self.path, 'bin/python'),
+                                     '-c', '"from lxml import etree"'],
+                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            proc.communicate()
+            if proc.returncode != 0:
+                raise Exception('Lxml did not build properly')
+            self.logger.notify('Lxml built properly')
+        else:
+            self.logger.warn('Tried to test lxml build in %s but the '
+                             'path does not exist' % self.path)
