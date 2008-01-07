@@ -373,7 +373,7 @@ class OpenCoreProject(Project):
                 default='0',
                 help='Whether to start Zope in debug mode'),
         Setting('email_confirmation',
-                default='0',
+                default='1',  # opencore ftests expect it turned on!
                 help='Whether to send email configuration'),
         ## FIXME: this could differ for different profiles
         ## e.g., there's another bundle at:
