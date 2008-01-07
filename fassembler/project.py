@@ -89,6 +89,7 @@ class Project(object):
                 % self)
         self.setup_config()
         tasks = self.bind_tasks()
+        self.logger.debug('Plan for task:\n%s' % self.make_description(tasks))
         for task in tasks:
             self.logger.set_section(self.name+'.'+task.name)
             self.logger.notify('== %s ==' % task.name, color='bold green')
@@ -133,13 +134,14 @@ class Project(object):
             for subtask in self.iter_actions(task.iter_subtasks()):
                 yield subtask
 
-    def make_description(self):
+    def make_description(self, tasks=None):
         """
         Returns the description of this project, in the context of the
         settings given.
         """
         self.setup_config()
-        self.bind_tasks()
+        if tasks is None:
+            tasks = self.bind_tasks()
         out = StringIO()
         title = self.title or self.name
         title = '%s (%s)' % (title, self.project_name)
@@ -162,7 +164,7 @@ class Project(object):
                 print >> out, indent(setting.description(value=setting_value), '    ')
         print >> out
         print >> out, indent(underline('Tasks', '='), '  ')
-        for task in self.iter_actions():
+        for task in tasks:
             desc = str(task)
             print >> out, indent(underline(task.title, '-'), '    ')
             print >> out, indent(desc, '    ')
