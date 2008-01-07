@@ -89,13 +89,14 @@ class Project(object):
                 % self)
         self.setup_config()
         tasks = self.bind_tasks()
-        self.logger.debug('Plan for task:\n%s' % self.make_description(tasks))
         for task in tasks:
             self.logger.set_section(self.name+'.'+task.name)
             self.logger.notify('== %s ==' % task.name, color='bold green')
             self.logger.indent += 2
             try:
                 try:
+                    self.logger.debug('Task Plan:')
+                    self.logger.debug(indent(str(task), '  '))
                     task.run()
                 finally:
                     self.logger.indent -= 2
