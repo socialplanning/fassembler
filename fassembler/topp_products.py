@@ -156,16 +156,14 @@ class CabochonProject(Project):
                 default='6',
                 help='Offset from base_port for Cabochon'),
         Setting('host',
-
-
                 default='127.0.0.1',
                 help='Host to serve on'),
         Setting('spec',
                 default='requirements/cabochon-req.txt',
                 help='Specification of packages to install'),
-         Setting('cabochon_user_info',
-                 default='{{env.var}}/cabochon-password.txt',
-                 help='The cabochon admin user info'),
+        Setting('cabochon_user_info',
+                default='{{env.var}}/cabochon-password.txt',
+                help='The cabochon admin user info'),
         ]
 
     actions = [
