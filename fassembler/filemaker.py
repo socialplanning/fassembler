@@ -53,7 +53,8 @@ class Maker(object):
     def __init__(self, base_path, logger,
                  simulate=False, 
                  interactive=True,
-                 quick=False):
+                 quick=False,
+                 beep=False):
         """
         Initialize the Maker.  Files go under base_path.
         """
@@ -62,6 +63,7 @@ class Maker(object):
         self.simulate = simulate
         self.interactive = interactive
         self.quick = quick
+        self.beep = beep
     
     def copy_file(self, src, dest=None, dest_dir=None, template_vars=None, interpolater=None, overwrite=False):
         """
@@ -781,6 +783,7 @@ class Maker(object):
         prompt = 'Overwrite %s [y/n/d/B/?] ' % dest_fn
         while 1:
             if self.all_answer is None:
+                self.beep_if_necessary()
                 response = raw_input(prompt).strip().lower()
             else:
                 response = self.all_answer
@@ -853,6 +856,7 @@ Responses:
         if first_char:
             responses = [res.strip('()')[0] for res in responses]
         while 1:
+            self.beep_if_necessary()
             response = raw_input(full_message).strip().lower()
             if not response:
                 if default:
@@ -870,6 +874,14 @@ Responses:
                 print 'Invalid response; please enter one of %s' % msg_responses
             if help:
                 print help
+
+    def beep_if_necessary(self):
+        """
+        Beep if --beep was given
+        """
+        if self.beep:
+            sys.stdout.write(chr(7))
+            sys.stdout.flush()
             
     def handle_exception(self, exc_info, can_continue=False):
         """

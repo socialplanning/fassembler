@@ -795,6 +795,7 @@ class CheckMySQLDatabase(Task):
                     ## getpass.  Personal bias that I never have
                     ## anyone looking over my shoulder?
                     try:
+                        self.maker.beep_if_necessary()
                         self.__class__._root_password_override = raw_input('Please enter the correct password (^C to abort): ')
                     except KeyboardInterrupt:
                         print '^C'

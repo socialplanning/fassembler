@@ -73,6 +73,12 @@ parser.add_option(
     help='Try to do things quickly (may not be as safe)')
 
 parser.add_option(
+    '--beep',
+    action='store_true',
+    dest='beep',
+    help='Beep everytime a question is asked')
+
+parser.add_option(
     '-H', '--project-help',
     action='store_true',
     dest='project_help',
@@ -140,7 +146,7 @@ def main(options, args):
     merge_config(config, environ.config, overwrite=True)
     maker = Maker(base_path, simulate=options.simulate,
                   interactive=not options.no_interactive, logger=logger,
-                  quick=options.quick)
+                  quick=options.quick, beep=options.beep)
     environ.maker = maker
     
     projects = []

@@ -187,6 +187,7 @@ class Namespace(DictMixin):
                     print 'Template: %s' % template_content
                 retry = False
                 while 1:
+                    ## FIXME: should beep here
                     response = raw_input('What to do? [(c)ancel/(q)uit/(r)etry/(s)how source/(n)amespace/(t)raceback/(p)db/(e)xecute/(r)etry/] ')
                     if not response.strip():
                         continue
