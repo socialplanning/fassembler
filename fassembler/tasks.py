@@ -1119,10 +1119,11 @@ class InstallSpec(Task):
         Finalizes the installation of an editable project.
         """
         cmd = ['python', 'setup.py', 'develop']
-        for link in context['find_links']:
-            cmd.extend(['-f', link])
+        if context['find_links']:
+            cmd.extend(['-f', ' '.join(context['find_links'])])
         if context['always_unzip']:
             cmd.append('--always-unzip')
+        self.logger.notify('Installing %s (and its dependencies)' % os.path.basename(src_dir))
         self.maker.run_command(
             cmd,
             cwd=src_dir,
