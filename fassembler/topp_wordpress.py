@@ -37,6 +37,9 @@ class WordPressProject(Project):
         Setting('apache_module_dir',
                 default='{{project.apache_module_dir()}}',
                 help='Location of apache modules'),
+        Setting('php_cgi_exec',
+                default='{{project.php_cgi_exec()}}',
+                help='Location of php cgi executable'),
         Setting('server_admin',
                 default='{{env.environ["USER"]}}@{{env.fq_hostname}}',
                 help='Server admin for Apache'),
@@ -76,7 +79,8 @@ class WordPressProject(Project):
                         '{{env.var}}/wordpress'),
         tasks.CheckMySQLDatabase('Check database'),
         tasks.Script('Setup database tables',
-                     '{{env.base_path}}/wordpress/bin/setup-database.sh'),
+                     ['{{config.php_cgi_exec}}', '-f', '{{env.base_path}}/wordpress/src/wordpress-mu/dbsetup.php',
+                      '{{project.secret()}}']),
         tasks.SaveURI(path='/blog'),
         ]
 
@@ -121,14 +125,19 @@ class WordPressProject(Project):
             'mime.types file')
     
     def apache_exec(self):
-        names = ['httpd', 'apache2']
+        return self.find_exec(['httpd', 'apache2'])
+
+    def php_cgi_exec(self):
+        return self.find_exec(['php-cgi', 'php', 'php5-cgi', 'php5', 'php4-cgi', 'php4'])
+
+    def find_exec(self, names):
         paths = os.environ['PATH'].split(os.path.pathsep)
         for name in names:
             for path in paths:
                 if os.path.exists(os.path.join(path, name)):
                     return os.path.join(path, name)
         raise OSError(
-            "Cannot find apache_exec")
+            "Cannot find any executable with name: %s" % ', '.join(names))
 
     def search(self, options, name):
         for option in options:
@@ -136,3 +145,10 @@ class WordPressProject(Project):
                 return option
         raise OSError(
             "Cannot find %s (tried %s)" % (name, ', '.join(options)))
+
+    def secret(self):
+        f = open(self.environ.config.get('general', 'topp_secret_filename'), 'rb')
+        c = f.read()
+        f.close()
+        return c
+    
