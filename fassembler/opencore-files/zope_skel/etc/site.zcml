@@ -23,4 +23,7 @@
   <includeOverrides files="package-includes/*-overrides.zcml" />
   <five:loadProductsOverrides />
 
+
+  <include files="opencore_custom.zcml" />
+
 </configure>

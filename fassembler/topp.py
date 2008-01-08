@@ -144,6 +144,7 @@ class ToppProject(Project):
                            'find_links': '{{config.find_links}}',
                            'db_prefix': '{{config.db_prefix}}',
                            'requirements_svn_repo': '{{config.requirements_svn_repo}}',
+                           'etc_svn_subdir': '{{config.etc_svn_subdir}}',
                            }),
         tasks.EnsureDir('Make sure var directory exists', '{{env.var}}', svn_add=False),
         tasks.SvnCheckout('check out requirements/', '{{config.requirements_svn_repo}}',

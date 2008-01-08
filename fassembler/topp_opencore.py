@@ -212,7 +212,7 @@ class ZopeConfigTask(tasks.Task):
     """
     zope_etc_path = interpolated('zope_etc_path')
     build_etc_path = interpolated('build_etc_path')
-    zope_profile_path = interpolated('zope_profile_path')
+    zope_profiles_dir = interpolated('zope_profiles_dir')
     build_profile_path = interpolated('build_profile_path')
 
     def __init__(self, name, stacklevel=1):
@@ -220,9 +220,10 @@ class ZopeConfigTask(tasks.Task):
         self.zope_etc_path = '{{config.zope_instance}}/etc'
         self.build_etc_path = '{{env.base_path}}/etc/{{project.name}}/zope_etc'
         # FIXME: is there a better way to get to this directory?
-        relative_profile_path = 'src/opencore/opencore/configuration/profiles/default'
-        self.zope_profile_path = '{{project.build_properties["virtualenv_path"]}}/%s' % relative_profile_path
+        relative_profiles_dir = 'src/opencore/opencore/configuration/profiles'
+        self.zope_profiles_dir = '{{project.build_properties["virtualenv_path"]}}/%s' % relative_profiles_dir
         self.build_profile_path = '{{env.base_path}}/etc/{{project.name}}/gs_profile'
+
 
 class PlaceZopeConfig(ZopeConfigTask):
 
@@ -237,10 +238,10 @@ class PlaceZopeConfig(ZopeConfigTask):
             self.maker.copy_dir(self.zope_etc_path,
                                 self.build_etc_path,
                                 add_dest_to_svn=True)
-        if not os.path.islink(self.zope_profile_path):
-            self.maker.copy_dir(self.zope_profile_path,
-                                self.build_profile_path,
-                                add_dest_to_svn=True)
+
+        self.maker.copy_dir('%s/default' % self.zope_profiles_dir,
+                            self.build_profile_path,
+                            add_dest_to_svn=True)
 
 
 class SymlinkZopeConfig(ZopeConfigTask):
@@ -251,12 +252,17 @@ class SymlinkZopeConfig(ZopeConfigTask):
     Assumes files already exist in the fassembler locations, i.e. that
     PlaceZopeConfig is run first.
     """
+    zope_profile_path = interpolated('zope_profile_path')
 
     def run(self):
         if not os.path.islink(self.zope_etc_path):
             self.maker.rmtree(self.zope_etc_path)
         self.maker.ensure_symlink(self.build_etc_path, self.zope_etc_path)
-        if not os.path.islink(self.zope_profile_path):
+
+        self.zope_profile_path = '%s/{{env.config.get("general", "etc_svn_subdir")}}' \
+                                 % self.zope_profiles_dir
+        if os.path.exists(self.zope_profile_path) and \
+               not os.path.islink(self.zope_profile_path):
             self.maker.rmtree(self.zope_profile_path)
         self.maker.ensure_symlink(self.build_profile_path,
                                   self.zope_profile_path)
@@ -299,8 +305,12 @@ class RunZopectlScript(tasks.Task):
     executes 'zopectl run {{task.script_path}}' from within the opencore virtualenv.
     """
 
-    def __init__(self, script_path, name='Run zopectl script', stacklevel=1):
+    script_arg = interpolated("script_arg")
+
+    def __init__(self, script_path, script_arg='',
+                 name='Run zopectl script', stacklevel=1):
         super(RunZopectlScript, self).__init__(name, stacklevel=stacklevel+1)
+        self.script_arg = script_arg
         self.script_path = script_path
 
     def run(self):
@@ -309,8 +319,13 @@ class RunZopectlScript(tasks.Task):
             self.logger.notify('Would run zopectl script at %s' % self.script_path)
             return
         if os.path.exists(self.script_path):
-            zopectl_path = self.interpolate('{{env.base_path}}/opencore/zope/bin/zopectl') 
-            script_proc = subprocess.Popen([zopectl_path, 'run', self.script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            zopectl_path = self.interpolate('{{env.base_path}}/opencore/zope/bin/zopectl')
+            process_args = [zopectl_path, 'run', self.script_path]
+            if self.script_arg:
+                process_args.append(self.script_arg)
+            script_proc = subprocess.Popen(process_args,
+                                           stdout=subprocess.PIPE,
+                                           stderr=subprocess.PIPE)
             self.logger.notify('Script running (PID %s)' % script_proc.pid)
             script_proc.communicate()
         else:
@@ -532,6 +547,7 @@ exec {{config.zeo_instance}}/bin/runzeo
         RunZopectlScript('{{env.base_path}}/opencore/src/opencore/do_nothing.py',
                          name='Run initial zopectl to bypass failure-on-first-start'),
         RunZopectlScript('{{env.base_path}}/opencore/src/opencore/add_openplans.py',
+                         script_arg='{{env.config.get("general", "etc_svn_subdir")}}',
                          name='Add OpenPlans site'),
         StopZeo(),
         ]
