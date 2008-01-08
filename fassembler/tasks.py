@@ -194,17 +194,22 @@ class Script(Task):
     {{if task.use_virtualenv }}A virtualenv environment will be used (one MUST be built for the project).
     {{else}}No virtualenv environment will be used.
     {{endif}}
+    {{if task.stdin}}
+    Also send the text {{task.stdin|repr}} as stdin
+    {{endif}}
     """
 
     script = interpolated('script')
     cwd = interpolated('cwd')
+    stdin = interpolated('stdin')
 
     def __init__(self, name, script, cwd=None, stacklevel=1, use_virtualenv=False,
-                 **extra_args):
+                 stdin=None, **extra_args):
         super(Script, self).__init__(name, stacklevel=stacklevel+1)
         self.script = script
         self.cwd = cwd
         self.use_virtualenv = use_virtualenv
+        self.stdin = stdin
         self.extra_args = extra_args
 
     def run(self):
@@ -212,6 +217,7 @@ class Script(Task):
         kw = self.extra_args.copy()
         if self.use_virtualenv:
             kw['script_abspath'] = self.venv_property('bin_path')
+        kw['stdin'] = self.stdin
         self.maker.run_command(script, cwd=self.cwd, **kw)
 
 
