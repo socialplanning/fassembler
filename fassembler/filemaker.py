@@ -503,6 +503,9 @@ class Maker(object):
             The working directory to run the script in.  By default it
             is ``self.base_path``.
 
+        ``stdin``:
+            The text to pass in stdin.
+
         ``capture_stderr``:
             If true, then stderr is captured in stdout, instead of
             being handled separately.
@@ -543,6 +546,7 @@ class Maker(object):
         script_abspath = popdefault(kw, 'script_abspath', None)
         log_error = popdefault(kw, 'log_error', True)
         simulate = popdefault(kw, 'simulate', self.simulate)
+        stdin = popdefault(kw, 'stdin', None)
         if extra_path:
             env = env.copy()
             path_parts = env.get('PATH', '').split(os.path.pathsep)
@@ -556,10 +560,15 @@ class Maker(object):
             stderr_pipe = subprocess.PIPE
         if args:
             cmd = [cmd] + list(args)
+        if stdin:
+            stdin_argument = subprocess.PIPE
+        else:
+            stdin_argument = None
         try:
             proc = subprocess.Popen(cmd,
                                     cwd=cwd,
                                     env=env,
+                                    stdin=stdin_argument,
                                     stderr=stderr_pipe,
                                     stdout=subprocess.PIPE)
         except OSError, e:
@@ -579,6 +588,8 @@ class Maker(object):
                 return (None, None, 0)
             else:
                 return None
+        if stdin:
+            proc.stdin.write(stdin)
         stdout, stderr = proc.communicate()
         if proc.returncode and not expect_returncode:
             if log_error:
