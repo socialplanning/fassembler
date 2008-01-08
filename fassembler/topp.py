@@ -119,6 +119,7 @@ class ToppProject(Project):
                 help='The admin password (will be auto-generated if not provided)'),
         Setting('db_prefix',
                 default='',
+                inherit_config=('general', 'db_prefix'),
                 help='The prefix to use for all database names'),
         Setting('find_links',
                 default='https://svn.openplans.org/eggs',
