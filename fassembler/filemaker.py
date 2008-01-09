@@ -87,8 +87,12 @@ class Maker(object):
         overwrite = False
         if os.path.exists(dest):
             existing = self._get_raw_contents(dest)
+            base_content = self._get_base_contents(dest)
             if existing == contents:
                 self.logger.info('File %s exists with same content' % self.display_path(dest))
+            elif base_content and existing == base_content:
+                # logging happens in ensure_file
+                pass
             else:
                 message = 'File %s already exists (with different content)' % self.display_path(dest)
                 if os.path.exists(self._orig_filename(dest)):
@@ -106,7 +110,11 @@ class Maker(object):
 
         self.ensure_file(dest, contents, overwrite=overwrite, executable=os.stat(src).st_mode&0111)
         if contents != raw_contents:
-            self.ensure_file(self._orig_filename(dest), raw_contents, overwrite=overwrite)
+            if not self.simulate:
+                # If we use ensure_file we get an unneeded log message
+                f = open(self._orig_filename(dest), 'wb')
+                f.write(raw_contents)
+                f.close()
 
     def _orig_filename(self, filename):
         """
@@ -114,6 +122,13 @@ class Maker(object):
         """
         return os.path.join(os.path.dirname(filename),
                             '.'+os.path.basename(filename)+'.orig')
+
+    def _base_filename(self, filename):
+        """
+        Gives the filename used to save the text of a file (not the template, the filled in text).
+        """
+        return os.path.join(os.path.dirname(filename),
+                            '.'+os.path.basename(filename)+'.base')
 
     def _get_contents(self, filename, template_vars=None, interpolater=None):
         """
@@ -151,6 +166,12 @@ class Maker(object):
             return f.read()
         finally:
             f.close()
+
+    def _get_base_contents(self, filename):
+        new_filename = self._base_filename(filename)
+        if not os.path.exists(new_filename):
+            return None
+        return self._get_raw_contents(new_filename)
 
     def _writefile(self, filename, contents):
         """
@@ -368,25 +389,38 @@ class Maker(object):
         f = open(filename, 'rb')
         old_content = f.read()
         f.close()
+        base_content = self._get_base_contents(filename)
         if content == old_content:
             self.logger.info('File %s matches expected content' % filename)
             if executable and not os.stat(filename).st_mode&0111:
                 self.make_executable(filename)
             return
-        if not overwrite:
+        show_overwrite_warning = True
+        if base_content and base_content == old_content:
+            self.logger.notify('File %s was not edited and content has changed, overwriting'
+                               % self.display_path(filename),
+                               color='cyan')
+            show_overwrite_warning = False
+        elif not overwrite:
             self.logger.notify('Warning: file %s does not match expected content' % filename)
             if self.interactive:
                 response = self.ask_difference(filename, None, content, old_content)
+                if not response:
+                    return
             else:
                 return
-                    
-        self.logger.notify('Overwriting %s with new content' % filename)
+
+        if show_overwrite_warning:
+            self.logger.notify('Overwriting %s with new content' % filename)
         if not self.simulate:
             f = open(filename, 'wb')
             f.write(content)
             f.close()
             if executable:
                 self.make_executable(filename)
+            f = open(self._base_filename(filename), 'wb')
+            f.write(content)
+            f.close()
 
     def make_executable(self, filename):
         """
@@ -823,6 +857,7 @@ class Maker(object):
         if message:
             print message
         prompt = 'Overwrite %s [y/n/d/B/?] ' % dest_fn
+        prompt = self.logger.colorize(prompt, 'bold cyan')
         while 1:
             if self.all_answer is None:
                 self.beep_if_necessary()
@@ -854,6 +889,11 @@ class Maker(object):
                 print '\n'.join(c_diff)
             elif response[0] == 'd':
                 print '\n'.join(u_diff)
+            elif response[0] == 't':
+                # Hidden feature
+                import traceback
+                traceback.print_stack()
+                continue
             else:
                 if response[0] != '?':
                     print 'Unknown command: %s' % response
