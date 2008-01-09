@@ -608,7 +608,10 @@ class Maker(object):
                     break
                 stdout.append(line)
                 line = line.rstrip()
-                level = log_filter(line)
+                if isinstance(log_filter, int):
+                    level = log_filter
+                else:
+                    level = log_filter(line)
                 if isinstance(level, tuple):
                     line, level = level
                 if line:
