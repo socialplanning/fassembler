@@ -1235,7 +1235,7 @@ class InstallSpec(Task):
             indent = len(context) * 2 + adjust
             line = ' '*indent + line
             if hanging_processing:
-                last_line = hanging_processing[:]
+                last_line = hanging_processing[-1]
                 self.logger.notify(last_line)
                 hanging_processing[:] = []
             return (line, level)
