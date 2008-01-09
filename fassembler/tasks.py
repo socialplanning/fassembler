@@ -1107,12 +1107,18 @@ class InstallSpec(Task):
         # Normalizing the name, so it's more predictable later:
         name = name.lower()
         dest = os.path.join(context['src_base'], name)
-        self.maker.checkout_svn(svn, dest, revision=revision)
-        self.maker.run_command(
-            'python', 'setup.py', 'develop', '--no-deps',
-            cwd=dest,
-            script_abspath=self.venv_property('bin_path'))
-        return self.install_finalize_editable, dest
+        self.logger.notify('Preparing checkout %s' % name)
+        self.logger.indent += 2
+        try:
+            self.maker.checkout_svn(svn, dest, revision=revision)
+            self.maker.run_command(
+                'python', 'setup.py', 'develop', '--no-deps',
+                cwd=dest,
+                script_abspath=self.venv_property('bin_path'),
+                log_filter=self.make_log_filter())
+            return self.install_finalize_editable, dest
+        finally:
+            self.logger.indent -= 2
 
     def install_finalize_editable(self, context, src_dir):
         """
@@ -1124,10 +1130,15 @@ class InstallSpec(Task):
         if context['always_unzip']:
             cmd.append('--always-unzip')
         self.logger.notify('Installing %s (and its dependencies)' % os.path.basename(src_dir))
-        self.maker.run_command(
-            cmd,
-            cwd=src_dir,
-            script_abspath=self.venv_property('bin_path'))
+        self.logger.indent += 2
+        try:
+            self.maker.run_command(
+                cmd,
+                cwd=src_dir,
+                script_abspath=self.venv_property('bin_path'),
+                log_filter=self.make_log_filter())
+        finally:
+            self.logger.indent -= 2
 
     def install_eggs(self, context, eggs):
         """
@@ -1140,10 +1151,95 @@ class InstallSpec(Task):
         if context['always_unzip']:
             cmd.append('--always-unzip')
         cmd.extend(eggs)
-        self.maker.run_command(
-            cmd,
-            cwd=self.venv_property('path'),
-            script_abspath=self.venv_property('bin_path'))
+        self.logger.notify('easy_installing %s' % ', '.join(eggs))
+        self.logger.indent += 2
+        try:
+            self.maker.run_command(
+                cmd,
+                cwd=self.venv_property('path'),
+                script_abspath=self.venv_property('bin_path'),
+                log_filter=self.make_log_filter())
+        finally:
+            self.logger.indent -= 2
+
+    log_filter_debug_regexes = [
+        re.compile(r'references __(file|path)__$'),
+        re.compile(r'^zip_safe flag not set; analyzing'),
+        re.compile(r'MAY be using inspect.[a-zA-Z0-9_]+$'),
+        re.compile(r'^Extracting .*to'),
+        re.compile(r'^create .*\.egg$'),
+        # Stuff from installing as an egg (from python setup.py install):
+        re.compile(r'^writing .* to .*\.egg-info/'),
+        re.compile(r'^writing .*\.egg-info/PKG-INFO$'),
+        re.compile(r'^writing manifest file .*\.egg-info/SOURCES.txt.*'),
+        re.compile(r'^running (develop|egg_info|build_ext)$'),
+        # Mostly for PIL:
+        re.compile(r'lib.*: warning: .* defined but not used'),
+        ]
+    log_filter_info_regexes = [
+        re.compile(r'^Installing .* script to .*/bin$'),
+        re.compile(r'^Creating .*\.egg-link [(]link to \.[)]$'),
+        re.compile(r'^reading manifest template .MANIFEST\.in.$'),
+        ]
+
+    def make_log_filter(self):
+        context = []
+        hanging_processing = []
+        def log_filter(line):
+            """
+            Filter the output of setup.py develop and easy_install
+            """
+            level = self.logger.NOTIFY
+            adjust = 0
+            prefix = 'Processing dependencies for '
+            if line.startswith(prefix):
+                requirement = line[len(prefix):].strip()
+                context.append(requirement)
+                hanging_processing[:] = [line]
+                return ('', self.logger.VERBOSE_DEBUG)
+                # Leave just this one line dedented:
+                adjust = -2
+            prefix = 'Finished processing dependencies for '
+            if line.startswith(prefix):
+                requirement = line[len(prefix):].strip()
+                if context and context[-1] == 'searching':
+                    # The dangling "Searching for ..." message
+                    context.pop()
+                if not context or context[-1] != requirement:
+                    # For some reason the top-level context is often None from
+                    # easy_install.process_distribution; so we shouldn't worry
+                    # about inconsistency in that case
+                    if len(context) != 1 or requirement != 'None':
+                        self.logger.warn('Error: Got unexpected "%s%s"' % (prefix, requirement))
+                        self.logger.warn('       Context: %s' % context)
+                context.pop()
+                if hanging_processing:
+                    # The start/finish of dependencies was empty
+                    last_line = hanging_processing[0]
+                    hanging_processing[:] = []
+                    return (last_line+'\n'+line, self.logger.DEBUG)
+            prefix = 'Searching for '
+            if line.startswith(prefix):
+                if context and context[-1] == 'searching':
+                    context.pop()
+                context.append('searching')
+                adjust = -2
+            if not line.strip():
+                level = self.logger.DEBUG
+            for regex in self.log_filter_debug_regexes:
+                if regex.search(line.strip()):
+                    level = self.logger.DEBUG
+            for regex in self.log_filter_info_regexes:
+                if regex.search(line.strip()):
+                    level = self.logger.INFO
+            indent = len(context) * 2 + adjust
+            line = ' '*indent + line
+            if hanging_processing:
+                last_line = hanging_processing[:]
+                self.logger.notify(last_line)
+                hanging_processing[:] = []
+            return (line, level)
+        return log_filter
             
 class ConditionalTask(Task):
 

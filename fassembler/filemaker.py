@@ -532,6 +532,14 @@ class Maker(object):
 
         ``log_error``:
             If true (the default) then errors will be logged
+
+        ``log_filter``:
+            This is a function that takes a line of output from the
+            program, and returns either a log level alone, or
+            (new_line, level).  If not provided, then the output of
+            the process will not be displayed.  You may also give an
+            integer which will be the level of all output (e.g.,
+            logger.INFO).
         """
         cwd = popdefault(kw, 'cwd', self.base_path) or self.base_path
         cwd = self.path(cwd)
@@ -547,6 +555,7 @@ class Maker(object):
         log_error = popdefault(kw, 'log_error', True)
         simulate = popdefault(kw, 'simulate', self.simulate)
         stdin = popdefault(kw, 'stdin', None)
+        log_filter = popdefault(kw, 'log_filter', None)
         if extra_path:
             env = env.copy()
             path_parts = env.get('PATH', '').split(os.path.pathsep)
@@ -554,7 +563,7 @@ class Maker(object):
         if script_abspath:
             cmd = self._script_abspath(cmd, script_abspath)
         assert not kw, ("Arguments not expected: %s" % kw)
-        if capture_stderr:
+        if capture_stderr or log_filter:
             stderr_pipe = subprocess.STDOUT
         else:
             stderr_pipe = subprocess.PIPE
@@ -590,7 +599,26 @@ class Maker(object):
                 return None
         if stdin:
             proc.stdin.write(stdin)
-        stdout, stderr = proc.communicate()
+        if log_filter:
+            stdout = []
+            stdout_pipe = proc.stdout
+            while 1:
+                line = stdout_pipe.readline()
+                if not line:
+                    break
+                stdout.append(line)
+                line = line.rstrip()
+                level = log_filter(line)
+                if isinstance(level, tuple):
+                    line, level = level
+                if line:
+                    self.logger.log(level, line)
+                if not self.logger.stdout_level_matches(level):
+                    self.logger.show_progress()
+            stdout = ''.join(stdout)
+            stderr = ''
+        else:
+            stdout, stderr = proc.communicate()
         if proc.returncode and not expect_returncode:
             if log_error:
                 self.logger.log(slice(self.logger.WARN, self.logger.FATAL),
