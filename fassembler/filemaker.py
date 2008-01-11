@@ -741,6 +741,7 @@ class Maker(object):
         updated.
         """
         dest = self.path(dest)
+        repo = repo.rstrip('/')
         if self.exists(dest):
             if self.quick:
                 self.logger.notify('Checkout %s exists; skipping update' % dest)
@@ -816,7 +817,7 @@ class Maker(object):
             raise ValueError(
                 "Could not determine svn URL of %s; output:\n%s"
                 % (path, stdout))
-        return match.group(1).strip()
+        return match.group(1).strip().rstrip('/')
 
     all_answer = None
 
