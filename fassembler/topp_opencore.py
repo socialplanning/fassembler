@@ -14,6 +14,10 @@ import warnings
 from glob import glob
 from time import sleep
 
+if sys.version >= (2, 5):
+    raise ImportError(
+        "Zope is not compatible with Python 2.5!")
+
 warnings.filterwarnings('ignore', 'tempnam is .*')
 
 tarball_version = '2.9.8openplans.1'
