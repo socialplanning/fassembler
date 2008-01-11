@@ -79,8 +79,9 @@ class WordPressProject(Project):
                         '{{env.var}}/wordpress'),
         tasks.CheckMySQLDatabase('Check database'),
         tasks.Script('Setup database tables',
-                     ['{{config.php_cgi_exec}}', '-f', '{{env.base_path}}/wordpress/src/wordpress-mu/dbsetup.php',
-                      '{{project.secret()}}']),
+                     ['{{config.php_cgi_exec}}', '-f', 'dbsetup.php',
+                      '{{project.secret()}}'],
+                     cwd='{{env.base_path}}/wordpress/src/wordpress-mu'),
         tasks.SaveURI(path='/blog'),
         ]
 
