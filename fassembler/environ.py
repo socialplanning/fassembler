@@ -117,12 +117,7 @@ class Environment(object):
     def random_string(self, length=20, chars=secret_chars):
         """
         Return a random string of the given length, taken from the given characters.
-
-        You can also give chars like chars='alphanumeric', which will
-        use string.alphanumeric.
         """
-        if hasattr(string, chars):
-            chars = getattr(string, chars).strip()
         return ''.join([
             random.choice(chars) for i in range(length)])
     

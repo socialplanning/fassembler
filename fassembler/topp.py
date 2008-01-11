@@ -155,7 +155,7 @@ class ToppProject(Project):
         tasks.EnsureFile('Write secret.txt if necessary', '{{env.var}}/secret.txt', '{{env.random_string(40)}}',
                          overwrite=False),
         tasks.EnsureFile('Write admin.txt if necessary', '{{env.var}}/admin.txt',
-                         'admin:{{config.admin_password or env.random_string(12, "alphanumeric")}}',
+                         'admin:{{py:import string}}{{config.admin_password or env.random_string(12, string.ascii_letters + string.digits + "_-!;")}}',
                          overwrite=False),
         ]
 
