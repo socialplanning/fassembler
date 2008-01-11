@@ -99,7 +99,7 @@ def filter_python_develop(line):
 """
 
 def main():
-    text = virtualenv.create_bootstrap_script(EXTRA_TEXT)
+    text = virtualenv.create_bootstrap_script(EXTRA_TEXT, python_version='2.4')
     if os.path.exists(script_name):
         f = open(script_name)
         cur_text = f.read()
