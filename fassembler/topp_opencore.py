@@ -135,7 +135,7 @@ class GetBundleTarball(tasks.Task):
             if tarball_name != self.interpolate('{{config.opencore_bundle_name}}'):
                 response = self.maker.ask(
                     'Current bundle is named "%s"; the build wants to install "%s"\n'
-                    'Overwrite current bundle?')
+                    'Overwrite current bundle?' % (tarball_name, self.interpolate('{{config.opencore_bundle_name}}')))
                 if response == 'n':
                     self.logger.notify('Aborting bundle installation')
                     return
