@@ -1,0 +1,15 @@
+<configure xmlns="http://namespaces.zope.org/zope"
+           xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+           package="opencore.configuration"
+           >
+
+  <genericsetup:registerProfile
+     name="{{env.config.get('general', 'etc_svn_subdir')}}"
+     title="OpenCore {{env.config.get('general', 'etc_svn_subdir')}} site"
+     description="OpenCore {{env.config.get('general', 'etc_svn_subdir')}} profile"
+     directory="profiles/{{env.config.get('general', 'etc_svn_subdir')}}"
+     provides="Products.GenericSetup.interfaces.EXTENSION"
+     for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+     />
+
+</configure>
