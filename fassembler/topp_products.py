@@ -255,7 +255,7 @@ class TwirlipProject(Project):
                      cwd='{{env.base_path}}/{{project.name}}/src/{{project.name}}'),
         tasks.SaveURI(path='/notification',
                       project_local=False,
-                      theme=False)
+                      theme=False),
         tasks.SaveCabochonSubscriber({'create_page' : '/page/create',
                                       'edit_page' : '/page/edit',
                                       'delete_page' : '/page/delete',
