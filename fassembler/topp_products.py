@@ -256,6 +256,11 @@ class TwirlipProject(Project):
         tasks.SaveURI(path='/notification',
                       project_local=False,
                       theme=False)
+        tasks.SaveCabochonSubscriber({'create_page' : '/page/create',
+                                      'edit_page' : '/page/edit',
+                                      'delete_page' : '/page/delete',
+                                      'email_changed' : '/page/email_changed'}),
+        
         ]
 
     depends_on_projects = ['fassembler:topp']

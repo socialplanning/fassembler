@@ -1338,3 +1338,41 @@ class TestLxml(Task):
         else:
             self.logger.warn('Tried to test lxml build in %s but the '
                              'path does not exist' % self.path)
+
+
+class SaveCabochonSubscriber(Task):
+    def __init__(self, events, stacklevel=1):
+        super(SaveCabochonSubscriber, self).__init__('Save Cabochon Subscriber', stacklevel+1)
+                
+        assert events is not None, (
+            "You must give a value for events")
+
+        self.events = events
+        
+    def run(self):
+
+        interp = lambda path : self.interpolate('http://{{config.host}}:{{config.port}}%s' % path)
+
+        subscribers = dict([(key, set([interp(value)])) for key, value in self.events.items()])
+            
+        cfg_filename = self.interpolate("{{env.var}}/cabochon_subscribers.cfg")
+        try:
+            f = open(cfg_filename, "r")
+
+            for line in f:
+                line = line.strip()
+                event, subscriber = line.split()[:2]
+                if not event in subscribers:
+                    subscribers[event] = []
+                subscribers[event].add(subscriber)
+        except IOError:
+            pass
+        else:
+            f.close()
+        
+        f = open(cfg_filename, "w")
+        for event_type in subscribers:
+            for subscriber in subscribers[event_type]:
+                f.write("%s %s\n" % (event_type, subscriber))
+        f.close()
+        
