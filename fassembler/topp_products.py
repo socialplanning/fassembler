@@ -108,7 +108,7 @@ class TaskTrackerProject(Project):
                      use_virtualenv=True,
                      cwd='{{env.base_path}}/{{project.name}}/src/{{project.name}}'),
         tasks.SaveURI(path='/tasks'),
-        tasks.SaveCabochonSubscriber({'delete_project' : '/project/delete'}),
+        tasks.SaveCabochonSubscriber({'delete_project' : '/project/destroy'}),
                                       
         ]
 
