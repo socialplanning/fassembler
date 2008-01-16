@@ -1353,12 +1353,14 @@ class SaveCabochonSubscriber(Task):
 
         interp = lambda path : self.interpolate('http://{{config.host}}:{{config.port}}%s' % path)
 
+        #new subscribers
         subscribers = dict()
         for event, subscriber in self.events.items():
             if not event in subscribers:
                 subscribers[event] = set()
-            subscribers[event].add(subscriber)
-                        
+            subscribers[event].add(interp(subscriber))
+
+        #existing subscribers
         cfg_filename = self.interpolate("{{env.var}}/cabochon_subscribers.cfg")
         try:
             f = open(cfg_filename, "r")
