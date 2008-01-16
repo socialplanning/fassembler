@@ -1353,8 +1353,12 @@ class SaveCabochonSubscriber(Task):
 
         interp = lambda path : self.interpolate('http://{{config.host}}:{{config.port}}%s' % path)
 
-        subscribers = dict([(key, set([interp(value)])) for key, value in self.events.items()])
-            
+        subscribers = dict()
+        for event, subscriber in self.events.items():
+            if not event in subscribers:
+                subscribers[event] = set()
+            subscribers[event].add(subscriber)
+                        
         cfg_filename = self.interpolate("{{env.var}}/cabochon_subscribers.cfg")
         try:
             f = open(cfg_filename, "r")
@@ -1363,7 +1367,7 @@ class SaveCabochonSubscriber(Task):
                 line = line.strip()
                 event, subscriber = line.split()[:2]
                 if not event in subscribers:
-                    subscribers[event] = []
+                    subscribers[event] = set()
                 subscribers[event].add(subscriber)
         except IOError:
             pass
