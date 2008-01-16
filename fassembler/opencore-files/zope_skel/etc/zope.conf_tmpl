@@ -76,10 +76,9 @@ default-zpublisher-encoding utf-8
 
 <product-config opencore.nui>
       email-confirmation {{if asbool(config.email_confirmation)}}True{{else}}False{{endif}}
-{{#FIXME: needs to be more dynamic:}}
-{{if env.config.has_option('uris', 'twirlip_uri'):}}
-      twirlip_uri {{env.config.get('uris', 'twirlip_uri')}}
-{{endif}}
+      cabochon_messages $VAR/opencore/cabochon-messages
+      cabochon_user_info $VAR/cabochon-password.txt
+
 </product-config>
 <product-config opencore.auth>
   topp_secret_filename  {{env.config.get('general', 'topp_secret_filename')}}
