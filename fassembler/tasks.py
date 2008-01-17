@@ -1341,17 +1341,20 @@ class TestLxml(Task):
 
 
 class SaveCabochonSubscriber(Task):
-    def __init__(self, events, stacklevel=1):
+    def __init__(self, events, use_base_port = False, stacklevel=1):
         super(SaveCabochonSubscriber, self).__init__('Save Cabochon Subscriber', stacklevel+1)
                 
         assert events is not None, (
             "You must give a value for events")
 
         self.events = events
+        self.use_base_port = use_base_port
         
     def run(self):
-
-        interp = lambda path : self.interpolate('http://{{config.host}}:{{config.port}}%s' % path)
+        if self.use_base_port:
+            interp = lambda path : self.interpolate('http://{{config.host}}:{{general.base_port}}%s' % path)
+        else:
+            interp = lambda path : self.interpolate('http://{{config.host}}:{{config.port}}%s' % path)
 
         #new subscribers
         subscribers = dict()

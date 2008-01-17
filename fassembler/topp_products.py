@@ -27,7 +27,7 @@ class ScriptTranscluderProject(Project):
                 default='5',
                 help='Offset from base_port'),
         Setting('host',
-                default='127.0.0.1',
+                default='localhost',
                 help='Host to serve on'),
         ]
     
@@ -88,7 +88,7 @@ class TaskTrackerProject(Project):
                 default='4',
                 help='Offset from base_port for TaskTracker'),
         Setting('host',
-                default='127.0.0.1',
+                default='localhost',
                 help='Host to serve on'),
         Setting('spec',
                 default='requirements/tasktracker-req.txt',
@@ -108,7 +108,7 @@ class TaskTrackerProject(Project):
                      use_virtualenv=True,
                      cwd='{{env.base_path}}/{{project.name}}/src/{{project.name}}'),
         tasks.SaveURI(path='/tasks'),
-        tasks.SaveCabochonSubscriber({'delete_project' : '/projects/{id}/tasks/project/destroy'}),
+        tasks.SaveCabochonSubscriber({'delete_project' : '/projects/{id}/tasks/project/destroy'}, use_base_port=True),
         ]
 
     depends_on_projects = ['fassembler:topp']
@@ -157,7 +157,7 @@ class CabochonProject(Project):
                 default='6',
                 help='Offset from base_port for Cabochon'),
         Setting('host',
-                default='127.0.0.1',
+                default='localhost',
                 help='Host to serve on'),
         Setting('spec',
                 default='requirements/cabochon-req.txt',
@@ -235,7 +235,7 @@ class TwirlipProject(Project):
                 default='7',
                 help='Offset from base_port for Twirlip'),
         Setting('host',
-                default='127.0.0.1',
+                default='localhost',
                 help='Host to serve on'),
         Setting('spec',
                 default='requirements/twirlip-req.txt',
@@ -289,7 +289,7 @@ class DeliveranceProject(Project):
                 default='0',
                 help='Offset from base_port for Deliverance'),
         Setting('host',
-                default='127.0.0.1',
+                default='localhost',
                 help='Host to serve on'),
         ]
 
