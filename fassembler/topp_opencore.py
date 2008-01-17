@@ -480,6 +480,13 @@ exec {{config.zope_instance}}/bin/runzope -X debug-mode=off
         ## FIXME: linkzope and linkzopebinaries?
         PlaceZopeConfig('Copy Zope etc into build etc'),
         SymlinkZopeConfig('Symlink Zope configuration'),
+        tasks.ForEach('Run zinstalls',
+                      'package_name',
+                      '{{project.req_settings.get("zinstall_packages")',
+                      tasks.RunCommand('zinstall',
+                                       ['{{env.base_path}}/opencore/bin/python',
+                                        'setup.py', 'zinstall'],
+                                       cwd='{{env.base_path}}/opencore/src/{{task.package_name}}')),
         tasks.InstallSupervisorConfig(),
         tasks.EnsureFile('Write the start script',
                          '{{env.base_path}}/bin/start-{{project.name}}',
