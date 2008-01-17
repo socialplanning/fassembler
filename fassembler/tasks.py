@@ -7,10 +7,10 @@ import sys
 import os
 import subprocess
 import urlparse
+import copy
 from tempita import Template
 import re
 from glob import glob
-from fassembler.filemaker import RunCommandError
 from fassembler.util import asbool
 from fassembler.distutilspatch import find_distutils_file, update_distutils_file
 
@@ -774,7 +774,7 @@ class CheckMySQLDatabase(Task):
                 args = (self.db_password,)
             else:
                 args = ()
-                logger.warn('Note: no password set for %s@localhost; login may not work' % self.db_name)
+                self.logger.warn('Note: no password set for %s@localhost; login may not work' % self.db_name)
             conn.cursor().execute(plan, args)
         conn.close()
         
@@ -1022,6 +1022,8 @@ class InstallSpec(Task):
         for command, arg in extra_commands:
             command(context, arg)
 
+    _setting_re = re.compile(r'^(\w+)\s*=\s*(.*)$')
+
     def read_commands(self, filename=None):
         """
         Reads the commands in the given file (or self.spec_filename),
@@ -1043,9 +1045,23 @@ class InstallSpec(Task):
                        always_unzip=False)
         commands = []
         uneditable_eggs = []
+        # Used to flag state when we are looking for multi-line settings, like:
+        # setting = value
+        #           line 2
+        in_setting = False
         for line in f:
-            line = line.strip()
-            if not line or line.startswith('#'):
+            line = line.rstrip()
+            if not line or line.strip().startswith('#'):
+                continue
+            if in_setting:
+                if line.strip() != line:
+                    # Leading whitespace; multi-line setting
+                    continue
+                else:
+                    in_setting = False
+            if self._setting_re.search(line):
+                # We just skip settings here
+                in_setting = True
                 continue
             if line.startswith('-f') or line.startswith('--find-links'):
                 if line.startswith('-f'):
@@ -1278,6 +1294,47 @@ class ConditionalTask(Task):
                 self.logger.debug('%s is False: not running %s' % (
                     cond, task.name))
 
+class ForEach(Task):
+
+    description = """
+    Iterate over the values in {{task.value}} ({{task.values or 'no values'}}), setting task.{{task.variable}} for
+    the task{{if len(task.tasks)>1}}s{{endif}}:
+    {{for t in list(task.iter_subtasks()) or task.tasks:}}
+      * {{t}}
+    {{endfor}}
+    """
+
+    variable = interpolated('variable')
+
+    def __init__(self, name, variable, value, tasks, stacklevel=1):
+        super(ForEach, self).__init__(name, stacklevel=stacklevel+1)
+        self.variable = variable
+        self.value = value
+        if not isinstance(tasks, (list, tuple)):
+            tasks = [tasks]
+        self.tasks = tasks
+
+    @property
+    def values(self):
+        return [l.strip() for l in self.interpolate(self.value).splitlines() if l.strip()]
+
+    def iter_subtasks(self):
+        values = self.values
+        if not values:
+            self.logger.debug('No values in %s' % self.name)
+            return
+        for line in values:
+            line = line.strip()
+            if not line:
+                continue
+            for task in self.tasks:
+                task_copy = copy.copy(task)
+                setattr(task_copy, self.variable, line)
+                yield task_copy
+
+    def run(self):
+        pass
+
 class SetDistutilsValue(Task):
 
     description = """
@@ -1316,14 +1373,18 @@ class SetDistutilsValue(Task):
 
 
 class TestLxml(Task):
-    """Tests that lxml was built properly within a given virtualenv."""
+
+    description = """
+    Tests that lxml in {{task.path}}
+    """
+
+    path = interpolated('path')
 
     def __init__(self, path, stacklevel=1):
         super(TestLxml, self).__init__('Test lxml build', stacklevel+1)
         self.path = path
     
     def run(self):
-        self.path = self.interpolate(self.path)
         if self.maker.simulate:
             self.logger.notify('Would test lxml build in %s' % self.path)
             return

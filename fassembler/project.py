@@ -5,6 +5,7 @@ These classes should be listed as the entry point [fassembler.project]
 """
 import os
 import sys
+import re
 from cStringIO import StringIO
 from fassembler.namespace import Namespace
 from fassembler.text import indent, underline, dedent
@@ -259,7 +260,44 @@ class Project(object):
         raise OSError(
             "Could not find any of executable(s) %s in PATH %s"
             % (', '.join(executables), os.environ['PATH']))
-        
+
+    _setting_re = re.compile(r'^(\w+)\s*=\s*(.*)$')
+
+    @property
+    def req_settings(self):
+        """
+        Reads settings from the requirements file in requirements/<self.name>-req.txt
+        Returns a dictionary
+        """
+        spec_filename = self.maker.path('requirements/%s-req.txt' % self.name)
+        if not os.path.exists(spec_filename):
+            self.logger.debug('No requirements file in %s' % spec_filename)
+            return {}
+        settings = {}
+        f = open(spec_filename)
+        in_setting = None
+        for line in f:
+            line = line.rstrip()
+            if line.strip() != line and in_setting:
+                # Continuation line
+                cur = settings[in_setting]
+                settings[in_setting] = cur + '\n' + line.strip()
+                continue
+            if not line or line.strip().startswith('#'):
+                continue
+            match = self._setting_re.search(line)
+            if match:
+                name = match.group(1)
+                value = match.group(2)
+                if name in settings:
+                    settings[name] = settings[name] + '\n' + value
+                else:
+                    settings[name] = value
+                in_setting = name
+            else:
+                in_setting = None
+        f.close()
+        return settings        
 
 class Setting(object):
     """

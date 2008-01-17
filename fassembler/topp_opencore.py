@@ -114,6 +114,11 @@ def make_tarball():
 
 class GetBundleTarball(tasks.Task):
 
+    description = """
+    Get the bundle {{config.opencore_bundle_tar_info}} (name {{config.opencore_bundle_name}})
+    and unpack it to {{task.dest}}
+    """
+
     dest = interpolated('dest')
 
     def __init__(self, name='Get opencore bundle tarball',
@@ -273,6 +278,9 @@ class SymlinkZopeConfig(ZopeConfigTask):
 
 
 class StartZeo(tasks.Task):
+
+    description = "Start zeo"
+
     def __init__(self, stacklevel=1):
         super(StartZeo, self).__init__('Start zeo', stacklevel=stacklevel+1)
 
@@ -288,6 +296,9 @@ class StartZeo(tasks.Task):
 
 
 class StopZeo(tasks.Task):
+    
+    description = "Start zeo"
+
     def __init__(self, stacklevel=1):
         super(StopZeo, self).__init__('Stop zeo', stacklevel=stacklevel+1)
 
@@ -553,6 +564,11 @@ exec {{config.zeo_instance}}/bin/runzeo
         RunZopectlScript('{{env.base_path}}/opencore/src/opencore/add_openplans.py',
                          script_arg='{{env.config.get("general", "etc_svn_subdir")}}',
                          name='Add OpenPlans site'),
+        tasks.ForEach('Install additional opencore-req.txt zopectl scripts',
+                      'script_name',
+                      '{{project.req_settings.get("zopectl_scripts")}}',
+                      RunZopectlScript('{{os.path.join(env.base_path, "opencore/", task.script_name)}}',
+                                       name="Additional zopectl script {{task.script_name}}")),
         StopZeo(),
         ]
 
