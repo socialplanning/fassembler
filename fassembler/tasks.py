@@ -14,6 +14,35 @@ from glob import glob
 from fassembler.util import asbool
 from fassembler.distutilspatch import find_distutils_file, update_distutils_file
 
+class interpolated(object):
+    """
+    This is a descriptor, a dynamic kind of attribute.
+
+    This descriptor takes values, and whenever the values are
+    retrieved they are interpolated with ``self.interpolate(value)``.
+    """
+    def __init__(self, name):
+        self.name = name
+    def __get__(self, obj, type=None):
+        ## FIXME: I *could* return a string subclass that gives access to the raw value too
+        if obj is None:
+            return self
+        try:
+            raw_value = getattr(obj, '_' + self.name)
+        except AttributeError:
+            raise AttributeError(
+                "No value set for %s" % self.name)
+        return obj.interpolate(raw_value, name=obj.position + (' attribute %s' % self.name))
+    def __set__(self, obj, value):
+        ## FIXME: nice to compile the template here too
+        setattr(obj, '_' + self.name, value)
+    def __delete__(self, obj, value):
+        delattr(obj, '_' + self.name)
+    def __repr__(self):
+        return '<%s for attribute %s>' % (
+            self.__class__.__name__, self.name)
+
+
 class Task(object):
     """
     Abstract base class for tasks
@@ -21,6 +50,7 @@ class Task(object):
 
     maker = None
     description = None
+    name = interpolated('name')
 
     def __init__(self, name, stacklevel=1):
         self.name = name
@@ -149,35 +179,6 @@ class Task(object):
 
     def iter_subtasks(self):
         return []
-
-class interpolated(object):
-    """
-    This is a descriptor, a dynamic kind of attribute.
-
-    This descriptor takes values, and whenever the values are
-    retrieved they are interpolated with ``self.interpolate(value)``.
-    """
-    def __init__(self, name):
-        self.name = name
-    def __get__(self, obj, type=None):
-        ## FIXME: I *could* return a string subclass that gives access to the raw value too
-        if obj is None:
-            return self
-        try:
-            raw_value = getattr(obj, '_' + self.name)
-        except AttributeError:
-            raise AttributeError(
-                "No value set for %s" % self.name)
-        return obj.interpolate(raw_value, name=obj.position + (' attribute %s' % self.name))
-    def __set__(self, obj, value):
-        ## FIXME: nice to compile the template here too
-        setattr(obj, '_' + self.name, value)
-    def __delete__(self, obj, value):
-        delattr(obj, '_' + self.name)
-    def __repr__(self):
-        return '<%s for attribute %s>' % (
-            self.__class__.__name__, self.name)
-
 
 class Script(Task):
     """
