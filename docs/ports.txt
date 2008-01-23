@@ -6,6 +6,7 @@
 +5 = ScriptTranscluder
 +6 = Cabochon
 +7 = Twirlip
++10 = Supervisor
 
 
 Note: update fassember.topp:CheckBasePorts.port_range if adding ports here
