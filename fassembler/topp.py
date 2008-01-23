@@ -173,6 +173,12 @@ class SupervisorProject(Project):
         Setting('spec',
                 default='requirements/supervisor-req.txt',
                 help='Specification for installing Supervisor'),
+        Setting('port',
+                default='{{env.base_port+int(config.port_offset)}}',
+                help="Port to install HTTP server on"),
+        Setting('port_offset',
+                default='10',
+                help='Offset from base_port for HTTP server'),
         ]
     
     actions = [
