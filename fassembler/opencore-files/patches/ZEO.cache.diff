@@ -1,0 +1,13 @@
+Index: lib/python/ZEO/cache.py
+===================================================================
+--- lib/python/ZEO/cache.py	2008-01-29 14:46:41.000000000 -0500
++++ lib/python/ZEO/cache.py	2008-01-29 14:46:47.000000000 -0500
+@@ -364,7 +364,7 @@
+             return
+ 
+         # Add the data we have to the list of non-current data for oid.
+-        assert tid is not None and cur_tid < tid
++        assert tid is not None and cur_tid <= tid   # PATCHED for bugs.launchpad.net/zope3/+bug/98275
+         # 0x1C = invalidate (hit, saving non-current)
+         self._trace(0x1C, oid, version, tid)
+         del self.current[oid]   # because we no longer have current data
