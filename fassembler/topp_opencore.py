@@ -20,7 +20,7 @@ if sys.version >= (2, 5):
 
 warnings.filterwarnings('ignore', 'tempnam is .*')
 
-tarball_version = '2.9.8openplans.1'
+tarball_version = '2.9.8openplans.2'
 tarball_url = 'https://svn.openplans.org/eggs/OpenplansZope-%s.tar.bz2' % tarball_version
 orig_zope_source = 'http://www.zope.org/Products/Zope/2.9.8/Zope-2.9.8-final.tgz'
 
