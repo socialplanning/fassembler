@@ -88,13 +88,23 @@ class WordPressProject(Project):
     depends_on_projects = ['fassembler:topp']
     depends_on_executables = [('httpd', 'apache2')]
 
+    def php_version(self):
+        return Popen([self.php_cgi_exec(), '-v'], stdout=PIPE).communicate()[0].split()[1].split('.')[0]
+	
     def extra_modules(self):
-        required_modules = ['mime', 'dir', 'rewrite', 'log_config']
+        required_modules = ['mime', 'dir', 'rewrite']
         apache_version = Popen([self.apache_exec(), "-v"], stdout=PIPE).communicate()[0].split()[2].split('/')[1].split('.')
         major, minor, revision = map(lambda x: int(x), apache_version)
-        if major == 2 and minor >= 2:
-            required_modules.append('authz_host')
-        elif major == 1 or (major == 2 and minor < 2):
+        # access_module changed to authz_module between Apache 2.1 and 2.2
+        # config_log_module changed to log_config_module somewhere between Apache 1.x and 2.x
+        if major == 2:
+            required_modules.append('log_config')
+            if minor >= 2:
+                required_modules.append('authz_host')
+            else:
+                required_modules.append('access')
+        elif major == 1:
+            required_modules.append('config_log')
             required_modules.append('access')
         compiled_in_modules = set(Popen([self.apache_exec(), "-l"], stdout=PIPE).communicate()[0].split()[3:])
         modules_to_load = []

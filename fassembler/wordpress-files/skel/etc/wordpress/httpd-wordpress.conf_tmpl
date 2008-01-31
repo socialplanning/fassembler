@@ -39,15 +39,15 @@ AcceptMutex fcntl
 
 Listen {{config.port}}
 
-# Boilerplate:
-LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
-
 {{project.extra_modules()}}
-LoadModule php5_module {{config.apache_module_dir}}/libphp5.so
-<IfModule mod_php5.c>
+LoadModule php{{project.php_version()}}_module {{config.apache_module_dir}}/libphp{{project.php_version()}}.so
+<IfModule mod_php{{project.php_version()}}.c>
   AddType application/x-httpd-php .php .phtml .php3
   AddType application/x-httpd-php-source .phps
 </IfModule>
+
+# Boilerplate:
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
 
 # Boilerplate:
 DirectoryIndex index.html index.cgi index.pl index.php index.xhtml index.phtml
