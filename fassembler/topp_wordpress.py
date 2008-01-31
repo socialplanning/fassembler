@@ -95,23 +95,28 @@ class WordPressProject(Project):
         required_modules = ['mime', 'dir', 'rewrite']
         apache_version = Popen([self.apache_exec(), "-v"], stdout=PIPE).communicate()[0].split()[2].split('/')[1].split('.')
         major, minor, revision = map(lambda x: int(x), apache_version)
+
         # access_module changed to authz_module between Apache 2.1 and 2.2
-        # config_log_module changed to log_config_module somewhere between Apache 1.x and 2.x
-        if major == 2:
-            required_modules.append('log_config')
-            if minor >= 2:
-                required_modules.append('authz_host')
-            else:
-                required_modules.append('access')
-        elif major == 1:
-            required_modules.append('config_log')
+        if major == 2 and minor >= 2:
+            required_modules.append('authz_host')
+        else:
             required_modules.append('access')
+
         compiled_in_modules = set(Popen([self.apache_exec(), "-l"], stdout=PIPE).communicate()[0].split()[3:])
         modules_to_load = []
         for r in required_modules:
             rc = 'mod_%s.c' % r
             if rc not in compiled_in_modules:
                 modules_to_load.append('LoadModule %s_module {{config.apache_module_dir}}/mod_%s.so' % (r, r))
+
+        # config_log_module changed to log_config_module somewhere between Apache 1.x and 2.x
+        # but its .so is called mod_log_config.so in both, which is annoying
+        if 'mod_log_config.c' not in compiled_in_modules:
+            if major == 1:
+                modules_to_load.append('LoadModule config_log_module {{config.apache_module_dir}}/mod_log_config.so')
+            elif major == 2:
+                modules_to_load.append('LoadModule log_config_module {{config.apache_module_dir}}/mod_log_config.so')
+
         return self.interpolate('\n'.join(modules_to_load))
 
     def apache_module_dir(self):
