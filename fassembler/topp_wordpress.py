@@ -145,7 +145,7 @@ class WordPressProject(Project):
         return [int(i) for i in (major, minor)]
 
     def apache_fg_flag(self):
-        major, _ = self.apache_version():
+        major, _ = self.apache_version()
         if major < 2:
             ## XXX -F only works for apache 1.3 if not launching from supervisor
             ## due to setsid bug, so use -X instead. Don't use in production!
