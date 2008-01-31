@@ -88,13 +88,9 @@ class WordPressProject(Project):
     depends_on_projects = ['fassembler:topp']
     depends_on_executables = [('httpd', 'apache2')]
 
-    def php_version(self):
-        return Popen([self.php_cgi_exec(), '-v'], stdout=PIPE).communicate()[0].split()[1].split('.')[0]
-	
     def extra_modules(self):
         required_modules = ['mime', 'dir', 'rewrite']
-        apache_version = Popen([self.apache_exec(), "-v"], stdout=PIPE).communicate()[0].split()[2].split('/')[1].split('.')
-        major, minor, revision = map(lambda x: int(x), apache_version)
+        major, minor = self.apache_version()
 
         # access_module changed to authz_host_module between Apache 2.1 and 2.2
         if major == 2 and minor >= 2:
@@ -143,8 +139,26 @@ class WordPressProject(Project):
     def apache_exec(self):
         return self.find_exec(['httpd', 'apache2'])
 
+    def apache_version(self):
+        "Returns a pair of integers [major, minor]"
+        major, minor, _ = Popen([self.apache_exec(), "-v"], stdout=PIPE).communicate()[0].split()[2].split('/')[1].split('.')
+        return [int(i) for i in (major, minor)]
+
+    def apache_fg_flag(self):
+        major, _ = self.apache_version():
+        if major < 2:
+            ## XXX -F only works for apache 1.3 if not launching from supervisor
+            ## due to setsid bug, so use -X instead. Don't use in production!
+            return '-X'
+        else:
+            return '-DFOREGROUND'
+
     def php_cgi_exec(self):
         return self.find_exec(['php-cgi', 'php', 'php5-cgi', 'php5', 'php4-cgi', 'php4'])
+
+    def php_version(self):
+        "Returns major as a string"
+        return Popen([self.php_cgi_exec(), '-v'], stdout=PIPE).communicate()[0].split()[1].split('.')[0]
 
     def find_exec(self, names):
         paths = os.environ['PATH'].split(os.path.pathsep)
