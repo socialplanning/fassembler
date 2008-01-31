@@ -7,6 +7,20 @@ from fassembler.project import Project, Setting
 from fassembler import tasks
 from subprocess import Popen, PIPE
 
+class CheckPHP(tasks.Task):
+    """Makes sure PHP was built with required modules"""
+    required_modules = ['hash']
+
+    def __init__(self, php_cgi_exec, stacklevel=1):
+        super(CheckPHP, self).__init__('CheckPHP', stacklevel=stacklevel+1)
+        self.php_cgi_exec = php_cgi_exec
+
+    def run(self):
+        compiled_in_modules = set(Popen([self.php_cgi_exec, '-m'], stdout=PIPE).communicate()[0].split('\n')[1:])
+        for m in self.required_modules:
+            if m not in compiled_in_modules:
+                raise Exception('PHP not compiled with required module %s', m)
+            
 class WordPressProject(Project):
     """
     Install WordPress
@@ -63,6 +77,7 @@ class WordPressProject(Project):
     skel_dir = os.path.join(os.path.dirname(__file__), 'wordpress-files', 'skel')
 
     actions = [
+        #CheckPHP('{{config.php_cgi_exec}}'),
         tasks.CopyDir('Create layout',
                       skel_dir, './'),
         tasks.SvnCheckout('Checkout wordpress-mu',
