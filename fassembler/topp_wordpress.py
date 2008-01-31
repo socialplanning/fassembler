@@ -96,10 +96,10 @@ class WordPressProject(Project):
         apache_version = Popen([self.apache_exec(), "-v"], stdout=PIPE).communicate()[0].split()[2].split('/')[1].split('.')
         major, minor, revision = map(lambda x: int(x), apache_version)
 
-        # access_module changed to authz_module between Apache 2.1 and 2.2
+        # access_module changed to authz_host_module between Apache 2.1 and 2.2
         if major == 2 and minor >= 2:
             required_modules.append('authz_host')
-        else:
+        elif major == 1 or (major == 2 and minor < 2):
             required_modules.append('access')
 
         compiled_in_modules = set(Popen([self.apache_exec(), "-l"], stdout=PIPE).communicate()[0].split()[3:])
