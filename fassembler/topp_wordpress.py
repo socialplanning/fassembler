@@ -16,10 +16,11 @@ class CheckPHP(tasks.Task):
         self.php_cgi_exec = php_cgi_exec
 
     def run(self):
+        self.php_cgi_exec = self.interpolate(self.php_cgi_exec)
         compiled_in_modules = set(Popen([self.php_cgi_exec, '-m'], stdout=PIPE).communicate()[0].split('\n')[1:])
         for m in self.required_modules:
             if m not in compiled_in_modules:
-                raise Exception('PHP not compiled with required module %s', m)
+                raise Exception('PHP not compiled with required module: %s' % m)
             
 class WordPressProject(Project):
     """
@@ -77,7 +78,7 @@ class WordPressProject(Project):
     skel_dir = os.path.join(os.path.dirname(__file__), 'wordpress-files', 'skel')
 
     actions = [
-        #CheckPHP('{{config.php_cgi_exec}}'),
+        CheckPHP('{{config.php_cgi_exec}}'),
         tasks.CopyDir('Create layout',
                       skel_dir, './'),
         tasks.SvnCheckout('Checkout wordpress-mu',
