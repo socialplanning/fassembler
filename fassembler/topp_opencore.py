@@ -345,7 +345,8 @@ class RunZopectlScript(tasks.Task):
             script_proc.communicate()
         else:
             self.logger.warn('Tried to run zopectl script at %s but the '
-                             'path does not exist' % self.script_path)
+                             'path does not exist' % self.script_path,
+                             color='red')
 
 
 class OpenCoreProject(Project):
