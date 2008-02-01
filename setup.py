@@ -46,5 +46,6 @@ setup(name='fassembler',
       wordpress = fassembler.topp_wordpress:WordPressProject
       cabochon = fassembler.topp_products:CabochonProject
       twirlip = fassembler.topp_products:TwirlipProject
+      nymap = fassembler.topp_nymap:NYMapProject
       """,
       )
