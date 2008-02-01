@@ -26,6 +26,10 @@ class NYMapProject(Project):
             'Checkout nymap',
             repository='{{config.svn}}',
             dest='{{env.base_path}}/{{project.name}}/src/nymap'),
+        tasks.Script(
+            'Run build script',
+            ['./build', '-f'],
+            cwd='{{env.base_path}}/{{project.name}}/src/nymap/build'),
         tasks.SaveURI(path='/maps',
                       uri='file://{{env.base_path}}/{{project.name}}/src/nymap',
                       project_local=False),
