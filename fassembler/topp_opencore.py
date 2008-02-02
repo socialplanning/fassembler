@@ -328,7 +328,7 @@ class RunZopectlScript(tasks.Task):
                  name='Run zopectl script', stacklevel=1):
         super(RunZopectlScript, self).__init__(name, stacklevel=stacklevel+1)
         self.script_path = script_path
-        self.script_args = script_args
+        self.script_args = ' '.join(script_args.split())
 
     def run(self):
         if self.maker.simulate:
@@ -572,8 +572,8 @@ exec {{config.zeo_instance}}/bin/runzeo
         RunZopectlScript('{{env.base_path}}/opencore/src/opencore/add_openplans.py',
                          ## XXX add_openplans.py wasn't doing anything with this argument:
                          #script_args='{{env.config.get("general", "etc_svn_subdir")}}', 
-                         script_args='{{env.config.get("applications", "wordpress uri")}} ' \
-                                     '{{env.config.get("applications", "tasktracker uri")}}',
+                         script_args='{{env.config.getdefault("applications", "wordpress uri", "")}} ' \
+                                     '{{env.config.getdefault("applications", "tasktracker uri", "")}}',
                          name='Add OpenPlans site'),
         tasks.ForEach('Install additional opencore-req.txt zopectl scripts',
                       'script_name',
