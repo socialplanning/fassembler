@@ -573,7 +573,9 @@ exec {{config.zeo_instance}}/bin/runzeo
                          ## XXX add_openplans.py wasn't doing anything with this argument:
                          #script_args='{{env.config.get("general", "etc_svn_subdir")}}', 
                          script_args='{{env.config.getdefault("applications", "wordpress uri", "")}} ' \
-                                     '{{env.config.getdefault("applications", "tasktracker uri", "")}}',
+                                     '{{env.config.getdefault("applications", "tasktracker uri", "")}}' \
+                                     '{{env.config.getdefault("applications", "cabochon uri", "")}}' \
+                                     '{{env.config.getdefault("applications", "twirlip uri", "")}}',
                          name='Add OpenPlans site'),
         tasks.ForEach('Install additional opencore-req.txt zopectl scripts',
                       'script_name',
