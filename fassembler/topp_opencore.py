@@ -317,27 +317,27 @@ class RunZopectlScript(tasks.Task):
 
     description = """
     Given the path of a python file {{task.script_path}},
-    executes 'zopectl run {{task.script_path}}' from within the opencore virtualenv.
+    executes 'zopectl run {{task.script_path}} {{task.script_args}}'
+    from within opencore's virtualenv.
     """
 
-    script_arg = interpolated("script_arg")
+    script_path = interpolated('script_path')
+    script_args = interpolated('script_args')
 
-    def __init__(self, script_path, script_arg='',
+    def __init__(self, script_path, script_args='',
                  name='Run zopectl script', stacklevel=1):
         super(RunZopectlScript, self).__init__(name, stacklevel=stacklevel+1)
-        self.script_arg = script_arg
         self.script_path = script_path
+        self.script_args = script_args
 
     def run(self):
-        self.script_path = self.interpolate(self.script_path)
         if self.maker.simulate:
             self.logger.notify('Would run zopectl script at %s' % self.script_path)
             return
         if os.path.exists(self.script_path):
             zopectl_path = self.interpolate('{{env.base_path}}/opencore/zope/bin/zopectl')
             process_args = [zopectl_path, 'run', self.script_path]
-            if self.script_arg:
-                process_args.append(self.script_arg)
+            process_args.append(self.script_args)
             script_proc = subprocess.Popen(process_args,
                                            stdout=subprocess.PIPE,
                                            stderr=subprocess.PIPE)
@@ -570,7 +570,10 @@ exec {{config.zeo_instance}}/bin/runzeo
         RunZopectlScript('{{env.base_path}}/opencore/src/opencore/do_nothing.py',
                          name='Run initial zopectl to bypass failure-on-first-start'),
         RunZopectlScript('{{env.base_path}}/opencore/src/opencore/add_openplans.py',
-                         script_arg='{{env.config.get("general", "etc_svn_subdir")}}',
+                         ## XXX add_openplans.py wasn't doing anything with this argument:
+                         #script_args='{{env.config.get("general", "etc_svn_subdir")}}', 
+                         script_args='{{env.config.get("applications", "wordpress uri")}} ' \
+                                     '{{env.config.get("applications", "tasktracker uri")}}',
                          name='Add OpenPlans site'),
         tasks.ForEach('Install additional opencore-req.txt zopectl scripts',
                       'script_name',
