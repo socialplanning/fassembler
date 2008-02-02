@@ -10,13 +10,13 @@ from subprocess import Popen, PIPE
 class CheckPHP(tasks.Task):
     """Makes sure PHP was built with required modules"""
     required_modules = ['hash']
+    php_cgi_exec = tasks.interpolated('php_cgi_exec')
 
     def __init__(self, php_cgi_exec, stacklevel=1):
         super(CheckPHP, self).__init__('CheckPHP', stacklevel=stacklevel+1)
         self.php_cgi_exec = php_cgi_exec
 
     def run(self):
-        self.php_cgi_exec = self.interpolate(self.php_cgi_exec)
         compiled_in_modules = set(Popen([self.php_cgi_exec, '-m'], stdout=PIPE).communicate()[0].split('\n')[1:])
         for m in self.required_modules:
             if m not in compiled_in_modules:

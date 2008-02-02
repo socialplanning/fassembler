@@ -1376,7 +1376,7 @@ class SetDistutilsValue(Task):
 class TestLxml(Task):
 
     description = """
-    Tests that lxml in {{task.path}}
+    Tests that lxml built properly in {{task.path}}
     """
 
     path = interpolated('path')
