@@ -17,7 +17,7 @@ class BuildMasterProject(Project):
     """Install Buildbot master that controls our automated builds & tests.
     """
 
-    name = 'buildbot master'
+    name = 'buildmaster'
     title = 'Installs the buildbot master'
     
     files_dir = os.path.join(os.path.dirname(__file__), 'buildbot-files')
