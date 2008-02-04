@@ -47,5 +47,7 @@ setup(name='fassembler',
       cabochon = fassembler.topp_products:CabochonProject
       twirlip = fassembler.topp_products:TwirlipProject
       nymap = fassembler.topp_nymap:NYMapProject
+      buildmaster = fassembler.topp_buildbot:BuildMasterProject
+      buildslave = fassembler.topp_buildbot:BuildSlaveProject
       """,
       )

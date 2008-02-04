@@ -14,13 +14,12 @@ warnings.filterwarnings('ignore', 'tempnam is .*')
 
 class BuildMasterProject(Project):
 
-    blah
-    
-class InstallBuildbot(tasks.Task):
-
-    description = """
-    Install Buildbot master into {{task.dest_path}}.
+    """Install Buildbot master that controls our automated builds & tests.
     """
+
+    name = 'buildbot master'
+    title = 'Installs the buildbot master'
+    
     files_dir = os.path.join(os.path.dirname(__file__), 'buildbot-files')
     skel_dir = os.path.join(files_dir, 'skel')
 
@@ -40,3 +39,5 @@ class InstallBuildbot(tasks.Task):
                           '{{config.spec}}'),
 
         ]
+
+    depends_on_projects = ['fassembler:topp']

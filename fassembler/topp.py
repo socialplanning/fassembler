@@ -17,7 +17,7 @@ class CheckBasePorts(tasks.Task):
 
     base_port = tasks.interpolated('base_port')
 
-    port_range = 10
+    port_range = 22
 
     def __init__(self, name='Check base ports', base_port='{{config.base_port}}',
                  stacklevel=1):
