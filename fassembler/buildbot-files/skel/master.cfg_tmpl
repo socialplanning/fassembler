@@ -41,19 +41,6 @@ c['slaves'] = slaves
 ocf = factory.BuildFactory()
 
 
-# debug, where are we?
-## ocf.addStep(ShellCommand, command='pwd',
-##             description='where the heck are we?')
-## ocf.addStep(ShellCommand, command='echo $PATH',
-##             description=" what's my path?")
-
-
-# get some stuff we need
-# XXX do this in a build script
-ocf.addStep(ShellCommand, workdir='%s/bin'  % ENV,
-            command = ['svn', 'export',
-                       'https://svn.openplans.org/svn/build/topp.build.buildbot/trunk/topp/build/buildbot/skel/bin/accept_certificates.sh'])
-
 # Accept certificates (for svn).
 ocf.addStep(ShellCommand,
             command=['%s/bin/accept_certificates.sh' % ENV],

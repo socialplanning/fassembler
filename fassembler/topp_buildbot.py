@@ -2,13 +2,35 @@
 Installation of a TOPP buildbot master.
 """
 
-import os
 from fassembler import tasks
 from fassembler.project import Project, Setting
+import os
+import socket
+import subprocess
+import sys
+
 interpolated = tasks.interpolated
 
 twisted_dirname = 'Twisted-2.5.0'
 tarball_url = 'http://tmrc.mit.edu/mirror/twisted/Twisted/2.5/%s.tar.bz2' % twisted_dirname
+
+def get_host_info():
+    uname = os.uname()
+    platform = sys.platform.title()
+    if platform.startswith('Linux'):
+        platform = 'Linux'
+        # Hopefully this includes distro info on all linuxes?
+        version = os.uname()[2]
+    elif platform == 'Darwin':
+        # we're more interested in "OSX" than "darwin".
+        platform = 'Mac OSX'
+        # thanks doug!
+        cmd = subprocess.Popen("osascript -e 'tell app \"Finder\" to version'")
+        version = cmd.stdout.read().strip()
+    else:
+        version = ''
+    hostname = uname[1]
+    return hostname, platform, version
 
 
 class GetTwistedSource(tasks.InstallTarball):
@@ -46,6 +68,8 @@ class BuildBotProject(Project):
  
     depends_on_projects = ['fassembler:topp']
 
+    hostname, platform, version = get_host_info()
+
     settings = [
         Setting('spec',
                 default='requirements/buildbot-req.txt',
@@ -77,9 +101,10 @@ class BuildBotProject(Project):
         Setting('buildslave_port_offset',
                 default='22',
                 help='Offset from base_port for the build slave.'),
-        
-        # XXX put port offsets & calculated ports here.
-        # See docs/ports.txt
+
+        Setting('passwd',
+                default='PASSWORD',
+                help="Password for buildslaves to connect to master."),
         ]
 
     actions = [
@@ -108,6 +133,7 @@ class BuildMasterProject(BuildBotProject):
     masterdir = 'master'
 
     settings = BuildBotProject.settings  + []
+
     actions = BuildBotProject.actions + [
         tasks.Script(
             'Make a buildbot master',
@@ -121,3 +147,43 @@ class BuildMasterProject(BuildBotProject):
              force_overwrite=True, svn_add=False),
         ]
         
+
+class BuildSlaveProject(BuildBotProject):
+
+    """Install a Buildbot slave to connect to our build master"""
+
+    name = 'buildslave'
+    title = 'Installs a buildbot slave'
+
+    settings = BuildBotProject.settings + [
+        Setting('buildslave_name',
+                default='{{os.path.join(env.base_path, project.name)}}',
+                help="Name of this build slave."),
+        
+        Setting('buildslave_dir',
+                default='{{os.path.join(env.base_path, project.name)}}',
+                help="Directory to put the buildslave in."),
+        
+        ]
+
+    actions = BuildBotProject.actions + [
+        tasks.Script(
+            'Fetch the accept_certificates script',
+            ['svn', 'export',
+             'https://svn.openplans.org/svn/build/topp.build.buildbot/trunk/topp/build/buildbot/skel/bin/accept_certificates.sh'
+             ],
+            cwd='{{os.path.join(env.base_path, "bin")}}'
+            ),
+        tasks.Script(
+            'Make a buildbot slave',
+            ['bin/buildbot', 'create-slave', '--force',
+             '{{config.buildslave_dir}}',
+             '{{config.host}}:{{config.buildslave_port}}',
+             '{{config.buildslave_name}}',
+             '{{config.passwd}}'
+             ],
+            cwd='{{os.path.join(env.base_path, project.name)}}'
+            ),
+        ]
+
+    
