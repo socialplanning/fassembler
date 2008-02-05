@@ -19,8 +19,20 @@ class GetTwistedSource(tasks.InstallTarball):
     
     _tarball_url = tarball_url
     _src_name = twisted_dirname
+    _marker = interpolated('_marker')
 
-        
+    def __init__(self, stacklevel=1):
+        super(GetTwistedSource, self).__init__(stacklevel=stacklevel+1)
+        self._marker = '{{os.path.join(task.dest_path, ".marker")}}'
+
+    def post_unpack_hook(self):
+        # This is just a marker file to show for future runs that we
+        # successfully downloaded and unpacked the tarball.
+        open(self._marker, 'w').write('')
+
+    def is_up_to_date(self):
+        return os.path.exists(self._marker)
+
 
 class BuildMasterProject(Project):
 
