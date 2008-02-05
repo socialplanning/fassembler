@@ -6,11 +6,21 @@ import os
 from fassembler import tasks
 from fassembler.project import Project, Setting
 interpolated = tasks.interpolated
-import warnings
+
+twisted_dirname = 'Twisted-2.5.0'
+tarball_url = 'http://tmrc.mit.edu/mirror/twisted/Twisted/2.5/%s.tar.bz2' % twisted_dirname
 
 
-warnings.filterwarnings('ignore', 'tempnam is .*')
+class GetTwistedSource(tasks.InstallTarball):
 
+    # easy_install twisted isn't possible, see
+    # http://twistedmatrix.com/trac/ticket/1286
+    # so we install from a tarball.
+    
+    _tarball_url = tarball_url
+    _src_name = twisted_dirname
+
+        
 
 class BuildMasterProject(Project):
 
@@ -19,7 +29,8 @@ class BuildMasterProject(Project):
 
     name = 'buildmaster'
     title = 'Installs the buildbot master'
-    
+    _twisted_src = twisted_dirname
+
     files_dir = os.path.join(os.path.dirname(__file__), 'buildbot-files')
     skel_dir = os.path.join(files_dir, 'skel')
 
@@ -37,7 +48,12 @@ class BuildMasterProject(Project):
         tasks.VirtualEnv(),
         tasks.InstallSpec('Install buildbot dependencies',
                           '{{config.spec}}'),
-
+        GetTwistedSource(),
+        tasks.Script('Install Twisted', ['python', 'setup.py', 'install'],
+                     use_virtualenv=True,
+                     cwd='{{env.base_path}}/{{project.name}}/src/{{project._twisted_src}}'
+                     ),
+        tasks.EasyInstall('Install buildbot', 'buildbot>=0.7.6')
         ]
 
     depends_on_projects = ['fassembler:topp']
