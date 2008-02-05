@@ -34,17 +34,17 @@ class GetTwistedSource(tasks.InstallTarball):
         return os.path.exists(self._marker)
 
 
-class BuildMasterProject(Project):
 
-    """Install Buildbot master that controls our automated builds & tests.
-    """
+class BuildBotProject(Project):
+    """Buildbot base project class"""
 
-    name = 'buildmaster'
-    title = 'Installs the buildbot master'
     _twisted_src = twisted_dirname
 
     files_dir = os.path.join(os.path.dirname(__file__), 'buildbot-files')
     skel_dir = os.path.join(files_dir, 'skel')
+
+ 
+    depends_on_projects = ['fassembler:topp']
 
     settings = [
         Setting('spec',
@@ -56,18 +56,43 @@ class BuildMasterProject(Project):
         # XXX put port offsets & calculated ports here.
         # See docs/ports.txt
         ]
+
     actions = [
         tasks.VirtualEnv(),
         tasks.InstallSpec('Install buildbot dependencies',
                           '{{config.spec}}'),
         GetTwistedSource(),
-        tasks.Script('Install Twisted', ['python', 'setup.py', 'install'],
+        tasks.Script('Install Twisted',
+                     ['python', 'setup.py', 'install'],
                      use_virtualenv=True,
                      cwd='{{env.base_path}}/{{project.name}}/src/{{project._twisted_src}}'
                      ),
         # XXX This fails about half the time, because sourceforge sucks.
         # Just re-run until it works.
-        tasks.EasyInstall('Install buildbot', 'buildbot>=0.7.6')
+        tasks.EasyInstall('Install buildbot', 'buildbot>=0.7.6'),
         ]
 
-    depends_on_projects = ['fassembler:topp']
+
+class BuildMasterProject(BuildBotProject):
+
+    """Install Buildbot master that controls our automated builds & tests.
+    """
+
+    name = 'buildmaster'
+    title = 'Installs a buildbot master'
+    masterdir = 'master'
+
+    settings = BuildBotProject.settings  + []
+    actions = BuildBotProject.actions + [
+        tasks.Script(
+            'Make a buildbot master',
+            ['bin/buildbot', 'create-master', masterdir],
+            cwd='{{os.path.join(env.base_path, project.name)}}'
+            ),
+        tasks.EnsureFile(
+             'Overwrite the buildbot master.cfg file',
+             '{{os.path.join(env.base_path, project.name, project.masterdir, "master.cfg")}}',
+             content_path='{{os.path.join(project.skel_dir, "master.cfg")}}',
+             force_overwrite=True, svn_add=False),
+        ]
+        
