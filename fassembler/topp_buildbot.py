@@ -53,6 +53,8 @@ class BuildMasterProject(Project):
                      use_virtualenv=True,
                      cwd='{{env.base_path}}/{{project.name}}/src/{{project._twisted_src}}'
                      ),
+        # XXX This fails about half the time, because sourceforge sucks.
+        # Just re-run until it works.
         tasks.EasyInstall('Install buildbot', 'buildbot>=0.7.6')
         ]
 
