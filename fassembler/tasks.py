@@ -119,11 +119,13 @@ class Task(object):
         Run maker.copy_dir, with interpolated arguments.
         """
         self._run_fill_method('copy_dir', *args, **kw)
+
     def copy_file(self, *args, **kw):
         """
         Run maker.copy_file, with interpolated arguments.
         """
         self._run_fill_method('copy_file', *args, **kw)
+
     def _run_fill_method(self, method_name, *args, **kw):
         ns = self.create_namespace()
         kw.setdefault('template_vars', ns.dict)
