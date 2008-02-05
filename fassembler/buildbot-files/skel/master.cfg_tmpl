@@ -10,7 +10,13 @@ from buildbot.buildslave import BuildSlave
 import os
 import subprocess
 
-OCBASEPORT=int('{{config.baseport}}')  # The build we make will use this port.
+# Note, we're overloading the meaning of base_port: fassembler used it
+# to build this buildbot and create this config, but we're re-using
+# the same base_port for buildbot to run fassembler :-) This is only a
+# problem if we have fassembler build a buildbot which then uses
+# fassembler to build another buildbot and runs it on the same port.
+# so Don't Do That.
+OCBASEPORT=int('{{config.baseport}}')
 OCBASEDIR='oc'
 ENV = os.environ.get('VIRTUAL_ENV') or os.environ.get('WORKINGENV')
 
