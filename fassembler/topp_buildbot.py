@@ -56,6 +56,28 @@ class BuildBotProject(Project):
         Setting('baseport',
                 default='{{env.base_port}}',
                 help="Base port"),
+
+        Setting('buildmaster_private_port',
+                default='{{env.base_port+int(config.buildmaster_private_offset)}}',
+                help="Port to run the private buildmaster on (force build allowed)"),
+        Setting('buildmaster_private_offset',
+                default='20',
+                help="Offset from base_port for the public build master."),
+
+        Setting('buildmaster_public_port',
+                default='{{env.base_port+int(config.buildmaster_public_offset)}}',
+                help="Port to run the public buildmaster on (force build disallowed)"),
+        Setting('buildmaster_public_offset',
+                default='21',
+                help="Offset from base_port for the public build master."),
+        
+        Setting('buildslave_port',
+                default='{{env.base_port+int(config.buildslave_port_offset)}}',
+                help="Port to install buildbot slave on"),
+        Setting('buildslave_port_offset',
+                default='22',
+                help='Offset from base_port for the build slave.'),
+        
         # XXX put port offsets & calculated ports here.
         # See docs/ports.txt
         ]

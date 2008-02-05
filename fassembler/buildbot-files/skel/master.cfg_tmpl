@@ -10,7 +10,7 @@ from buildbot.buildslave import BuildSlave
 import os
 import subprocess
 
-OCBASEPORT=int('{{config.baseport}}')
+OCBASEPORT=int('{{config.baseport}}')  # The build we make will use this port.
 OCBASEDIR='oc'
 ENV = os.environ.get('VIRTUAL_ENV') or os.environ.get('WORKINGENV')
 
@@ -22,7 +22,7 @@ c['projectName'] = 'OpenCore'
 c['projectURL']  = 'http://www.openplans.org/projects/opencore'
 c['buildbotURL'] = 'http://www.openplans.org/buildbot/'
 
-c['slavePortnum'] = 12346
+c['slavePortnum'] = int('{{config.buildslave_port}}')
 
 c['change_source'] = [SVNPoller(svnurl='https://svn.openplans.org/svn/opencore/trunk/')]
 
@@ -164,11 +164,11 @@ c['schedulers'] = [buildOnChange, buildNightly]
 
 # This is the status display that should be presented to the Universe, 
 # hence forcing builds to begin is disabled. 
-publicWebStatus = html.WebStatus(http_port='12344', allowForce=False)
+publicWebStatus = html.WebStatus(http_port='{{config.buildmaster_public_port}}', allowForce=False)
 
 # This is the status display that should be presented to developers 
 # only, allowing them to manually force builds, stop builds etc. 
-developerWebStatus = html.WebStatus(http_port='12345', allowForce=True)
+developerWebStatus = html.WebStatus(http_port='{{config.buildmaster_private_port}}', allowForce=True)
 
 
 ## this mailer mails all status only to the nightlies list
