@@ -53,6 +53,9 @@ class BuildBotProject(Project):
         Setting('host',
                 default='localhost',
                 help='Host to serve on'),
+        Setting('baseport',
+                default='{{env.base_port}}',
+                help="Base port"),
         # XXX put port offsets & calculated ports here.
         # See docs/ports.txt
         ]
@@ -92,7 +95,7 @@ class BuildMasterProject(BuildBotProject):
         tasks.EnsureFile(
              'Overwrite the buildbot master.cfg file',
              '{{os.path.join(env.base_path, project.name, project.masterdir, "master.cfg")}}',
-             content_path='{{os.path.join(project.skel_dir, "master.cfg")}}',
+             content_path='{{os.path.join(project.skel_dir, "master.cfg_tmpl")}}',
              force_overwrite=True, svn_add=False),
         ]
         

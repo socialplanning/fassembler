@@ -10,6 +10,10 @@ from buildbot.buildslave import BuildSlave
 import os
 import subprocess
 
+OCBASEPORT=int('{{config.baseport}}')
+OCBASEDIR='oc'
+ENV = os.environ.get('VIRTUAL_ENV') or os.environ.get('WORKINGENV')
+
 slaves = [BuildSlave('slave1', 'PASSWORD')]
 
 c = BuildmasterConfig = {}
@@ -30,10 +34,6 @@ c['slaves'] = slaves
 # (minimal, not a full stack).
 ocf = factory.BuildFactory()
 
-OCBASEPORT=11100
-OCBASEDIR='oc'
-import os
-ENV = os.environ.get('VIRTUAL_ENV') or os.environ.get('WORKINGENV')
 
 # debug, where are we?
 ## ocf.addStep(ShellCommand, command='pwd',
