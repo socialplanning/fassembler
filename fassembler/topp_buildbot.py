@@ -5,7 +5,6 @@ Installation of a TOPP buildbot master.
 from fassembler import tasks
 from fassembler.project import Project, Setting
 import os
-import socket
 import subprocess
 import sys
 
@@ -160,7 +159,6 @@ class BuildSlaveProject(BuildBotProject):
 
     settings = BuildBotProject.settings + [
         Setting('buildslave_name',
-                default='{{project.name}}',
                 help="Name of this build slave."
                 ),
         Setting('buildslave_dir',
@@ -182,8 +180,14 @@ class BuildSlaveProject(BuildBotProject):
             cwd='{{os.path.join(env.base_path, config.buildslave_dir, "bin")}}'
             ),
         tasks.Script(
+            'Move aside the old config if it exists',
+            'test -f {{config.buildslave_dir}}/buildbot.tac && mv -f {{config.buildslave_dir}}/buildbot.tac {{config.buildslave_dir}}/buildbot.tac.old || echo nothing to move',
+            cwd='{{env.base_path}}',
+            shell=True),
+        tasks.Script(
             'Make a buildbot slave',
-            ['bin/buildbot', 'create-slave', '--force',
+            ['bin/buildbot', 'create-slave',
+             '--keepalive=60',  # Jeff warns that they lose connection at default
              '{{config.buildslave_dir}}',
              '{{config.buildmaster_host}}:{{config.buildslave_port}}',
              '{{config.buildslave_name}}',
