@@ -3,16 +3,19 @@ The abstract base class for tasks (``Task``) and many useful
 subclasses that actually do something.
 """
 
-import sys
-import os
-import subprocess
-import urlparse
 import copy
-from tempita import Template
+import os
 import re
-from glob import glob
-from fassembler.util import asbool
+import subprocess
+import sys
+import urllib
+import urlparse
+
 from fassembler.distutilspatch import find_distutils_file, update_distutils_file
+from fassembler.util import asbool
+from glob import glob
+from tempita import Template
+
 
 class interpolated(object):
     """
@@ -116,11 +119,13 @@ class Task(object):
         Run maker.copy_dir, with interpolated arguments.
         """
         self._run_fill_method('copy_dir', *args, **kw)
+
     def copy_file(self, *args, **kw):
         """
         Run maker.copy_file, with interpolated arguments.
         """
         self._run_fill_method('copy_file', *args, **kw)
+
     def _run_fill_method(self, method_name, *args, **kw):
         ns = self.create_namespace()
         kw.setdefault('template_vars', ns.dict)
@@ -260,6 +265,9 @@ class EnsureFile(Task):
     {{if task.executable}}
     The file will be made executable.
     {{endif}}
+    {{if task.content_path and task.content_path.endswith('tmpl')}}
+    The output will have Tempita markup evaluated.
+    {{endif}}
     """
 
     dest = interpolated('dest')
@@ -301,7 +309,7 @@ class EnsureFile(Task):
 class EnsureDir(Task):
 
     description = """
-    Ensure that the directory {{task.dest}} exists.
+    Ensure that the directory {{task.dest}} exists, creating if necessary.
     {{if task.svn_add}}
     If the parent directory {{os.path.dirname(task.dest)}} is an svn repository, also svn add this directory.
     {{endif}}
@@ -1447,3 +1455,57 @@ class SaveCabochonSubscriber(Task):
                 f.write("%s %s\n" % (event_type, subscriber))
         f.close()
         
+
+class InstallTarball(Task):
+
+    dest_path = interpolated('dest_path')
+    _tarball_url = ''
+    _src_name = ''
+
+    description = """
+    Install {{task._src_name}} into {{task.dest_path}}.
+
+    This downloads {{task._src_name}} from {{task._tarball_url}}.
+    """
+
+    def __init__(self, stacklevel=1):
+        super(InstallTarball, self).__init__(
+            'Install ' + self._src_name, stacklevel=stacklevel+1)
+        self.dest_path = '{{env.base_path}}/{{project.name}}/src/{{task._src_name}}'
+
+
+    def is_up_to_date(self):
+        # subclasses can override if they want to be smart about
+        # when to run.
+        return False
+
+    def post_unpack_hook(self):
+        # subclasses can override if they want to do extra work or checks.
+        pass
+                         
+    def run(self):
+        if self.is_up_to_date():
+            return
+        url = self._tarball_url
+        tmp_fn = os.path.abspath(os.path.basename(url))
+        delete_tmp_fn = False
+        try:
+            if os.path.exists(tmp_fn):
+                self.logger.notify('Source file %s already exists' % tmp_fn)
+            else:
+                self.logger.notify('Downloading %s to %s' % (url, tmp_fn))
+                if not self.maker.simulate:
+                    urllib.urlretrieve(url, tmp_fn)
+            self.maker.ensure_dir(os.path.dirname(self.dest_path))
+            self.maker.run_command(
+                'tar', 'jfx', tmp_fn,
+                cwd=os.path.dirname(self.dest_path))
+            self.post_unpack_hook()
+            delete_tmp_fn = True
+        finally:
+            if delete_tmp_fn and os.path.exists(tmp_fn):
+                os.unlink(tmp_fn)
+
+    def tmp_filename(self):
+        return os.tempnam() + '.tar.bz2'
+

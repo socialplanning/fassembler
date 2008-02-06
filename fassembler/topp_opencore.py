@@ -24,54 +24,39 @@ tarball_version = '2.9.8openplans.2'
 tarball_url = 'https://svn.openplans.org/eggs/OpenplansZope-%s.tar.bz2' % tarball_version
 orig_zope_source = 'http://www.zope.org/Products/Zope/2.9.8/Zope-2.9.8-final.tgz'
 
-class InstallZope(tasks.Task):
 
-    dest_path = interpolated('src_path')
+class InstallZope(tasks.InstallTarball):
+
     version_path = interpolated('version_path')
     _tarball_url = tarball_url
-    _orig_zope_source = orig_zope_source
+    _orig_source = orig_zope_source
+    _src_name = 'Zope'
+    _tarball_version = tarball_version
 
     description = """
-    Install Zope into {{task.dest_path}}.
+    Install {{task._src_name}} into {{task.dest_path}}.
 
-    This downloads Zope from {{task._tarball_url}}, which was itself built from {{task._orig_zope_source}}
+    This downloads {{task._src_name}} from {{task._tarball_url}},
+    which was itself built from {{task._orig_source}}
     """
 
     def __init__(self, stacklevel=1):
-        super(InstallZope, self).__init__(
-            'Install Zope', stacklevel=stacklevel+1)
-        self.dest_path = '{{env.base_path}}/{{project.name}}/src/Zope'
+        super(InstallZope, self).__init__(stacklevel)
         self.version_path = '{{task.dest_path}}/opencore_tarball_version.txt'
 
-    def run(self):
+    def is_up_to_date(self):
         if os.path.exists(self.version_path):
             f = open(self.version_path)
             version = f.read().strip()
             f.close()
-            if version == tarball_version:
+            if version == self._tarball_version:
                 self.logger.notify('Version %s up-to-date' % version)
-                return
-        url = tarball_url
-        tmp_fn = os.path.abspath(os.path.basename(url))
-        delete_tmp_fn = False
-        try:
-            if os.path.exists(tmp_fn):
-                self.logger.notify('Zope source %s already exists' % tmp_fn)
-            else:
-                self.logger.notify('Downloading %s to %s' % (url, tmp_fn))
-                if not self.maker.simulate:
-                    urllib.urlretrieve(url, tmp_fn)
-            self.maker.run_command(
-                'tar', 'jfx', tmp_fn,
-                cwd=os.path.dirname(self.dest_path))
-            self.maker.ensure_file(self.version_path, tarball_version, svn_add=False)
-            delete_tmp_fn = True
-        finally:
-            if delete_tmp_fn and os.path.exists(tmp_fn):
-                os.unlink(tmp_fn)
+                return True
 
-    def tmp_filename(self):
-        return os.tempnam() + '.tar.bz2'
+    def post_unpack_hook(self):
+        self.maker.ensure_file(self.version_path, self._tarball_version,
+                               svn_add=False)
+
 
 def make_tarball():
     filename = os.path.basename(tarball_url)

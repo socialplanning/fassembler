@@ -1,5 +1,5 @@
 +0 = Deliverance
-+1 = Zope
++1 = Zope (opencore)
 +2 = ZEO
 +3 = WordPress
 +4 = TaskTracker
@@ -7,6 +7,8 @@
 +6 = Cabochon
 +7 = Twirlip
 +10 = Supervisor
-
++20 = buildbot private master http (force build allowed)
++21 = buildbot public master http (force build not allowed)
++22 = buildbot slave
 
 Note: update fassember.topp:CheckBasePorts.port_range if adding ports here

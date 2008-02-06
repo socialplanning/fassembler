@@ -574,6 +574,9 @@ class Maker(object):
             the process will not be displayed.  You may also give an
             integer which will be the level of all output (e.g.,
             logger.INFO).
+
+        ``shell``:
+            Run the command string in a child shell. Default False.
         """
         cwd = popdefault(kw, 'cwd', self.base_path) or self.base_path
         cwd = self.path(cwd)
@@ -590,6 +593,7 @@ class Maker(object):
         simulate = popdefault(kw, 'simulate', self.simulate)
         stdin = popdefault(kw, 'stdin', None)
         log_filter = popdefault(kw, 'log_filter', None)
+        use_shell = popdefault(kw, 'shell', False)
         if extra_path:
             env = env.copy()
             path_parts = env.get('PATH', '').split(os.path.pathsep)
@@ -613,7 +617,8 @@ class Maker(object):
                                     env=env,
                                     stdin=stdin_argument,
                                     stderr=stderr_pipe,
-                                    stdout=subprocess.PIPE)
+                                    stdout=subprocess.PIPE,
+                                    shell=use_shell)
         except OSError, e:
             if e.errno != 2:
                 # File not found
