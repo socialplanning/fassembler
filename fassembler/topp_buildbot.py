@@ -74,9 +74,9 @@ class BuildBotProject(Project):
         Setting('spec',
                 default='requirements/buildbot-req.txt',
                 help='Specification of packages to install'),
-        Setting('host',
+        Setting('buildmaster_host',
                 default='localhost',
-                help='Host to serve on'),
+                help='Host the buildmaster runs on'),
         Setting('baseport',
                 default='{{env.base_port}}',
                 help="Base port"),
@@ -97,13 +97,12 @@ class BuildBotProject(Project):
         
         Setting('buildslave_port',
                 default='{{env.base_port+int(config.buildslave_port_offset)}}',
-                help="Port to install buildbot slave on"),
+                help="Port build slaves connect to the master on"),
         Setting('buildslave_port_offset',
                 default='22',
-                help='Offset from base_port for the build slave.'),
+                help='Offset from base_port for the build slave connect port.'),
 
-        Setting('passwd',
-                default='PASSWORD',
+        Setting('buildbot_passwd',
                 help="Password for buildslaves to connect to master."),
         ]
 
@@ -157,7 +156,7 @@ class BuildSlaveProject(BuildBotProject):
 
     settings = BuildBotProject.settings + [
         Setting('buildslave_name',
-                default='{{os.path.join(env.base_path, project.name)}}',
+                default='{{project.name}}',
                 help="Name of this build slave."),
         
         Setting('buildslave_dir',
@@ -172,18 +171,16 @@ class BuildSlaveProject(BuildBotProject):
             ['svn', 'export',
              'https://svn.openplans.org/svn/build/topp.build.buildbot/trunk/topp/build/buildbot/skel/bin/accept_certificates.sh'
              ],
-            cwd='{{os.path.join(env.base_path, "bin")}}'
+            cwd='{{os.path.join(env.base_path, config.buildslave_dir, "bin")}}'
             ),
         tasks.Script(
             'Make a buildbot slave',
             ['bin/buildbot', 'create-slave', '--force',
              '{{config.buildslave_dir}}',
-             '{{config.host}}:{{config.buildslave_port}}',
+             '{{config.buildmaster_host}}:{{config.buildslave_port}}',
              '{{config.buildslave_name}}',
-             '{{config.passwd}}'
+             '{{config.buildbot_passwd}}'
              ],
             cwd='{{os.path.join(env.base_path, project.name)}}'
             ),
         ]
-
-    

@@ -265,7 +265,7 @@ class EnsureFile(Task):
     {{if task.executable}}
     The file will be made executable.
     {{endif}}
-    {{if task.content_path.endswith('tmpl')}}
+    {{if task.content_path and task.content_path.endswith('tmpl')}}
     The output will have Tempita markup evaluated.
     {{endif}}
     """

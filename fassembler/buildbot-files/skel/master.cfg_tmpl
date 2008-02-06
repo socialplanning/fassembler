@@ -18,9 +18,8 @@ import subprocess
 # so Don't Do That.
 OCBASEPORT=int('{{config.baseport}}')
 OCBASEDIR='oc'
-ENV = os.environ.get('VIRTUAL_ENV') or os.environ.get('WORKINGENV')
 
-slaves = [BuildSlave('slave1', 'PASSWORD')]
+slaves = [BuildSlave('slave1', '{{config.buildbot_passwd}}')]
 
 c = BuildmasterConfig = {}
 
@@ -43,8 +42,9 @@ ocf = factory.BuildFactory()
 
 # Accept certificates (for svn).
 ocf.addStep(ShellCommand,
-            command=['%s/bin/accept_certificates.sh' % ENV],
-            description='accepting certificates for svn')
+            command='{{os.path.join("..", "..", "bin", "accept_certificates.sh")}}',
+            description='accepting certificates for svn',
+            )
 
 # Clean up after previous runs.
 
