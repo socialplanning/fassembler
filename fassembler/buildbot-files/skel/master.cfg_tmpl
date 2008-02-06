@@ -19,20 +19,21 @@ import subprocess
 OCBASEPORT=int('{{config.baseport}}')
 OCBASEDIR='oc'
 
-slaves = [BuildSlave('slave1', '{{config.buildbot_passwd}}')]
+slavenames = ['slave1']
+slaves = [BuildSlave(name, '{{config.buildbot_passwd}}') for name in slavenames]
 
 c = BuildmasterConfig = {}
 
 c['projectName'] = 'OpenCore'
 c['projectURL']  = 'http://www.openplans.org/projects/opencore'
-c['buildbotURL'] = 'http://www.openplans.org/buildbot/'
+c['buildbotURL'] = '{{config.buildbot_url}}'
 
 c['slavePortnum'] = int('{{config.buildslave_port}}')
 
 c['change_source'] = [SVNPoller(svnurl='https://svn.openplans.org/svn/opencore/trunk/')]
 
-#
-# Build slaves that are allowed to attach
+
+# Build slaves that are allowed to attach.
 c['slaves'] = slaves
 
 # This is the build factory for building & testing Opencore
@@ -135,9 +136,10 @@ ocf.addStep(ShellCommand,
 #                     'builddir':  'linux-x86', 
 #                     'factory':   f} ]
 c['builders'] = [{'name': 'builder1',
-                  'slavename': 'slave1',
+                  'slavename': name,
                   'builddir': 'builds',
-                  'factory': ocf}]
+                  'factory': ocf}
+                 for name in slavenames]
 
 # SCHEDULERS
 buildOnChange = scheduler.Scheduler(

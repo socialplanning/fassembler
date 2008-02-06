@@ -71,6 +71,10 @@ class BuildBotProject(Project):
     hostname, platform, version = get_host_info()
 
     settings = [
+        Setting('buildbot_url',
+                default='http://www.openplans.org/buildbot/',
+                help='Public URL of the buildbot web page',
+                ),
         Setting('spec',
                 default='requirements/buildbot-req.txt',
                 help='Specification of packages to install'),
@@ -157,12 +161,16 @@ class BuildSlaveProject(BuildBotProject):
     settings = BuildBotProject.settings + [
         Setting('buildslave_name',
                 default='{{project.name}}',
-                help="Name of this build slave."),
-        
+                help="Name of this build slave."
+                ),
         Setting('buildslave_dir',
                 default='{{os.path.join(env.base_path, project.name)}}',
-                help="Directory to put the buildslave in."),
-        
+                help="Directory to put the buildslave in."
+                ),
+        Setting('buildslave_description',
+                default='{{project.platform}} {{project.version}} running on {{project.hostname}}',
+                help="Public description of your build slave's platform.",
+                )
         ]
 
     actions = BuildBotProject.actions + [
@@ -183,4 +191,14 @@ class BuildSlaveProject(BuildBotProject):
              ],
             cwd='{{os.path.join(env.base_path, project.name)}}'
             ),
+        tasks.EnsureFile(
+             'Overwrite the buildslave host info file',
+             '{{os.path.join(config.buildslave_dir, "info", "host")}}',
+             content_path='{{os.path.join(project.skel_dir, "host_tmpl")}}',
+             force_overwrite=True, svn_add=False),
+        tasks.EnsureFile(
+             'Overwrite the buildslave admin info file',
+             '{{os.path.join(config.buildslave_dir, "info", "admin")}}',
+             content_path='{{os.path.join(project.skel_dir, "admin_tmpl")}}',
+             force_overwrite=True, svn_add=False),
         ]
