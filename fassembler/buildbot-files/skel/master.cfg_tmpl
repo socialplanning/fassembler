@@ -135,7 +135,7 @@ ocf.addStep(ShellCommand,
 #                     'slavename': 'test-slave',
 #                     'builddir':  'linux-x86', 
 #                     'factory':   f} ]
-c['builders'] = [{'name': 'builder1',
+c['builders'] = [{'name': 'opencore minimal',
                   'slavename': name,
                   'builddir': 'builds',
                   'factory': ocf}
@@ -182,13 +182,6 @@ breakMailer = mail.MailNotifier(fromaddr='buildbot@openplans.org',
                                 relayhost='mail.openplans.org', 
                                 lookup='openplans.org')
 
-pwMailer = mail.MailNotifier(fromaddr='buildbot@openplans.org',
-                             sendToInterestedUsers=False,
-                             extraRecipients=['pw@openplans.org'],
-                             mode='all', 
-                             relayhost='mail.openplans.org', 
-                             lookup='openplans.org')
-
 
 ircbot = words.IRC(host='irc.freenode.net',
                    nick='buildbot-topp',
@@ -198,7 +191,8 @@ ircbot = words.IRC(host='irc.freenode.net',
 
 c['status'] = [developerWebStatus,
                #publicWebStatus,
-               pwMailer,
+               breakMailer, listMailer,
+               #pwMailer,
                ircbot,
                ]
 
