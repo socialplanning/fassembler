@@ -84,6 +84,9 @@ class BuildBotProject(Project):
                 default='{{env.base_port}}',
                 help="Base port"),
 
+        Setting('child_baseport',
+                default='{{env.base_port +  1000}}',
+                help="Base port for applications built by the bots"),
         Setting('buildmaster_private_port',
                 default='{{env.base_port+int(config.buildmaster_private_offset)}}',
                 help="Port to run the private buildmaster on (force build allowed)"),

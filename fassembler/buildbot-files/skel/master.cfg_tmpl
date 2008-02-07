@@ -10,20 +10,14 @@ from buildbot.buildslave import BuildSlave
 import os
 import subprocess
 
-# Note, we're overloading the meaning of base_port: fassembler used it
-# to build this buildbot and create this config, but we're re-using
-# the same base_port for buildbot to run fassembler :-) This is only a
-# problem if we have fassembler build a buildbot which then uses
-# fassembler to build another buildbot and runs it on the same port.
-# so Don't Do That.
-OCBASEPORT=int('{{config.baseport}}')
+OCBASEPORT=int('{{config.child_baseport}}')
 OCBASEDIR='oc'
 
 slavenames = ['slave1']
 slaves = [BuildSlave(name, '{{config.buildbot_passwd}}') for name in slavenames]
 
 c = BuildmasterConfig = {}
-
+				   
 c['projectName'] = 'OpenCore'
 c['projectURL']  = 'http://www.openplans.org/projects/opencore'
 c['buildbotURL'] = '{{config.buildbot_url}}'
@@ -135,7 +129,7 @@ ocf.addStep(ShellCommand,
 #                     'slavename': 'test-slave',
 #                     'builddir':  'linux-x86', 
 #                     'factory':   f} ]
-c['builders'] = [{'name': 'opencore minimal',
+c['builders'] = [{'name': 'opencore-minimal',
                   'slavename': name,
                   'builddir': 'builds',
                   'factory': ocf}
