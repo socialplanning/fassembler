@@ -132,19 +132,23 @@ class BuildMasterProject(BuildBotProject):
 
     name = 'buildmaster'
     title = 'Installs a buildbot master'
-    masterdir = 'master'
 
-    settings = BuildBotProject.settings  + []
+    settings = BuildBotProject.settings  + [
+        Setting('master_dir',
+                default='{{os.path.join(env.base_path, project.name)}}',
+                help="Directory to put the build master in."
+                ),
+        ]
 
     actions = BuildBotProject.actions + [
         tasks.Script(
             'Make a buildbot master',
-            ['bin/buildbot', 'create-master', masterdir],
-            cwd='{{os.path.join(env.base_path, project.name)}}'
+            ['bin/buildbot', 'create-master', '{{config.master_dir}}'],
+            cwd='{{config.master_dir}}'
             ),
         tasks.EnsureFile(
              'Overwrite the buildbot master.cfg file',
-             '{{os.path.join(env.base_path, project.name, project.masterdir, "master.cfg")}}',
+             '{{os.path.join(config.master_dir, "master.cfg")}}',
              content_path='{{os.path.join(project.skel_dir, "master.cfg_tmpl")}}',
              force_overwrite=True, svn_add=False),
         ]
