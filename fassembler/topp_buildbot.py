@@ -71,7 +71,7 @@ class BuildBotProject(Project):
 
     settings = [
         Setting('buildbot_url',
-                default='http://www.openplans.org/buildbot/',
+                default='http://{{project.hostname}.openplans.org:{{config.buildmaster_private_port}}',
                 help='Public URL of the buildbot web page',
                 ),
         Setting('spec',
