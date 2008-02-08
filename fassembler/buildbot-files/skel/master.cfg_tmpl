@@ -47,8 +47,7 @@ ocf.addStep(ShellCommand,
 ##             command=['%s/opencore/bin/superviscorctl shutdown' % OCBASEDIR],
 ##             description='shut down old stuff',
 ##             haltOnFailure=0)
-# XXX What is $PWD on the slave when this runs?
-ocf.addStep(ShellCommand, command=['rm', '-rf', 'build', OCBASEDIR],
+ocf.addStep(ShellCommand, command="rm -rf %s *Zope*bz2",
             description='removing old files')
 
 # Bootstrap the topp build tools (fassembler).
