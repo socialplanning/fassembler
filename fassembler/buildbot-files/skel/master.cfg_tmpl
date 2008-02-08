@@ -89,13 +89,13 @@ ocf.addStep(ShellCommand,
 # Run the zopectl unit tests.
 # WORKS except that zopectl always exits 0, argh.
 ocf.addStep(ShellCommand, 
-            command=['%s/opencore/zope/bin/zopectl' % OCBASEDIR, 'test', '-s',
+            command=['%s/opencore/zope/bin/zopetest' % OCBASEDIR, '-s',
                      'Products.listen'],
             description='run listen unit test suite',
             haltOnFailure=0)
 
 ocf.addStep(ShellCommand,
-            command=['%s/opencore/zope/bin/zopectl' % OCBASEDIR, 'test', '-s',
+            command=['%s/opencore/zope/bin/zopetest' % OCBASEDIR, '-s',
                      'opencore'],
             description='run opencore unit test suite',
             haltOnFailure=1)
