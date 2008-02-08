@@ -202,12 +202,12 @@ class BuildSlaveProject(BuildBotProject):
             'Make a buildbot slave',
             ['bin/buildbot', 'create-slave',
              '--keepalive=60',  # Jeff warns that they lose connection at default
-             '{{config.buildslave_dir}}',
+             '.',
              '{{config.buildmaster_host}}:{{config.buildslave_port}}',
              '{{config.buildslave_name}}',
              '{{config.buildbot_passwd}}'
              ],
-            cwd='{{os.path.join(env.base_path, project.name)}}'
+            cwd='{{os.path.join(env.base_path, config.buildslave_dir)}}'
             ),
         tasks.EnsureFile(
              'Overwrite the buildslave host info file',
