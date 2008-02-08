@@ -78,6 +78,7 @@ default-zpublisher-encoding utf-8
       email-confirmation {{if asbool(config.email_confirmation)}}True{{else}}False{{endif}}
       cabochon_messages $VAR/opencore/cabochon-messages
       cabochon_user_info $VAR/cabochon-password.txt
+      build_ini_path {{env.base_path}}/etc/build.ini
 
 </product-config>
 <product-config opencore.auth>

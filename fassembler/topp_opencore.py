@@ -522,6 +522,12 @@ class ZEOProject(Project):
         Setting('zope_install',
                 default='{{project.build_properties["virtualenv_path"]}}/lib/zope',
                 help='Location of Zope software'),
+        Setting('opencore_site_id',
+                default='{{project.req_settings.get("opencore_site_id")}}',
+                help='id of opencore site object'),
+        Setting('opencore_site_title',
+                default='{{project.req_settings.get("opencore_site_title")}}',
+                help='title of opencore site object'),
         ]
 
     files_dir = os.path.join(os.path.dirname(__file__), 'opencore-files')
@@ -534,6 +540,10 @@ exec {{config.zeo_instance}}/bin/runzeo
 """
 
     actions = [
+        tasks.SaveSetting('Save settings',
+                          {'opencore_site_id': '{{config.opencore_site_id}}',
+                           'opencore_site_title': '{{config.opencore_site_id}}',
+                          }),
         ## FIXME: this is kind of lame (recreating a venv we know exists),
         #  but needed for later steps:
         tasks.VirtualEnv(path='opencore'),
@@ -558,10 +568,6 @@ exec {{config.zeo_instance}}/bin/runzeo
         RunZopectlScript('{{env.base_path}}/opencore/src/opencore/add_openplans.py',
                          ## XXX add_openplans.py wasn't doing anything with this argument:
                          #script_args='{{env.config.get("general", "etc_svn_subdir")}}', 
-                         script_args='{{env.config.getdefault("applications", "wordpress uri", "")}} ' \
-                                     '{{env.config.getdefault("applications", "tasktracker uri", "")}} ' \
-                                     '{{env.config.getdefault("applications", "cabochon uri", "")}} ' \
-                                     '{{env.config.getdefault("applications", "twirlip uri", "")}} ',
                          name='Add OpenPlans site'),
         tasks.ForEach('Install additional opencore-req.txt zopectl scripts',
                       'script_name',
