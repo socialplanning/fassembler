@@ -11,7 +11,7 @@ import os
 import subprocess
 
 OCBASEPORT=int('{{config.child_baseport}}')
-OCBASEDIR='oc'
+OCBASEDIR='{{config.oc_basedir}}'
 
 slavenames = ['slave1']
 slaves = [BuildSlave(name, '{{config.buildbot_passwd}}') for name in slavenames]
@@ -37,7 +37,7 @@ ocf = factory.BuildFactory()
 
 # Accept certificates (for svn).
 ocf.addStep(ShellCommand,
-            command='{{os.path.join("..", "..", "bin", "accept_certificates.sh")}}',
+            command='{{os.path.join(config.buildslave_dir, "bin", "accept_certificates.sh")}}',
             description='accepting certificates for svn',
             )
 
@@ -47,7 +47,8 @@ ocf.addStep(ShellCommand,
 ##             command=['%s/opencore/bin/superviscorctl shutdown' % OCBASEDIR],
 ##             description='shut down old stuff',
 ##             haltOnFailure=0)
-ocf.addStep(ShellCommand, command=['rm', '-rf', 'build'],
+# XXX What is $PWD on the slave when this runs?
+ocf.addStep(ShellCommand, command=['rm', '-rf', 'build', OCBASEDIR],
             description='removing old files')
 
 # Bootstrap the topp build tools (fassembler).
@@ -77,6 +78,14 @@ ocf.addStep(ShellCommand,
                      ],
             description='building opencore and dependencies',
             haltOnFailure=1)
+
+# Create the zope unit test wrapper script.
+# XXX maybe this should move into fassembler:opencore
+ocf.addStep(ShellCommand,
+            command='{{os.path.join(config.buildslave_dir, "bin", "mkzopetest.sh")}}',
+            description='creating zopectl test wrapper script',
+            haltOnFailure=True
+            )
 
 # Run the zopectl unit tests.
 # WORKS except that zopectl always exits 0, argh.

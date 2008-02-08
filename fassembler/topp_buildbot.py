@@ -13,6 +13,7 @@ interpolated = tasks.interpolated
 twisted_dirname = 'Twisted-2.5.0'
 tarball_url = 'http://tmrc.mit.edu/mirror/twisted/Twisted/2.5/%s.tar.bz2' % twisted_dirname
 
+
 def get_host_info():
     uname = os.uname()
     platform = sys.platform.title()
@@ -69,9 +70,12 @@ class BuildBotProject(Project):
 
     hostname, platform, version = get_host_info()
 
+    buildslave_dirname = 'buildslave'
+
+
     settings = [
         Setting('buildbot_url',
-                default='http://{{project.hostname}.openplans.org:{{config.buildmaster_private_port}}',
+                default='http://{{project.hostname}}.openplans.org:{{config.buildmaster_private_port}}',
                 help='Public URL of the buildbot web page',
                 ),
         Setting('spec',
@@ -110,6 +114,15 @@ class BuildBotProject(Project):
 
         Setting('buildbot_passwd',
                 help="Password for buildslaves to connect to master."),
+
+        Setting('buildslave_dir',
+                default='{{project.buildslave_dirname}}',
+                help="Subdirectory to put the buildslave in. Must be relative"
+                ),
+        Setting('oc_basedir',
+                default='oc', #{{os.path.join(config.buildslave_dir, "builds", "build", "oc")}}',
+                help='Directory where slave will build opencore.',
+                ),
         ]
 
     actions = [
@@ -120,7 +133,7 @@ class BuildBotProject(Project):
         tasks.Script('Install Twisted',
                      ['python', 'setup.py', 'install'],
                      use_virtualenv=True,
-                     cwd='{{env.base_path}}/{{project.name}}/src/{{project._twisted_src}}'
+                     cwd='{{os.path.join(env.base_path, project.name, "src", project._twisted_src)}}'
                      ),
         # XXX This fails about half the time, because sourceforge sucks.
         # Just re-run until it works.
@@ -161,16 +174,12 @@ class BuildSlaveProject(BuildBotProject):
 
     """Install a Buildbot slave to connect to our build master"""
 
-    name = 'buildslave'
+    name = BuildBotProject.buildslave_dirname
     title = 'Installs a buildbot slave'
 
     settings = BuildBotProject.settings + [
         Setting('buildslave_name',
                 help="Name of this build slave."
-                ),
-        Setting('buildslave_dir',
-                default='{{os.path.join(env.base_path, project.name)}}',
-                help="Directory to put the buildslave in."
                 ),
         Setting('buildslave_description',
                 default='{{project.platform}} {{project.version}} running on {{project.hostname}}',
@@ -179,13 +188,11 @@ class BuildSlaveProject(BuildBotProject):
         ]
 
     actions = BuildBotProject.actions + [
-        tasks.Script(
-            'Fetch the accept_certificates script',
-            ['svn', 'export',
-             'https://svn.openplans.org/svn/build/topp.build.buildbot/trunk/topp/build/buildbot/skel/bin/accept_certificates.sh'
-             ],
-            cwd='{{os.path.join(env.base_path, config.buildslave_dir, "bin")}}'
-            ),
+        tasks.EnsureFile(
+            'Install the accept_certificates script',
+            '{{os.path.join(config.buildslave_dir, "bin", "accept_certificates.sh")}}',
+            content_path='{{os.path.join(project.skel_dir, "accept_certificates.sh")}}',
+            force_overwrite=True, svn_add=False, executable=True),
         tasks.Script(
             'Move aside the old config if it exists',
             'test -f {{config.buildslave_dir}}/buildbot.tac && mv -f {{config.buildslave_dir}}/buildbot.tac {{config.buildslave_dir}}/buildbot.tac.old || echo nothing to move',
@@ -212,4 +219,10 @@ class BuildSlaveProject(BuildBotProject):
              '{{os.path.join(config.buildslave_dir, "info", "admin")}}',
              content_path='{{os.path.join(project.skel_dir, "admin_tmpl")}}',
              force_overwrite=True, svn_add=False),
+        tasks.EnsureFile(
+            'Install the test wrapper maker',
+            '{{os.path.join(config.buildslave_dir, "bin", "mkzopetest.sh")}}',
+            content_path='{{os.path.join(project.skel_dir, "mkzopetest.sh")}}',
+            force_overwrite=True, svn_add=False, executable=True),
+
         ]
