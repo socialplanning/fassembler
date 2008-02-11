@@ -550,10 +550,13 @@ exec {{config.zeo_instance}}/bin/runzeo
 """
 
     actions = [
-        tasks.SaveSetting('Save settings',
+        tasks.SaveSetting('Save global settings',
                           {'opencore_site_id': '{{config.opencore_site_id}}',
                            'opencore_site_title': '{{config.opencore_site_id}}',
                           }),
+        tasks.SaveSetting('Save application settings',
+                          {'opencore_vacuum_whitelist': 'http://woonerf.streetsblog.org,http://www.streetsblog.org'},
+                          section='application'),
         ## FIXME: this is kind of lame (recreating a venv we know exists),
         #  but needed for later steps:
         tasks.VirtualEnv(path='opencore'),
