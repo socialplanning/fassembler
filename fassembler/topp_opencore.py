@@ -424,6 +424,10 @@ class OpenCoreProject(Project):
 cd {{env.base_path}}
 exec {{config.zope_instance}}/bin/runzope -X debug-mode=off
 """
+    flunc_admin_template = """\
+setglobal admin      '{{config.zope_user}}'
+setglobal adminpw    '{{config.zope_password}}'
+"""
     actions = [
         tasks.VirtualEnv(),
         tasks.SetDistutilsValue('Disable zipped eggs',
@@ -492,7 +496,13 @@ exec {{config.zope_instance}}/bin/runzope -X debug-mode=off
                       project_local=False,
                       header_name='zope',
                       theme='not-main-site'),
+        tasks.EnsureFile(
+            'Overwrite the flunc admin user info',
+            '{{env.base_path}}/opencore/src/opencore/ftests/admin.conf',
+            content=flunc_admin_template,
+            svn_add=False, overwrite=True),
         ]
+    
 
     depends_on_projects = ['fassembler:topp']
 
