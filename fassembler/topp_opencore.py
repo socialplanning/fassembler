@@ -533,9 +533,11 @@ class ZEOProject(Project):
                 default='{{project.build_properties["virtualenv_path"]}}/lib/zope',
                 help='Location of Zope software'),
         Setting('opencore_site_id',
+                inherit_config=('general', 'opencore_site_id'),
                 default='{{project.req_settings.get("opencore_site_id")}}',
                 help='id of opencore site object'),
         Setting('opencore_site_title',
+                inherit_config=('general', 'opencore_site_title'),
                 default='{{project.req_settings.get("opencore_site_title")}}',
                 help='title of opencore site object'),
         ]
@@ -551,8 +553,8 @@ exec {{config.zeo_instance}}/bin/runzeo
 
     actions = [
         tasks.SaveSetting('Save global settings',
-                          {'opencore_site_id': '{{config.opencore_site_id}}',
-                           'opencore_site_title': '{{config.opencore_site_id}}',
+                          {'opencore_site_id': '{{config.opencore_site_id or project.req_settings.get("opencore_site_id")}}',
+                           'opencore_site_title': '{{config.opencore_site_title or project.req_settings.get("opencore_site_title")}}',
                           }),
         tasks.SaveSetting('Save application settings',
                           {'opencore_vacuum_whitelist': 'http://woonerf.streetsblog.org,http://www.streetsblog.org'},
