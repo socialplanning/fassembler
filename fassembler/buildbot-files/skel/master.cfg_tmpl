@@ -168,28 +168,37 @@ publicWebStatus = html.WebStatus(http_port='{{config.buildmaster_public_port}}',
 developerWebStatus = html.WebStatus(http_port='{{config.buildmaster_private_port}}', allowForce=True)
 
 
-## this mailer mails all status only to the nightlies list
+## this mailer mails all status only to the status list
 listMailer = mail.MailNotifier(
+    mode='all',
+    subject='%(builder)s finished a build',
+    relayhost='mail.openplans.org',
+    extraRecipients=['opencore-builds@lists.openplans.org',
+                     ],
     fromaddr='buildbot@openplans.org',
-    subject='buildbot test',
-    mode='all', relayhost='mail.openplans.org',
-    extraRecipients=['nightlies@lists.openplans.org'],
     sendToInterestedUsers=False)
 
 
 # This mailer sends an email to anyone who has made changes to a build
-# that breaks
-breakMailer = mail.MailNotifier(fromaddr='buildbot@openplans.org', 
-                                mode='problem', 
-                                relayhost='mail.openplans.org', 
-                                lookup='openplans.org')
+# that breaks. XXX Or at least it's supposed to; so far it doesn't seem
+# to actually work.
+breakMailer = mail.MailNotifier(
+    fromaddr='buildbot@openplans.org', 
+    mode='problem',
+    subject='%(builder)s FAILURE, and sadly, you are on the blamelist',
+    relayhost='mail.openplans.org', 
+    lookup='openplans.org',
+    sendToInterestedUsers=True,
+    )
 
 
+# Is there a way to get it to always announce failures?
 ircbot = words.IRC(host='irc.freenode.net',
                    nick='buildbot-topp',
                    channels=['#openplans'],
                    allowForce=False,
                    )
+
 
 c['status'] = [developerWebStatus,
                #publicWebStatus,
