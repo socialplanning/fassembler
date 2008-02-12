@@ -117,7 +117,7 @@ class ToppProject(Project):
     settings = [
         Setting('requirements_svn_repo',
                 inherit_config=('general', 'requirements_svn_repo'),
-                default='https://svn.openplans.org/svn/build/requirements/trunk',
+                default='https://svn.openplans.org/svn/build/requirements/openplans/trunk',
                 help="Location where requirement files will be found for all builds"),
         Setting('base_port',
                 inherit_config=('general', 'base_port'),
