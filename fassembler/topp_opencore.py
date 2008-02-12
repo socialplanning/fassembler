@@ -529,6 +529,8 @@ class ZEOProject(Project):
     name = 'zeo'
     title = 'Install ZEO'
 
+    spec_filename = 'opencore'  # Re-use opencore-req.txt.
+
     settings = [
         Setting('zeo_instance',
                 default='{{project.build_properties["virtualenv_path"]}}/zeo',
@@ -566,8 +568,8 @@ exec {{config.zeo_instance}}/bin/runzeo
 
     actions = [
         tasks.SaveSetting('Save global settings',
-                          {'opencore_site_id': '{{config.opencore_site_id or "openplans"}}',
-                           'opencore_site_title': '{{config.opencore_site_title or "OpenCore Site"}}',
+                          {'opencore_site_id': '{{config.opencore_site_id}}',
+                           'opencore_site_title': '{{config.opencore_site_title}}',
                           }),
         tasks.SaveSetting('Save application settings',
                           {'opencore_vacuum_whitelist': 'http://woonerf.streetsblog.org,http://www.streetsblog.org'},

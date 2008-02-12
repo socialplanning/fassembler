@@ -37,6 +37,10 @@ class Project(object):
     # can be a list of options, e.g., [('apache2', 'httpd')]:
     depends_on_executables = []
 
+    # Override spec_filename if you want to use another project's spec file to find req_settings.    
+    spec_filename = None 
+
+
     def __init__(self, project_name, maker, environ, logger, config):
         self.project_name = project_name
         self.maker = maker
@@ -266,10 +270,12 @@ class Project(object):
     @property
     def req_settings(self):
         """
-        Reads settings from the requirements file in requirements/<self.name>-req.txt
+        Reads settings from the requirements file in requirements/<self.spec_filename or self.name>-req.txt
         Returns a dictionary
         """
-        spec_filename = self.maker.path('requirements/%s-req.txt' % self.name)
+        
+        spec_filename = self.maker.path('requirements/%s-req.txt' % (
+            self.spec_filename or self.name))
         if not os.path.exists(spec_filename):
             self.logger.debug('No requirements file in %s' % spec_filename)
             return {}
