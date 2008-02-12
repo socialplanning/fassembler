@@ -534,11 +534,11 @@ class ZEOProject(Project):
                 help='Location of Zope software'),
         Setting('opencore_site_id',
                 inherit_config=('general', 'opencore_site_id'),
-                default='{{project.req_settings.get("opencore_site_id")}}',
+                default='{{project.req_settings.get("opencore_site_id") or "openplans"}}',
                 help='id of opencore site object'),
         Setting('opencore_site_title',
                 inherit_config=('general', 'opencore_site_title'),
-                default='{{project.req_settings.get("opencore_site_title")}}',
+                default='{{project.req_settings.get("opencore_site_title") or "OpenCore Site"}}',
                 help='title of opencore site object'),
         ]
 
