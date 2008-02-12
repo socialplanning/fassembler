@@ -13,8 +13,6 @@ import subprocess
 import re
 import shutil
 from difflib import unified_diff, context_diff
-from environ import random_string
-import string
 import tempita
 
 EXE_MODE = 0111
@@ -916,20 +914,6 @@ Responses:
             (and overwrite)
   Type "all Y/N/B" to use Y/N/B for answer to all future questions
 '''
-
-    def ask_password(self):
-        """
-        Prompt user to input a password.
-        """
-        def randpw():
-            return random_string(12, string.ascii_letters + string.digits + "_-!;")
-        if not self.interactive:
-            return randpw()
-        self.beep_if_necessary()
-        prompt = 'Input a password or press enter to generate a random one: '
-        prompt = self.logger.colorize(prompt, 'bold cyan')
-        inputpw = raw_input(prompt)
-        return inputpw or randpw()
 
     def ask(self, message, help=None, responses=['y', 'n'], default=None,
             first_char=False):
