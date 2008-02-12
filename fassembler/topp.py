@@ -86,6 +86,25 @@ class EnvironRefresh(tasks.Task):
     def run(self):
         self.environ.refresh_config()
 
+
+
+class EnsureAdminFile(tasks.EnsureFile):
+
+    password = ''
+    
+    def __init__(self, name):
+        super(EnsureAdminFile, self).__init__(
+            name, '{{env.config.get("general", "admin_info_filename")}}',
+            content='admin:{{task.password}}\n', overwrite=False)
+
+    def run(self):
+        if os.path.exists(self.dest):
+            self.password = self.environ.parse_auth(self.dest).password
+        else:
+            self.password = self.environ.maker.ask_password()
+        super(EnsureAdminFile, self).run()
+
+
 class ToppProject(Project):
     """
     Create the basic layout used at TOPP for a set of applications.
@@ -115,10 +134,6 @@ class ToppProject(Project):
                 default='{{env.hostname}}-{{os.path.basename(env.base_path)}}',
                 inherit_config=('general', 'etc_svn_subdir'),
                 help='svn subdirectory where data configuration is kept (will be created if necessary)'),
-        Setting('admin_password',
-                default='',
-                inherit_config=('general', 'admin_password'),
-                help='The admin password (will be auto-generated if not provided)'),
         Setting('db_prefix',
                 default='',
                 inherit_config=('general', 'db_prefix'),
@@ -149,14 +164,15 @@ class ToppProject(Project):
                            'requirements_svn_repo': '{{config.requirements_svn_repo}}',
                            'etc_svn_subdir': '{{config.etc_svn_subdir}}',
                            }),
+        
         tasks.EnsureDir('Make sure var directory exists', '{{env.var}}', svn_add=False),
         tasks.SvnCheckout('check out requirements/', '{{config.requirements_svn_repo}}',
                           'requirements'),
-        tasks.EnsureFile('Write secret.txt if necessary', '{{env.var}}/secret.txt', '{{env.random_string(40)}}',
+        tasks.EnsureFile('Write OpenPlans shared secret to var/secret.txt if it does not exist',
+                         '{{env.var}}/secret.txt',
+                         '{{env.random_string(40)}}',
                          overwrite=False),
-        tasks.EnsureFile('Write admin.txt if necessary', '{{env.var}}/admin.txt',
-                         'admin:{{py:import string}}{{config.admin_password or env.random_string(12, string.ascii_letters + string.digits + "_-!;")}}',
-                         overwrite=False),
+        EnsureAdminFile('Write Zope administrator login to var/admin.txt if it does not exist'),
         ]
 
 

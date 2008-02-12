@@ -856,6 +856,7 @@ class SaveSetting(Task):
             else:
                 section = self.section
             self.environ.config.set(section, key, value)
+        self.environ.save()
 
     def format_variables(self, variables):
         """
