@@ -32,7 +32,11 @@ class NYMapProject(Project):
             cwd='{{env.base_path}}/{{project.name}}/src/nymap/build'),
         tasks.SaveURI(path='/maps',
                       uri='file://{{env.base_path}}/{{project.name}}/src/nymap',
-                      project_local=False),
+                      project_local=False,
+                      ## FIXME: this should be themable, but currently
+                      ## is not (see #2172):
+                      theme=False,
+                      ),
         tasks.SaveURI(path='/maps/ows',
                       project_name='{{project.name}}_geoserver',
                       uri='{{config.geoserver_url}}',
