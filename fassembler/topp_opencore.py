@@ -553,8 +553,8 @@ exec {{config.zeo_instance}}/bin/runzeo
 
     actions = [
         tasks.SaveSetting('Save global settings',
-                          {'opencore_site_id': '{{config.opencore_site_id or project.req_settings.get("opencore_site_id")}}',
-                           'opencore_site_title': '{{config.opencore_site_title or project.req_settings.get("opencore_site_title")}}',
+                          {'opencore_site_id': '{{config.opencore_site_id or "openplans"}}',
+                           'opencore_site_title': '{{config.opencore_site_title or "OpenCore Site"}}',
                           }),
         tasks.SaveSetting('Save application settings',
                           {'opencore_vacuum_whitelist': 'http://woonerf.streetsblog.org,http://www.streetsblog.org'},
