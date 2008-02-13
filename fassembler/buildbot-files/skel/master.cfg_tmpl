@@ -1,3 +1,4 @@
+# -*- mode: python ;-*-
 from buildbot.changes.pb import PBChangeSource
 from buildbot.changes.svnpoller import SVNPoller
 from buildbot.process import factory
@@ -100,9 +101,9 @@ ocf.addStep(ShellCommand,
             description='run opencore unit test suite',
             haltOnFailure=0)
 
-# Run the flunc tests.
+# Run the flunc tests. Wait a bit for services to come up.
 ocf.addStep(ShellCommand, 
-            command=['%s/bin/supervisord' % OCBASEDIR],
+            command='%s/bin/supervisord && sleep 5' % OCBASEDIR,
             description='start services for functional tests',
             haltOnFailure=1)
 
