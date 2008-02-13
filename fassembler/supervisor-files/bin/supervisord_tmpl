@@ -1,3 +1,14 @@
 #!/bin/sh
 BASE_PATH="{{env.base_path}}"
+VAR_PATH="{{env.var}}"
+LOG_FILENAME="$VAR_PATH/logs/supervisor/supervisord.log"
+if [ -e "$LOG_FILENAME" ] ; then
+    EXPECT_USER="$(ls -l $LOG_FILENAME | awk '{print $3}')"
+    if [ "`whoami`" != "$EXPECT_USER" ] ; then
+        echo "You should run this script as $EXPECT_USER"
+        echo "Like:"
+        echo "  sudo -u $EXPECT_USER -H $0"
+        exit 1
+    fi
+fi
 exec $BASE_PATH/supervisor/bin/supervisord -c $BASE_PATH/etc/supervisor/supervisor.conf "$@"
