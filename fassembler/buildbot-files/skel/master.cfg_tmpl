@@ -25,7 +25,10 @@ c['buildbotURL'] = '{{config.buildbot_url}}'
 
 c['slavePortnum'] = int('{{config.buildslave_port}}')
 
-c['change_source'] = [SVNPoller(svnurl='https://svn.openplans.org/svn/opencore/trunk/')]
+c['change_source'] = [
+    SVNPoller(svnurl='https://svn.openplans.org/svn/opencore/trunk/', 
+              pollinterval=180)
+]
 
 
 # Build slaves that are allowed to attach.
@@ -71,9 +74,10 @@ ocf.addStep(ShellCommand,
                      'fassembler:topp',
                      # Just build enough of the stack to run flunc.
                      'fassembler:supervisor',
+                     'fassembler:opencore',
                      'fassembler:deliverance',
                      'fassembler:cabochon',
-                     'fassembler:opencore',
+                     'fassembler:twirlip',
                      'fassembler:zeo',
                      ],
             description='building opencore and dependencies',
