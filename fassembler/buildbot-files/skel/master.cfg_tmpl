@@ -119,12 +119,13 @@ ocf.addStep(ShellCommand,
             description='run flunc tests',
             haltOnFailure=0)
 
-ocf.addStep(ShellCommand, 
-            command=['%s/bin/supervisorctl' % OCBASEDIR,
-                     'shutdown'],
+# Shut down subprocesses; wait a minute in case they take a while to die.
+# This hopefully works around #2230.  If not, I'll add Jeff's
+# portkill script, like commented out below.
+ocf.addStep(ShellCommand,
+            command='%s/bin/supervisorctl shutdown && sleep 10' % OCBASEDIR,
             description='shut down',
             haltOnFailure=1)
-
 
 ## # Cleanup.
 ## # kill any programs running on the ports 
