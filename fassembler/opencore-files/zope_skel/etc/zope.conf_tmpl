@@ -60,15 +60,15 @@ default-zpublisher-encoding utf-8
 
 <zodb_db main>
   mount-point /
-  # ZODB cache, in number of objects
-  cache-size 5000
+  # ZODB cache, in number of objects, per thread
+  cache-size 10000
   <zeoclient>
     server localhost:$ZEO_PORT
     storage 1
     name zeostorage
     var $OPENCORE_VAR
-    # ZEO client cache, in bytes
-    cache-size 20MB
+    # ZEO client disk cache, in bytes
+    cache-size 500MB
     # Uncomment to have a persistent disk cache
     #client zeo1
   </zeoclient>
