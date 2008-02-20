@@ -164,6 +164,20 @@ class ToppProject(Project):
                            'requirements_svn_repo': '{{config.requirements_svn_repo}}',
                            'etc_svn_subdir': '{{config.etc_svn_subdir}}',
                            }),
+        tasks.SaveSetting(
+            'Save google maps API key settings',
+            # XXX These clobber existing settings for the same hosts,
+            # do I have to create a Setting for each one to avoid that?
+            {'localhost': 'ABQIAAAACgq_R1LiJejH1-2eRRyQvBTwM0brOpm-All5BF6PoaKBxRWWERRkYcknpt7YAYi-YjtUb5J69-e2Hg',
+             'nohost': 'bogus_key_used_for_tests',
+             'www.openplans.org': 'ABQIAAAACgq_R1LiJejH1-2eRRyQvBS2lPFLheJWsuHrs6xH0wGxdJK4bBT7zpC8h-HATfIgsTkoocmUbRhpwg',
+             'stage.openplans.org': 'ABQIAAAACgq_R1LiJejH1-2eRRyQvBQhAd8z9tKimIVBIDKW422U7wrpTRT4LpjJ0VDlwv4iA4aXJWxlniaFBA',
+             'dev.openplans.org': 'ABQIAAAACgq_R1LiJejH1-2eRRyQvBT0aeC4KnTBbz925FydCQjB46Vj8xRHTu2sYOFP5rYKWdKQEJ-FTMaFvA',
+             'flow.openplans.org': 'ABQIAAAACgq_R1LiJejH1-2eRRyQvBTAnO2yKFgq3slTQJTAtOvdYNplURScwsK_eLUbAQ_tbSW1L7eKUGZ2pQ',
+             'dev.nycstreets.org': 'ABQIAAAACgq_R1LiJejH1-2eRRyQvBQ42FaFWNur_4XCSEHkUOZhqT-5LhT80_6nqiuC2nvOrzbvOLN0PC7grg',
+             'dev.yourstreets.org': 'ABQIAAAACgq_R1LiJejH1-2eRRyQvBQbz6J6EYtXVUBa7BucdbOEH1SrphRUT2-E4Pe2M5U4iDeS9qzQXHoT1A',
+             },
+             section='google_maps_keys'),
         
         tasks.EnsureDir('Make sure var directory exists', '{{env.var}}', svn_add=False),
         tasks.SvnCheckout('check out requirements/', '{{config.requirements_svn_repo}}',
