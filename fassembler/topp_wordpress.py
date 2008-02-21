@@ -178,6 +178,9 @@ class WordPressProject(Project):
 
     def find_exec(self, names):
         paths = os.environ['PATH'].split(os.path.pathsep)
+        for extra in ['/usr/sbin', '/sbin']:
+            if extra not in paths:
+                paths.append(extra)
         for name in names:
             for path in paths:
                 if os.path.exists(os.path.join(path, name)):
