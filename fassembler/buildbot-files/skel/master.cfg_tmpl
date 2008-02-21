@@ -51,101 +51,106 @@ c['slaves'] = slaves
 # Opencore - minimal from-scratch build factory
 #################################################
 
-ocf = factory.BuildFactory()
+def make_factory(name, fassembler_targets):
+    fac = factory.BuildFactory()
+    fac.name = name
+    # Accept certificates (for svn).
+    fac.addStep(ShellCommand,
+                command='{{os.path.join("..", "..", "bin", "accept_certificates.sh")}}',
+                description=['accepting certificates', 'for svn'],
+                )
 
-# Accept certificates (for svn).
-ocf.addStep(ShellCommand,
-            command='{{os.path.join("..", "..", "bin", "accept_certificates.sh")}}',
-            description='accepting certificates for svn',
-            )
+    # Clean up after previous runs.
+    fac.addStep(ShellCommand, command="rm -rf %s *bz2 *gz *zip" % OCBASEDIR,
+                description='removing old files')
 
-# Clean up after previous runs.
-ocf.addStep(ShellCommand, command="rm -rf %s *bz2 *gz *zip" % OCBASEDIR,
-            description='removing old files')
+    # Bootstrap the topp build tools (fassembler).
+    fac.addStep(ShellCommand,
+                command='svn export https://svn.openplans.org/svn/fassembler/trunk/fassembler-boot.py',   # string instead of list causes it to be run via sh.
+                description=['getting fassembler', 'bootstrap script'],
+                haltOnFailure=1)
 
-# Bootstrap the topp build tools (fassembler).
-ocf.addStep(ShellCommand,
-            command='svn export https://svn.openplans.org/svn/fassembler/trunk/fassembler-boot.py',   # string instead of list causes it to be run via sh.
-            description='getting fassembler bootstrap script',
-            haltOnFailure=1)
+    fac.addStep(ShellCommand,
+                command=['python', 'fassembler-boot.py', 'oc'],
+                description='bootstrapping fassembler',
+                haltOnFailure=1)
 
-ocf.addStep(ShellCommand,
-            command=['python', 'fassembler-boot.py', 'oc'],
-            description='bootstrapping fassembler',
-            haltOnFailure=1)
+    # Run the build.
+    fac.addStep(ShellCommand,
+                command=['%s/bin/fassembler' % OCBASEDIR,
+                         '--no-interactive',
+                         'var=%s/var' % OCBASEDIR,
+                         'base_port=%d' % OCBASEPORT,
+                         'fassembler:topp',
+                         ] + fassembler_targets,
+                description=['building', name, 'and dependencies'],
+                haltOnFailure=1)
 
-# Run the build.
-ocf.addStep(ShellCommand,
-            command=['%s/bin/fassembler' % OCBASEDIR,
-                     '--no-interactive',
-                     'var=%s/var' % OCBASEDIR,
-                     'base_port=%d' % OCBASEPORT,
-                     'fassembler:topp',
-                     # Just build enough of the stack to run flunc.
-                     'fassembler:supervisor',
-                     'fassembler:opencore',
-                     'fassembler:deliverance',
-                     'fassembler:cabochon',
-                     'fassembler:twirlip',
-                     'fassembler:zeo',
-                     ],
-            description='building opencore and dependencies',
-            haltOnFailure=1)
+    # Create the zope unit test wrapper script.
+    # XXX maybe this should move into fassembler:opencore
+    fac.addStep(ShellCommand,
+                command='{{os.path.join("..", "..", "bin", "mkzopetest.sh")}}',
+                description=['creating zopectl', 'test wrapper script'],
+                haltOnFailure=True
+                )
 
-# Create the zope unit test wrapper script.
-# XXX maybe this should move into fassembler:opencore
-ocf.addStep(ShellCommand,
-            command='{{os.path.join("..", "..", "bin", "mkzopetest.sh")}}',
-            description='creating zopectl test wrapper script',
-            haltOnFailure=True
-            )
+    # Run the zopectl unit tests.
+    # WORKS except that zopectl always exits 0, argh.
+    fac.addStep(ShellCommand, 
+                command=['%s/opencore/zope/bin/zopetest' % OCBASEDIR, '-s',
+                         'Products.listen'],
+                description=['run listen unit', 'tests'],
+                haltOnFailure=False)
 
-# Run the zopectl unit tests.
-# WORKS except that zopectl always exits 0, argh.
-ocf.addStep(ShellCommand, 
-            command=['%s/opencore/zope/bin/zopetest' % OCBASEDIR, '-s',
-                     'Products.listen'],
-            description='run listen unit test suite',
-            haltOnFailure=False)
+    fac.addStep(ShellCommand,
+                command=['%s/opencore/zope/bin/zopetest' % OCBASEDIR, '-s',
+                         'opencore'],
+                description=['run opencore', 'unit tests'],
+                haltOnFailure=0)
 
-ocf.addStep(ShellCommand,
-            command=['%s/opencore/zope/bin/zopetest' % OCBASEDIR, '-s',
-                     'opencore'],
-            description='run opencore unit test suite',
-            haltOnFailure=0)
+    # Run the flunc tests. Wait a bit for services to come up.
+    fac.addStep(ShellCommand, 
+                command='%s/bin/supervisord && sleep 5' % OCBASEDIR,
+                description=['start services', 'for functional tests'],
+                haltOnFailure=1)
 
-# Run the flunc tests. Wait a bit for services to come up.
-ocf.addStep(ShellCommand, 
-            command='%s/bin/supervisord && sleep 5' % OCBASEDIR,
-            description='start services for functional tests',
-            haltOnFailure=1)
+    fac.addStep(ShellCommand, 
+                command=['%s/opencore/bin/flunc' % OCBASEDIR,
+                         '-p', '%s/opencore/src/opencore/ftests/' % OCBASEDIR,
+                         '-t', 'http://localhost:%d' % OCBASEPORT,
+                         'all'],
+                description='run flunc tests',
+                haltOnFailure=0)
 
-ocf.addStep(ShellCommand, 
-            command=['%s/opencore/bin/flunc' % OCBASEDIR,
-                     '-p', '%s/opencore/src/opencore/ftests/' % OCBASEDIR,
-                     '-t', 'http://localhost:%d' % OCBASEPORT,
-                     'all'],
-            description='run flunc tests',
-            haltOnFailure=0)
+    # Shut down subprocesses; wait a bit in case they take a while to die.
+    # This hopefully works around #2230.  If not, I'll add Jeff's
+    # portkill script, like commented out below.
+    fac.addStep(ShellCommand,
+                command='%s/bin/supervisorctl shutdown && sleep 20' % OCBASEDIR,
+                description='shut down',
+                haltOnFailure=1)
 
-# Shut down subprocesses; wait a bit in case they take a while to die.
-# This hopefully works around #2230.  If not, I'll add Jeff's
-# portkill script, like commented out below.
-ocf.addStep(ShellCommand,
-            command='%s/bin/supervisorctl shutdown && sleep 20' % OCBASEDIR,
-            description='shut down',
-            haltOnFailure=1)
-
-## # Cleanup.
-## # kill any programs running on the ports 
-## # this shouldn't be necessary
-## ocf.addStep(ShellCommand, 
-##           command=['portkill.py', '<<zope-port>>', '<<zeo-port>>'],
-##           description='kill any running instances using the ports',
-##           haltOnFailure=1)
+    ## # Cleanup.
+    ## # kill any programs running on the ports 
+    ## # this shouldn't be necessary
+    ## fac.addStep(ShellCommand, 
+    ##           command=['portkill.py', '<<zope-port>>', '<<zeo-port>>'],
+    ##           description='kill any running instances using the ports',
+    ##           haltOnFailure=1)
+    return fac
 
 
+ocf = make_factory('Opencore (minimal stack)', [
+    # Just build enough of the stack to run flunc.
+    'fassembler:supervisor',
+    'fassembler:opencore',
+    'fassembler:deliverance',
+    'fassembler:cabochon',
+    'fassembler:twirlip',
+    'fassembler:zeo',
+    ])
 
+    
 ############################################################################
 # BUILDERS - each tells a slave which build factory to use.
 ############################################################################
@@ -160,6 +165,7 @@ c['builders'] = [{'name': 'opencore-minimal',
                   'builddir': 'builds',
                   'factory': ocf}
                  for name in slavenames]
+
 
 ###########################################################################
 # SCHEDULERS - control when the master decides to fire off a build.
