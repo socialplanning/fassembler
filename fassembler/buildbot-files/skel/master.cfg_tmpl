@@ -11,6 +11,12 @@ from buildbot.buildslave import BuildSlave
 import os
 import subprocess
 
+"""Buildbot master configuration for opencore and related software.
+
+{{config.editwarning}}
+"""
+
+
 OCBASEPORT=int('{{config.child_baseport}}')
 OCBASEDIR='{{config.oc_basedir}}'
 

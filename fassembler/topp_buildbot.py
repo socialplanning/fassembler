@@ -56,9 +56,15 @@ class GetTwistedSource(tasks.InstallTarball):
         return os.path.exists(self._marker)
 
 
+editwarning = '''!!! WARNING !!! This is a generated file.  DO NOT EDIT!
+
+Instead you should edit the tmpl file in the fassembler source, under
+{{project.skel_dir}}
+'''
 
 class BuildBotProject(Project):
     """Buildbot base project class"""
+
 
     _twisted_src = twisted_dirname
 
@@ -71,7 +77,6 @@ class BuildBotProject(Project):
     hostname, platform, version = get_host_info()
 
     buildslave_dirname = 'buildslave'
-
 
     settings = [
         Setting('buildbot_url',
@@ -122,6 +127,10 @@ class BuildBotProject(Project):
         Setting('oc_basedir',
                 default='oc', #{{os.path.join(config.buildslave_dir, "builds", "build", "oc")}}',
                 help='Directory where slave will build opencore.',
+                ),
+        Setting('editwarning',
+                default=editwarning,
+                help='Text to warn people about editing generated files.'
                 ),
         ]
 
