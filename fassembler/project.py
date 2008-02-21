@@ -262,7 +262,9 @@ class Project(object):
                     self.logger.debug('Found %s in %s' % (executable, full))
                     return
         raise OSError(
-            "Could not find any of executable(s) %s in PATH %s"
+            "Could not find any of executable(s) %s in PATH %s.\n"
+            "Please ensure that you have the relevant packages installed,\n"
+            "and/or add the relevant directory to your $PATH."
             % (', '.join(executables), os.environ['PATH']))
 
     _setting_re = re.compile(r'^(\w+)\s*=\s*(.*)$')
