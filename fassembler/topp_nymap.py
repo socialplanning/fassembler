@@ -14,7 +14,7 @@ class NYMapProject(Project):
     title = 'Install NYMap'
     settings = [
         Setting('svn',
-                default='https://svn.openplans.org/geo/nymap',
+                default='https://svn.openplans.org/geo/nymap/branches/woonerf',
                 help='Location of nymap svn repository'),
         Setting('geoserver_url',
                 default='http://artois.openplans.org/geoserver/ows/',
