@@ -119,11 +119,11 @@ ocf.addStep(ShellCommand,
             description='run flunc tests',
             haltOnFailure=0)
 
-# Shut down subprocesses; wait a minute in case they take a while to die.
+# Shut down subprocesses; wait a bit in case they take a while to die.
 # This hopefully works around #2230.  If not, I'll add Jeff's
 # portkill script, like commented out below.
 ocf.addStep(ShellCommand,
-            command='%s/bin/supervisorctl shutdown && sleep 10' % OCBASEDIR,
+            command='%s/bin/supervisorctl shutdown && sleep 20' % OCBASEDIR,
             description='shut down',
             haltOnFailure=1)
 
