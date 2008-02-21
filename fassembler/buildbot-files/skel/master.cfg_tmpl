@@ -24,6 +24,9 @@ slavenames = ['slave1']
 slaves = [BuildSlave(name, '{{config.buildbot_passwd}}') for name in slavenames]
 
 c = BuildmasterConfig = {}
+# "The BuildmasterConfig name is the only one which matters: all other
+# names defined during the execution of this file are discarded."
+# (from http://buildbot.net/repos/release/docs/buildbot.html#Configuration)
 				   
 c['projectName'] = 'OpenCore'
 c['projectURL']  = 'http://www.openplans.org/projects/opencore'
@@ -36,14 +39,19 @@ c['change_source'] = [
               pollinterval=180)
 ]
 
-
 # Build slaves that are allowed to attach.
 c['slaves'] = slaves
 
-# This is the build factory for building & testing Opencore
-# (minimal, not a full stack).
-ocf = factory.BuildFactory()
 
+#########################################################################
+# FACTORIES - these configure how to build stuff.
+#########################################################################
+
+#################################################
+# Opencore - minimal from-scratch build factory
+#################################################
+
+ocf = factory.BuildFactory()
 
 # Accept certificates (for svn).
 ocf.addStep(ShellCommand,
@@ -52,11 +60,6 @@ ocf.addStep(ShellCommand,
             )
 
 # Clean up after previous runs.
-
-## ocf.addStep(ShellCommand, 
-##             command=['%s/opencore/bin/superviscorctl shutdown' % OCBASEDIR],
-##             description='shut down old stuff',
-##             haltOnFailure=0)
 ocf.addStep(ShellCommand, command="rm -rf %s *bz2 *gz *zip" % OCBASEDIR,
             description='removing old files')
 
@@ -141,10 +144,13 @@ ocf.addStep(ShellCommand,
 ##           description='kill any running instances using the ports',
 ##           haltOnFailure=1)
 
-####################################################################################
 
 
-# BUILDERS -- should be like the following:
+############################################################################
+# BUILDERS - each tells a slave which build factory to use.
+############################################################################
+
+# Should be like the following:
 # c['builders'] = [ { 'name':      'test', 
 #                     'slavename': 'test-slave',
 #                     'builddir':  'linux-x86', 
@@ -155,7 +161,10 @@ c['builders'] = [{'name': 'opencore-minimal',
                   'factory': ocf}
                  for name in slavenames]
 
-# SCHEDULERS
+###########################################################################
+# SCHEDULERS - control when the master decides to fire off a build.
+###########################################################################
+
 buildOnChange = scheduler.Scheduler(
     'Post Commit Build', 
     branch=None,
@@ -171,6 +180,11 @@ c['schedulers'] = [buildOnChange, buildNightly]
 
 
 
+############################################################################
+# STATUS NOTIFICATION
+############################################################################
+
+
 # This is the status display that should be presented to the Universe, 
 # hence forcing builds to begin is disabled. 
 publicWebStatus = html.WebStatus(http_port='{{config.buildmaster_public_port}}', allowForce=False)
@@ -180,7 +194,7 @@ publicWebStatus = html.WebStatus(http_port='{{config.buildmaster_public_port}}',
 developerWebStatus = html.WebStatus(http_port='{{config.buildmaster_private_port}}', allowForce=True)
 
 
-## this mailer mails all status only to the status list
+# Mails all status only to the status list.
 listMailer = mail.MailNotifier(
     mode='all',
     subject='%(builder)s finished a build',
@@ -191,9 +205,9 @@ listMailer = mail.MailNotifier(
     sendToInterestedUsers=False)
 
 
-# This mailer sends an email to anyone who has made changes to a build
-# that breaks. XXX Or at least it's supposed to; so far it doesn't seem
-# to actually work.
+# Notify by email anyone who has made changes to a build that
+# breaks. XXX Or at least it's supposed to; some people get mail, but
+# not PW ... anybody else not getting it?
 breakMailer = mail.MailNotifier(
     fromaddr='buildbot@openplans.org', 
     mode='problem',
@@ -204,7 +218,8 @@ breakMailer = mail.MailNotifier(
     )
 
 
-# Is there a way to get it to always announce failures?
+# An IRC status bot. Is there a way to get this to always announce
+# failures?
 ircbot = words.IRC(host='irc.freenode.net',
                    nick='buildbot-topp',
                    channels=['#openplans'],
@@ -219,6 +234,8 @@ c['status'] = [developerWebStatus,
                ircbot,
                ]
 
+
+############################################################################
 # write the configuration to a file for debugging.
 # XXX first monkeypatch buildslave so it doesn't blow up on repr.
 def repr_buildslave(s):
