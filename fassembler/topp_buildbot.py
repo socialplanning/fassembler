@@ -58,8 +58,9 @@ class GetTwistedSource(tasks.InstallTarball):
 
 editwarning = '''!!! WARNING !!! This is a generated file.  DO NOT EDIT!
 
-Instead you should edit the tmpl file in the fassembler source, under
-{{project.skel_dir}}
+Instead you should edit (and commit) the tmpl file in the fassembler
+source, under {{project.skel_dir}}, then re-run fassembler to
+regenerate this file.
 '''
 
 class BuildBotProject(Project):
