@@ -126,8 +126,8 @@ class BuildBotProject(Project):
                 help="Subdirectory to put the buildslave in. Must be relative"
                 ),
         Setting('oc_basedir',
-                default='oc', #{{os.path.join(config.buildslave_dir, "builds", "build", "oc")}}',
-                help='Directory where slave will build opencore.',
+                default='oc',
+                help='Subdirectory where slave will build stuff.',
                 ),
         Setting('editwarning',
                 default=editwarning,
