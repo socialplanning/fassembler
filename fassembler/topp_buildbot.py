@@ -96,7 +96,7 @@ class BuildBotProject(Project):
 
         Setting('child_baseport',
                 default='{{env.base_port +  1000}}',
-                help="Base port for applications built by the bots"),
+                help="Base port for applications built by the bots. There are multiple builders, so choose a number where you have a few hundred ports free after that!"),  # It kind of sucks that the master config is in charge of this.
         Setting('buildmaster_private_port',
                 default='{{env.base_port+int(config.buildmaster_private_offset)}}',
                 help="Port to run the private buildmaster on (force build allowed)"),
