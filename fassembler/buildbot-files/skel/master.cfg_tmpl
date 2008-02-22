@@ -34,6 +34,9 @@ c['buildbotURL'] = '{{config.buildbot_url}}'
 
 c['slavePortnum'] = int('{{config.buildslave_port}}')
 
+
+# We can only have one change source. So if we want buildbot for multiple
+# source trees, I think we'd need multiple buildbots with different configs.
 c['change_source'] = [
     SVNPoller(svnurl='https://svn.openplans.org/svn/opencore/trunk/', 
               pollinterval=180)
@@ -150,6 +153,16 @@ ocf = make_factory('Opencore (minimal stack)', [
     'fassembler:zeo',
     ])
 
+spf = make_factory('Sputnik (minimal stack)', [
+    # Just build enough of the stack to run flunc.
+    'fassembler:supervisor',
+    'fassembler:opencore',
+    'fassembler:deliverance',
+    'fassembler:cabochon',
+    'fassembler:twirlip',
+    'fassembler:zeo',
+    ])
+
     
 ############################################################################
 # BUILDERS - each tells a slave which build factory to use.
@@ -160,12 +173,22 @@ ocf = make_factory('Opencore (minimal stack)', [
 #                     'slavename': 'test-slave',
 #                     'builddir':  'linux-x86', 
 #                     'factory':   f} ]
-c['builders'] = [{'name': 'opencore-minimal',
-                  'slavename': name,
-                  'builddir': 'builds',
-                  'factory': ocf}
-                 for name in slavenames]
 
+opencore_builders = [
+    {'name': 'opencore-minimal',
+     'slavename': name,
+     'builddir': 'oc',
+     'factory': ocf}
+    for name in slavenames]
+
+sputnik_builders = [
+    {'name': 'sputnik-minimal',
+     'slavename': name,
+     'builddir': 'sputnik',
+     'factory': spf}
+    for name in slavenames]
+
+c['builders'] = opencore_builders + sputnik_builders
 
 ###########################################################################
 # SCHEDULERS - control when the master decides to fire off a build.
@@ -249,6 +272,6 @@ def repr_buildslave(s):
 BuildSlave.__repr__ = repr_buildslave
 
 import pprint
-outfile = file(os.path.join('/home/pw/buildbottest/master', 'config.out'), 'w')
+outfile = file('config.out', 'w')
 outfile.write(pprint.pformat(c))
 outfile.close()
