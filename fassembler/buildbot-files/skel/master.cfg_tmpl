@@ -7,6 +7,7 @@ from buildbot.steps.source import SVN
 from buildbot.status import html, mail, words
 from buildbot import scheduler
 from buildbot.buildslave import BuildSlave
+from twisted.python import log
 
 import os
 import subprocess
@@ -35,11 +36,40 @@ c['buildbotURL'] = '{{config.buildbot_url}}'
 c['slavePortnum'] = int('{{config.buildslave_port}}')
 
 
-# We can only have one change source. So if we want buildbot for multiple
-# source trees, I think we'd need multiple buildbots with different configs.
+# Buildbot only allows tracking ONE change source for the entire
+# buildmaster config.  Rats. So if we want to track multiple source
+# trees, I think we need multiple buildmasters with different configs.
+#
+# As a hackaround for now, we'll watch our entire repository but use a
+# split_file callback that ignores large parts of the tree.  This
+# means we get only the changes we care about - BUT then both the
+# sputnik and opencore builders see all those changes, even though the
+# 'sputnik' stuff is not relevant to the opencore builder. So the
+# opencore builder will fire a build every time you change stuff in
+# sputnik, and you'll be on the blamelist.  I think this is similar to
+# what buildbot.zope.org does.
+def split_file(path):
+    pieces = path.split('/')
+    if pieces[0] not in ('opencore', 'sputnik'):
+        log.msg("ignoring file %s, not relevant?" % path)
+        return None   # Ignore this file.
+    elif pieces[1] == 'trunk':
+        branch = pieces[1]
+        filepath = '/'.join(pieces[2:])
+        return (branch, filepath)
+    elif pieces[1] == 'branches':
+        branch = pieces[2]
+        filepath = '/'.join(pieces[3:])
+        return (branch, filepath)
+    else:
+        log.msg("ignoring file %s, maybe a tag?" % path)
+        return None
+
 c['change_source'] = [
-    SVNPoller(svnurl='https://svn.openplans.org/svn/opencore/trunk/', 
-              pollinterval=180)
+    SVNPoller(svnurl='https://svn.openplans.org/svn/',
+              pollinterval=180,
+              split_file=split_file,
+              )
 ]
 
 # Build slaves that are allowed to attach.
@@ -50,11 +80,13 @@ c['slaves'] = slaves
 # FACTORIES - these configure how to build stuff.
 #########################################################################
 
-#################################################
-# Opencore - minimal from-scratch build factory
-#################################################
 
-def make_factory(name, baseport, fassembler_targets):
+def make_factory(name, baseport=BASEPORT, requirements_repo=None,
+                 fassembler_targets=[]):
+    """
+    We have multiple very similar builds that just use different
+    requirements_svn_repo. Hence, this factory function.
+    """
     fac = factory.BuildFactory()
     fac.name = name
     # Accept certificates (for svn).
@@ -79,18 +111,20 @@ def make_factory(name, baseport, fassembler_targets):
                 haltOnFailure=1)
 
     # Run the build.
+    buildcmd = ['%s/bin/fassembler' % OCBASEDIR,
+                '--no-interactive',
+                'var=%s/var' % OCBASEDIR,
+                'base_port=%d' % baseport,]
+    if requirements_repo:
+        buildcmd.append('requirements_svn_repo=%s' % requirements_repo)
     fac.addStep(ShellCommand,
-                command=['%s/bin/fassembler' % OCBASEDIR,
-                         '--no-interactive',
-                         'var=%s/var' % OCBASEDIR,
-                         'base_port=%d' % baseport,
-                         'fassembler:topp',
-                         ] + fassembler_targets,
+                command=buildcmd + fassembler_targets,
                 description=['building', name, 'and dependencies'],
                 haltOnFailure=1)
 
     # Create the zope unit test wrapper script.
     # XXX maybe this should move into fassembler:opencore
+    # ... or just fix the upstream zopectl bug!
     fac.addStep(ShellCommand,
                 command='{{os.path.join("..", "..", "bin", "mkzopetest.sh")}}',
                 description=['creating zopectl', 'test wrapper script'],
@@ -143,29 +177,26 @@ def make_factory(name, baseport, fassembler_targets):
     return fac
 
 
-ocf = make_factory(
-    'Opencore (minimal stack)', BASEPORT,
-    [
-    # Just build enough of the stack to run flunc.
+minimal_opencore_targets = [
+    'fassembler:topp',
     'fassembler:supervisor',
     'fassembler:opencore',
     'fassembler:deliverance',
     'fassembler:cabochon',
     'fassembler:twirlip',
     'fassembler:zeo',
-    ])
+    ]
 
-spf = make_factory(
-    'Sputnik (minimal stack)', BASEPORT + 100,
-    [
-    # Just build enough of the stack to run flunc.
-    'fassembler:supervisor',
-    'fassembler:opencore',
-    'fassembler:deliverance',
-    'fassembler:cabochon',
-    'fassembler:twirlip',
-    'fassembler:zeo',
-    ])
+ocf = make_factory(
+    'Openplans (partial stack)', baseport=BASEPORT,
+    fassembler_targets=minimal_opencore_targets
+    )
+
+nyc = make_factory(
+    'Nycstreets (partial stack)',
+    requirements_repo='https://svn.openplans.org/svn/build/requirements/nycstreets/trunk/',
+    baseport=BASEPORT + 100,
+    fassembler_targets=minimal_opencore_targets)
 
     
 ############################################################################
@@ -185,14 +216,14 @@ opencore_builders = [
      'factory': ocf}
     for name in slavenames]
 
-sputnik_builders = [
-    {'name': 'sputnik-minimal',
+nycstreets_builders = [
+    {'name': 'nycstreets-minimal',
      'slavename': name,
-     'builddir': 'sputnik',
-     'factory': spf}
+     'builddir': 'nycstreets',
+     'factory': nyc}
     for name in slavenames]
 
-c['builders'] = opencore_builders + sputnik_builders
+c['builders'] = opencore_builders + nycstreets_builders
 
 ###########################################################################
 # SCHEDULERS - control when the master decides to fire off a build.
