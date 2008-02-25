@@ -124,7 +124,8 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
 
     # Create the zope unit test wrapper script.
     # XXX maybe this should move into fassembler:opencore
-    # ... or just fix the upstream zopectl bug!
+    # ... or just fix the upstream zopectl bug, namely that zopectl
+    # always exits 0 even when tests fail.
     fac.addStep(ShellCommand,
                 command='{{os.path.join("..", "..", "bin", "mkzopetest.sh")}}',
                 description=['creating zopectl', 'test wrapper script'],
@@ -132,11 +133,16 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                 )
 
     # Run the zopectl unit tests.
-    # WORKS except that zopectl always exits 0, argh.
     fac.addStep(ShellCommand, 
                 command=['%s/opencore/zope/bin/zopetest' % OCBASEDIR, '-s',
                          'Products.listen'],
                 description=['run listen unit', 'tests'],
+                haltOnFailure=False)
+
+    fac.addStep(ShellCommand, 
+                command=['%s/opencore/zope/bin/zopetest' % OCBASEDIR, '-s',
+                         'Products.wicked'],
+                description=['run wicked unit', 'tests'],
                 haltOnFailure=False)
 
     fac.addStep(ShellCommand,
@@ -187,15 +193,15 @@ minimal_opencore_targets = [
     'fassembler:zeo',
     ]
 
-ocf = make_factory(
+oc_factory = make_factory(
     'Openplans (partial stack)', baseport=BASEPORT,
     fassembler_targets=minimal_opencore_targets
     )
 
-nyc = make_factory(
+nycsr_factory = make_factory(
     'Nycstreets (partial stack)',
     requirements_repo='https://svn.openplans.org/svn/build/requirements/nycstreets/trunk/',
-    baseport=BASEPORT + 100,
+    baseport=BASEPORT + 100, #XXX hacky way to avoid port overlap.
     fassembler_targets=minimal_opencore_targets)
 
     
@@ -203,24 +209,18 @@ nyc = make_factory(
 # BUILDERS - each tells a slave which build factory to use.
 ############################################################################
 
-# Should be like the following:
-# c['builders'] = [ { 'name':      'test', 
-#                     'slavename': 'test-slave',
-#                     'builddir':  'linux-x86', 
-#                     'factory':   f} ]
-
 opencore_builders = [
     {'name': 'opencore-minimal',
      'slavename': name,
      'builddir': 'oc',
-     'factory': ocf}
+     'factory': oc_factory}
     for name in slavenames]
 
 nycstreets_builders = [
     {'name': 'nycstreets-minimal',
      'slavename': name,
      'builddir': 'nycstreets',
-     'factory': nyc}
+     'factory': nycsr_factory}
     for name in slavenames]
 
 c['builders'] = opencore_builders + nycstreets_builders
