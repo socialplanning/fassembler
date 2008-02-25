@@ -231,7 +231,7 @@ c['builders'] = opencore_builders + nycstreets_builders
 
 buildOnChange = scheduler.Scheduler(
     'Post Commit Build', 
-    branch=None,
+    branch='trunk',
     treeStableTimer=5*60, 
     builderNames=[b['name'] for b in c['builders']]
                                     )
