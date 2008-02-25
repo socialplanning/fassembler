@@ -82,6 +82,7 @@ c['slaves'] = slaves
 
 
 def make_factory(name, baseport=BASEPORT, requirements_repo=None,
+                 ftestsdir=None,
                  fassembler_targets=[]):
     """
     We have multiple very similar builds that just use different
@@ -89,6 +90,7 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
     """
     fac = factory.BuildFactory()
     fac.name = name
+    
     # Accept certificates (for svn).
     fac.addStep(ShellCommand,
                 command='{{os.path.join("..", "..", "bin", "accept_certificates.sh")}}',
@@ -159,7 +161,7 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
 
     fac.addStep(ShellCommand, 
                 command=['%s/opencore/bin/flunc' % OCBASEDIR,
-                         '-p', '%s/opencore/src/opencore/ftests/' % OCBASEDIR,
+                         '-p', '%s/%s' % (OCBASEDIR, ftestsdir),
                          '-t', 'http://localhost:%d' % baseport,
                          'all'],
                 description='run flunc tests',
@@ -195,6 +197,7 @@ minimal_opencore_targets = [
 
 oc_factory = make_factory(
     'Openplans (partial stack)', baseport=BASEPORT,
+    ftestsdir='opencore/src/opencore/ftests/',
     fassembler_targets=minimal_opencore_targets
     )
 
@@ -202,6 +205,7 @@ nycsr_factory = make_factory(
     'Nycstreets (partial stack)',
     requirements_repo='https://svn.openplans.org/svn/build/requirements/nycstreets/trunk/',
     baseport=BASEPORT + 100, #XXX hacky way to avoid port overlap.
+    ftestsdir='opencore/src/sputnik/ftests/',
     fassembler_targets=minimal_opencore_targets)
 
     
