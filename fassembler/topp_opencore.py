@@ -426,6 +426,9 @@ class OpenCoreProject(Project):
         Setting('opencore_bundle_svn_repo',
                 default='{{config.opencore_bundle_svn_repo_dir}}/{{config.opencore_bundle_name}}',
                 help='Full svn repository for checkouts'),
+        Setting('ftests_path',
+                default='opencore/src/opencore/ftests',
+                help='Relative path to ftests'),
         ]
 
     files_dir = os.path.join(os.path.dirname(__file__), 'opencore-files')
@@ -511,7 +514,7 @@ setglobal adminpw    '{{config.zope_password}}'
                       theme='not-main-site'),
         tasks.EnsureFile(
             'Overwrite the flunc admin user info',
-            '{{env.base_path}}/opencore/src/opencore/ftests/admin.conf',
+            '{{env.base_path}}/{{config.ftests_path}}/admin.conf',
             content=flunc_admin_template,
             svn_add=False, overwrite=True),
         ]

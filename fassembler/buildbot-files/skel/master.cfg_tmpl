@@ -119,6 +119,8 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                 'base_port=%d' % baseport,]
     if requirements_repo:
         buildcmd.append('requirements_svn_repo=%s' % requirements_repo)
+    if ftestsdir:
+        buildcmd.append('ftests_path=%s' % ftestsdir)
     fac.addStep(ShellCommand,
                 command=buildcmd + fassembler_targets,
                 description=['building', name, 'and dependencies'],
