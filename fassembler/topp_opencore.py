@@ -602,7 +602,7 @@ exec {{config.zeo_instance}}/bin/runzeo
                          ## XXX add_openplans.py wasn't doing anything with this argument:
                          #script_args='{{env.config.get("general", "etc_svn_subdir")}}', 
                          name='Add OpenPlans site'),
-        tasks.ForEach('Install additional opencore-req.txt zopectl scripts',
+        tasks.ForEach('Run additional opencore-req.txt zopectl scripts',
                       'script_name',
                       '{{project.req_settings.get("zopectl_scripts")}}',
                       RunZopectlScript('{{os.path.join(env.base_path, "opencore/", task.script_name)}}',
