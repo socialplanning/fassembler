@@ -240,13 +240,20 @@ buildOnChange = scheduler.Scheduler(
     branch='trunk',
     treeStableTimer=5*60, 
     builderNames=[b['name'] for b in c['builders']]
-                                    )
-buildNightly  = scheduler.Nightly(
-    'Nightly Build', 
-    builderNames=[b['name'] for b in c['builders']],
+    )
+
+buildOpencoreNightly  = scheduler.Nightly(
+    'Opencore Nightly Build', 
+    builderNames=[b['name'] for b in opencore_builders],
     hour=3, minute=0)
 
-c['schedulers'] = [buildOnChange, buildNightly]
+buildNycstreetsNightly  = scheduler.Nightly(
+    'Sputnik Nightly Build', 
+    builderNames=[b['name'] for b in nycstreets_builders],
+    hour=3, minute=30)
+
+
+c['schedulers'] = [buildOnChange, buildOpencoreNightly, buildNycstreetsNightly]
 
 
 
@@ -285,6 +292,8 @@ breakMailer = mail.MailNotifier(
     relayhost='mail.openplans.org', 
     lookup='openplans.org',
     sendToInterestedUsers=True,
+    extraRecipients=['opencore-builds@lists.openplans.org',
+                     ],
     )
 
 
@@ -298,9 +307,7 @@ ircbot = words.IRC(host='irc.freenode.net',
 
 
 c['status'] = [developerWebStatus,
-               #publicWebStatus,
-               breakMailer, listMailer,
-               #pwMailer,
+               breakMailer,
                ircbot,
                ]
 
