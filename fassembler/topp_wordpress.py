@@ -135,8 +135,10 @@ class WordPressProject(Project):
         return self.search(
             ['/usr/local/apache2/modules',
              '/usr/lib/apache2/modules',
-             '/usr/libexec/apache2', # Mac OS X 10.5
-             '/usr/libexec/httpd',   # Mac OS X 10.4
+             '/usr/libexec/apache2',       # Mac OS X 10.5
+             '/usr/libexec/httpd',         # Mac OS X 10.4
+             '/usr/lib/httpd/modules',     # Red Hat EL and CentOS
+             '/usr/lib64/httpd/modules',   # Red Hat EL and CentOS 64-bit
             ],
             'apache modules/')
 
