@@ -9,7 +9,7 @@ from subprocess import Popen, PIPE
 
 class CheckPHP(tasks.Task):
     """Makes sure PHP was built with required modules"""
-    required_modules = ['hash']
+    required_modules = ['hash', 'openssl']
     php_cgi_exec = tasks.interpolated('php_cgi_exec')
 
     def __init__(self, php_cgi_exec, stacklevel=1):
