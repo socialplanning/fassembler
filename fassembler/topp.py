@@ -138,6 +138,10 @@ class ToppProject(Project):
                 default='',
                 inherit_config=('general', 'db_prefix'),
                 help='The prefix to use for all database names'),
+        Setting('sputnik_linked_site',
+                inherit_config=('general', 'sputnik_linked_site'),
+                default='',
+                help="Location of remote associated sputnik (streetsblog) site"),
         Setting('find_links',
                 default='https://svn.openplans.org/eggs',
                 help='Custom locations for distutils and easy_install to look in'),
@@ -162,6 +166,7 @@ class ToppProject(Project):
                            'find_links': '{{config.find_links}}',
                            'db_prefix': '{{config.db_prefix}}',
                            'requirements_svn_repo': '{{config.requirements_svn_repo}}',
+                           'sputnik_linked_site': '{{config.sputnik_linked_site}}',
                            'etc_svn_subdir': '{{config.etc_svn_subdir}}',
                            }),
         tasks.SaveSetting(
