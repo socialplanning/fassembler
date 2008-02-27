@@ -128,7 +128,7 @@ class ToppProject(Project):
                 help='The location where persistent files (persistent across builds) are kept'),
         Setting('etc_svn_repo',
                 inherit_config=('general', 'etc_repository'),
-                default='https://svn.openplans.org/svn/config/',
+                default='https://svn.openplans.org/config/',
                 help='Parent directory where the configuration that will go in etc/ comes from'),
         Setting('etc_svn_subdir',
                 default='{{env.hostname}}-{{os.path.basename(env.base_path)}}',
