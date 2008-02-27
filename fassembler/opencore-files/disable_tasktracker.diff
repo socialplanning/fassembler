@@ -1,0 +1,13 @@
+Index: opencore/src/opencore/opencore/configuration/configure.zcml
+===================================================================
+--- opencore/src/opencore/opencore/configuration/configure.zcml	(revision 13579)
++++ opencore/src/opencore/opencore/configuration/configure.zcml	(working copy)
+@@ -14,7 +14,7 @@
+   <include package="opencore.nui" />
+   <include package="opencore.project" />
+   <include package="opencore.listen" />
+-  <include package="opencore.tasktracker" />
++  <!-- include package="opencore.tasktracker" / -->
+   <include package="opencore.wordpress" />
+   <include package="opencore.redirect" />
+   <include package="opencore.utility" />
