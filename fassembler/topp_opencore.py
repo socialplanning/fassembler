@@ -457,7 +457,7 @@ setglobal adminpw    '{{config.zope_password}}'
         ## FIXME: quick way to disable tasktracker for woonerf builds
         ##        we will no longer need this once we start using ZCMLLoader
         tasks.ConditionalTask('Disable TaskTracker if necessary',
-                              ('{{project.req_settings.get("disable_tasktracker", "true")}}',
+                              ('{{project.req_settings.get("disable_tasktracker", "false")}}',
                                tasks.Patch(name='Apply disable_tasktracker patch',
                                            files='{{env.base_path}}/fassembler/src/fassembler/fassembler/opencore-files/disable_tasktracker.diff',
                                            dest='{{env.base_path}}'))),
