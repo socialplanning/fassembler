@@ -33,7 +33,6 @@ class ScriptTranscluderProject(Project):
     
     actions = [
         tasks.VirtualEnv(),
-        ## FIXME: use poach-eggs?
         tasks.InstallSpec('Install ScriptTranscluder',
                           '{{config.spec}}'),
         tasks.InstallPasteConfig(path='scripttranscluder/src/scripttranscluder/fassembler_config.ini_tmpl'),
