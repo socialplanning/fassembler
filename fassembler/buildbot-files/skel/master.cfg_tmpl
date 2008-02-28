@@ -82,7 +82,7 @@ c['slaves'] = slaves
 
 
 def make_factory(name, baseport=BASEPORT, requirements_repo=None,
-                 ftestsdir=None,
+                 ftestsdir=None, flunc_suite='all',
                  fassembler_targets=[]):
     """
     We have multiple very similar builds that just use different
@@ -165,7 +165,7 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                 command=['%s/opencore/bin/flunc' % OCBASEDIR,
                          '-p', '%s/%s' % (OCBASEDIR, ftestsdir),
                          '-t', 'http://localhost:%d' % baseport,
-                         'all'],
+                         flunc_suite],
                 description='run flunc tests',
                 haltOnFailure=0)
 
@@ -200,7 +200,8 @@ minimal_opencore_targets = [
 oc_factory = make_factory(
     'Openplans (partial stack)', baseport=BASEPORT,
     ftestsdir='opencore/src/opencore/ftests/',
-    fassembler_targets=minimal_opencore_targets
+    fassembler_targets=minimal_opencore_targets,
+    flunc_suite='all',
     )
 
 nycsr_factory = make_factory(
@@ -208,7 +209,9 @@ nycsr_factory = make_factory(
     requirements_repo='https://svn.openplans.org/svn/build/requirements/nycstreets/trunk/',
     baseport=BASEPORT + 100, #XXX hacky way to avoid port overlap.
     ftestsdir='opencore/src/sputnik/ftests/',
-    fassembler_targets=minimal_opencore_targets)
+    fassembler_targets=minimal_opencore_targets,
+    flunc_suite='minimal',
+    )
 
     
 ############################################################################
