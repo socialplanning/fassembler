@@ -6,6 +6,7 @@
 +5 = ScriptTranscluder
 +6 = Cabochon
 +7 = Twirlip
++8 = ErrorEater
 +10 = Supervisor
 +20 = buildbot private master http (force build allowed)
 +21 = buildbot public master http (force build not allowed)
