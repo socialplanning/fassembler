@@ -798,8 +798,15 @@ class Maker(object):
             if revision:
                 cmd.extend(['-r', str(revision)])
             cmd.extend([repo, dest])
-            self.run_command(cmd)
+            self.run_command(cmd, log_filter=self._filter_svn)
             self.logger.notify('Checked out repository to %s' % dest)
+
+    def _filter_svn(self, line):
+        """
+        Filters svn output
+        """
+        if line: pass
+        # @@
 
     _repo_url_re = re.compile(r'^URL:\s+(.*)$', re.MULTILINE)
 

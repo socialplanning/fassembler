@@ -279,7 +279,7 @@ class DeliveranceProject(Project):
                 default='requirements/deliverance-req.txt',
                 help='Specification of packages to install'),
         Setting('openplans_hooks_repo',
-                default='https://svn.openplans.org/config/dvhoster/trunk',
+                default='https://svn.openplans.org/svn/build/openplans_hooks/trunk',
                 help='SVN location of openplans_hooks'),
         Setting('port',
                 default='{{env.base_port+int(config.port_offset)}}',
