@@ -648,7 +648,9 @@ command = {{env.base_path}}/bin/start-{{task.script_name}}
 stdout_logfile = {{env.var}}/logs/{{project.name}}/{{task.script_name}}-supervisor.log
 stdout_logfile_maxbytes = 1MB
 stdout_logfile_backups = 10
-redirect_stderr=true
+redirect_stderr = true
+stdout_capture_maxbytes = 200KB
+stderr_capture_maxbytes = 200KB
 """
 
 class CheckMySQLDatabase(Task):

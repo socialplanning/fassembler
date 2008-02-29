@@ -49,5 +49,7 @@ setup(name='fassembler',
       nymap = fassembler.topp_nymap:NYMapProject
       buildmaster = fassembler.topp_buildbot:BuildMasterProject
       buildslave = fassembler.topp_buildbot:BuildSlaveProject
+      errorlistener = fassembler.topp_erroreater:ErrorListenerProject
+      erroreater = fassembler.topp_erroreater:ErrorEaterProject
       """,
       )
