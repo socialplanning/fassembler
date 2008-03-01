@@ -522,7 +522,7 @@ setglobal adminpw    '{{config.zope_password}}'
                       ),
         tasks.SaveSetting('Save SSL-only path settings',
                           variables={'opencore_global sslonly':
-                                     
+                                     '/join /login /acl_users/credentials_signed_cookie_auth/require_login',
                                      },
                           section='applications'
                           ),
