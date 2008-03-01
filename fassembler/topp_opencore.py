@@ -519,6 +519,12 @@ setglobal adminpw    '{{config.zope_password}}'
                       project_local=False,
                       header_name='zope',
                       theme='not-main-site'),
+        tasks.SaveSetting('Save SSL-only path settings',
+                          variables={'opencore_global sslonly':
+                                     '/login /join /acl_users/credentials_signed_cookie_auth/require_login',
+                                     },
+                          section='applications'
+                          ),
         tasks.EnsureFile(
             'Overwrite the flunc admin user info',
             '{{env.base_path}}/{{config.ftests_path}}/admin.conf',
