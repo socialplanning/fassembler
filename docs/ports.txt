@@ -1,3 +1,6 @@
+Standard stack
+==============
+
 +0 = Deliverance
 +1 = Zope (opencore)
 +2 = ZEO
@@ -7,9 +10,20 @@
 +6 = Cabochon
 +7 = Twirlip
 +8 = ErrorEater
++9 = (unused; for RelateMe)
 +10 = Supervisor
 +20 = buildbot private master http (force build allowed)
 +21 = buildbot public master http (force build not allowed)
 +22 = buildbot slave
 
 Note: update fassember.topp:CheckBasePorts.port_range if adding ports here
+
+
+
+StreetsBlog stack
+=================
+
++0 = Unused (Apache would go here)
++5 = ScriptTranscluder
++9 = RelateMe
++10 = Supervisor

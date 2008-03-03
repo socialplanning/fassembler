@@ -51,5 +51,6 @@ setup(name='fassembler',
       buildslave = fassembler.topp_buildbot:BuildSlaveProject
       errorlistener = fassembler.topp_erroreater:ErrorListenerProject
       erroreater = fassembler.topp_erroreater:ErrorEaterProject
+      relateme = fassembler.topp_products:RelateMeProject
       """,
       )
