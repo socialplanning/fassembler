@@ -9,7 +9,8 @@ from subprocess import Popen, PIPE
 
 class CheckPHP(tasks.Task):
     """Makes sure PHP was built with required modules"""
-    required_modules = ['hash', 'openssl']
+    required_modules = ['hash']
+    recommended_modules = ['openssl']
     php_cgi_exec = tasks.interpolated('php_cgi_exec')
 
     def __init__(self, php_cgi_exec, stacklevel=1):
@@ -18,9 +19,19 @@ class CheckPHP(tasks.Task):
 
     def run(self):
         compiled_in_modules = set(Popen([self.php_cgi_exec, '-m'], stdout=PIPE).communicate()[0].split('\n')[1:])
+        missing_required = []
         for m in self.required_modules:
             if m not in compiled_in_modules:
-                raise Exception('PHP not compiled with required module: %s' % m)
+                missing_required.append(m)
+        missing_recommended = []
+        for m in self.recommended_modules:
+            if m not in compiled_in_modules:
+                missing_recommended.append(m)
+        if missing_recommended:
+            self.logger.warn('PHP not compiled with recommended modules: %s' % missing_recommended)
+        if missing_required:
+            raise Exception('PHP not compiled with required modules: %s' % missing_required)
+
             
 class WordPressProject(Project):
     """
