@@ -427,7 +427,7 @@ class OpenCoreProject(Project):
                 default='{{config.opencore_bundle_svn_repo_dir}}/{{config.opencore_bundle_name}}',
                 help='Full svn repository for checkouts'),
         Setting('ftests_path',
-                default='opencore/src/opencore/ftests',
+                default='{{project.req_settings.get("ftests_path", "opencore/src/opencore/ftests")}}',
                 help='Relative path to ftests'),
         ]
 
