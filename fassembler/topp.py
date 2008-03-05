@@ -149,6 +149,9 @@ class ToppProject(Project):
         Setting('find_links',
                 default='https://svn.openplans.org/eggs',
                 help='Custom locations for distutils and easy_install to look in'),
+        Setting('projtxt',
+                default='project',
+                help='Displayed name for opencore project/group'),
         ]
 
     actions = [
@@ -172,6 +175,7 @@ class ToppProject(Project):
                            'requirements_svn_repo': '{{config.requirements_svn_repo}}',
                            'streetsblog_uri': '{{config.streetsblog_uri}}',
                            'streetfilms_uri': '{{config.streetfilms_uri}}',
+                           'projtxt': '{{config.projtxt}}',
                            'etc_svn_subdir': '{{config.etc_svn_subdir}}',
                            }),
         tasks.SaveSetting(
