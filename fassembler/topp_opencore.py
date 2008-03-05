@@ -440,9 +440,10 @@ class OpenCoreProject(Project):
 cd {{env.base_path}}
 exec {{config.zope_instance}}/bin/runzope -X debug-mode=off
 """
-    flunc_admin_template = """\
+    flunc_globals_template = """\
 setglobal admin      '{{config.zope_user}}'
 setglobal adminpw    '{{config.zope_password}}'
+setglobal projtxt    '{{env.config.get("general", "projtxt")}}'
 """
     actions = [
         tasks.VirtualEnv(),
@@ -527,9 +528,9 @@ setglobal adminpw    '{{config.zope_password}}'
                           section='applications'
                           ),
         tasks.EnsureFile(
-            'Overwrite the flunc admin user info',
-            '{{env.base_path}}/{{config.ftests_path}}/admin.conf',
-            content=flunc_admin_template,
+            'Overwrite the flunc global info',
+            '{{env.base_path}}/{{config.ftests_path}}/globals.conf',
+            content=flunc_globals_template,
             svn_add=False, overwrite=True),
         ]
     
