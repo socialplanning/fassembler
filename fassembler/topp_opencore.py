@@ -493,6 +493,9 @@ setglobal adminpw    '{{config.zope_password}}'
                         exclude_glob='{{env.base_path}}/opencore/src/opencore-bundle/ClockServer'),
         ## FIXME: linkzope and linkzopebinaries?
         PlaceZopeConfig('Copy Zope etc into build etc'),
+        tasks.Patch(name='Patch Five viewlet security acquisition (see http://trac.openplans.org/openplans/ticket/2026)',
+                    files='{{env.base_path}}/fassembler/src/fassembler/fassembler/opencore-files/five-viewletmanager.patch',
+                    dest='{{env.base_path}}/opencore/src/opencore-bundle/Five'),
         SymlinkZopeConfig('Symlink Zope configuration'),
         tasks.ForEach('Run zinstalls',
                       'package_name',
