@@ -50,7 +50,11 @@ c['slavePortnum'] = int('{{config.buildslave_port}}')
 # what buildbot.zope.org does.
 def split_file(path):
     pieces = path.split('/')
-    if pieces[0] not in ('opencore', 'sputnik', 'fassembler'):
+    if pieces[0] not in ('opencore', 'sputnik', 'fassembler',
+                         'oc-tt', 'oc-js', 'oc-cab',
+                         'topp.featurelets', 'topp.utils',
+                         'CabochonClient',
+                         ):
         log.msg("ignoring file %s, not relevant?" % path)
         return None   # Ignore this file.
     elif pieces[1] == 'trunk':
