@@ -31,6 +31,8 @@ orig_zope_source = 'http://www.zope.org/Products/Zope/2.9.8/Zope-2.9.8-final.tgz
 default_opencore_site_id = 'openplans'
 default_opencore_site_title = 'OpenCore Site'
 default_mailing_list_fqdn = 'lists.openplans.org'
+default_email_from_address = '%s@%s' %
+    (Popen(['whoami'], stdout=PIPE).communicate()[0].strip(), getfqdn())
 
 
 class InstallZope(tasks.InstallTarball):
@@ -253,8 +255,7 @@ class PlaceZopeConfig(ZopeConfigTask):
         if config.has_option('general', 'email_from_address'):
             email_from_address = config.get('general', 'email_from_address')
         else:
-            whoami = Popen(['whoami'], stdout=PIPE).communicate()[0].strip()
-            email_from_address = '%s@%s' % (whoami, getfqdn())
+            email_from_address = self.project.req_settings.get('email_from_address', default_email_from_address)
 
         if config.has_option('general', 'opencore_site_title'):
             opencore_site_title = config.get('general', 'opencore_site_title')
@@ -636,6 +637,14 @@ class ZEOProject(Project):
         Setting('opencore_site_title',
                 inherit_config=('general', 'opencore_site_title'),
                 default='{{project.req_settings.get("opencore_site_title") or default_opencore_site_title}}',
+                help='title of opencore site object'),
+        Setting('email_from_address',
+                inherit_config=('general', 'email_from_address'),
+                default='{{project.req_settings.get("email_from_address") or default_email_from_address}}',
+                help='title of opencore site object'),
+        Setting('mailing_list_fqdn',
+                inherit_config=('general', 'mailing_list_fqdn'),
+                default='{{project.req_settings.get("mailing_list_fqdn") or default_mailing_list_fqdn}}',
                 help='title of opencore site object'),
         ]
 
