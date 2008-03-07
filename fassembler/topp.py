@@ -154,7 +154,7 @@ class ToppProject(Project):
                 default='https://svn.openplans.org/eggs',
                 help='Custom locations for distutils and easy_install to look in'),
         Setting('projtxt',
-                default='project',
+                default='{{project.req_settings.get("projtxt", "project")}}',
                 help='Displayed name for opencore project/group'),
         ]
 
