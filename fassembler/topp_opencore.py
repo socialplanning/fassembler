@@ -607,6 +607,13 @@ class ZEOProject(Project):
 
     spec_filename = 'opencore'  # Re-use opencore-req.txt.
 
+    # Settings don't have access to module scope.
+    default_email_from_address = default_email_from_address
+    default_opencore_site_id = default_opencore_site_id
+    default_opencore_site_title = default_opencore_site_title
+    default_mailing_list_fqdn = default_mailing_list_fqdn
+
+
     settings = [
         Setting('zeo_instance',
                 default='{{project.build_properties["virtualenv_path"]}}/zeo',
@@ -625,19 +632,19 @@ class ZEOProject(Project):
                 help='Location of Zope software'),
         Setting('opencore_site_id',
                 inherit_config=('general', 'opencore_site_id'),
-                default='{{project.req_settings.get("opencore_site_id") or default_opencore_site_id}}',
+                default='{{project.req_settings.get("opencore_site_id") or project.default_opencore_site_id}}',
                 help='id of opencore site object'),
         Setting('opencore_site_title',
                 inherit_config=('general', 'opencore_site_title'),
-                default='{{project.req_settings.get("opencore_site_title") or default_opencore_site_title}}',
+                default='{{project.req_settings.get("opencore_site_title") or project.default_opencore_site_title}}',
                 help='title of opencore site object'),
         Setting('email_from_address',
                 inherit_config=('general', 'email_from_address'),
-                default='{{project.req_settings.get("email_from_address") or default_email_from_address}}',
+                default='{{project.req_settings.get("email_from_address") or project.default_email_from_address}}',
                 help='title of opencore site object'),
         Setting('mailing_list_fqdn',
                 inherit_config=('general', 'mailing_list_fqdn'),
-                default='{{project.req_settings.get("mailing_list_fqdn") or default_mailing_list_fqdn}}',
+                default='{{project.req_settings.get("mailing_list_fqdn") or project.default_mailing_list_fqdn}}',
                 help='title of opencore site object'),
         ]
 
