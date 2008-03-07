@@ -168,12 +168,14 @@ class Namespace(DictMixin):
         except KeyboardInterrupt:
             raise
         except:
+            if not self['maker'].interactive:
+                # If nobody's at the keyboard, errors must be fatal.
+                raise
             if _in_broken_ns:
                 # Hitting this recursively while already handling another error
                 raise
             _in_broken_ns = True
             try:
-                ## FIXME: should probably raise if not interactive
                 import traceback
                 try:
                     # Enable nicer raw_input:
