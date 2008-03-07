@@ -67,7 +67,10 @@ class DeleteBuildIniIfNecessary(tasks.Task):
                 self.logger.notify('Would delete %s' % build_ini)
                 return
             if stat.st_size:
-                response = self.maker.ask('build.ini is in the way of a checkout, but contains information.  Delete?')
+                if maker.interactive:
+                    response = self.maker.ask('build.ini is in the way of a checkout, but contains information.  Delete?')
+                else:
+                    response = 'n'
                 if response == 'n':
                     raise AssertionError(
                         "Cannot continue; %s exists (must be resolved manually)" % build_ini)
