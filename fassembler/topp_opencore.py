@@ -31,8 +31,8 @@ orig_zope_source = 'http://www.zope.org/Products/Zope/2.9.8/Zope-2.9.8-final.tgz
 default_opencore_site_id = 'openplans'
 default_opencore_site_title = 'OpenCore Site'
 default_mailing_list_fqdn = 'lists.openplans.org'
-default_email_from_address = '%s@%s' %
-    (Popen(['whoami'], stdout=PIPE).communicate()[0].strip(), getfqdn())
+default_email_from_address = ('%s@%s' %
+    (Popen(['whoami'], stdout=PIPE).communicate()[0].strip(), getfqdn()))
 
 
 class InstallZope(tasks.InstallTarball):
