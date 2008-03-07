@@ -7,12 +7,15 @@ import sys
 import subprocess
 import urllib
 import shutil
+from socket import getfqdn
 from fassembler.project import Project, Setting
 from fassembler import tasks
 interpolated = tasks.interpolated
 import warnings
 from glob import glob
+from subprocess import Popen, PIPE
 from time import sleep
+from xml.dom import minidom
 
 if sys.version >= (2, 5):
     raise ImportError(
@@ -23,6 +26,11 @@ warnings.filterwarnings('ignore', 'tempnam is .*')
 tarball_version = '2.9.8openplans.2'
 tarball_url = 'https://svn.openplans.org/eggs/OpenplansZope-%s.tar.bz2' % tarball_version
 orig_zope_source = 'http://www.zope.org/Products/Zope/2.9.8/Zope-2.9.8-final.tgz'
+
+
+default_opencore_site_id = 'openplans'
+default_opencore_site_title = 'OpenCore Site'
+default_mailing_list_fqdn = 'lists.openplans.org'
 
 
 class InstallZope(tasks.InstallTarball):
@@ -236,6 +244,59 @@ class PlaceZopeConfig(ZopeConfigTask):
         self.maker.copy_dir('%s/default' % self.zope_profiles_dir,
                             self.build_profile_path,
                             add_dest_to_svn=True)
+
+        # fix values in properties.xml and propertiestool.xml
+        # FIXME this should be done with templates
+
+        config = self.environ.config
+
+        if config.has_option('general', 'email_from_address'):
+            email_from_address = config.get('general', 'email_from_address')
+        else:
+            whoami = Popen(['whoami'], stdout=PIPE).communicate()[0].strip()
+            email_from_address = '%s@%s' % (whoami, getfqdn())
+
+        if config.has_option('general', 'opencore_site_title'):
+            opencore_site_title = config.get('general', 'opencore_site_title')
+        else:
+            opencore_site_title = self.project.req_settings.get('opencore_site_title', default_opencore_site_title)
+
+        properties_path = '%s/properties.xml' % self.build_profile_path
+        doc = minidom.parse(properties_path)
+        for node in doc.getElementsByTagName('property'):
+            name = node.getAttribute('name')
+            if name == u'title':
+                node.firstChild.data = unicode(opencore_site_title)
+            elif name == u'email_from_address':
+                node.firstChild.data = unicode(email_from_address)
+        doc.writexml(open(properties_path, 'w'))
+
+        
+        propertiestool_path = '%s/propertiestool.xml' % self.build_profile_path
+        doc = minidom.parse(propertiestool_path)
+
+        if config.has_option('general', 'mailing_list_fqdn'):
+            mailing_list_fqdn = config.get('general', 'mailing_list_fqdn')
+        else:
+            mailing_list_fqdn = self.project.req_settings.get('mailing_list_fqdn', default_mailing_list_fqdn)
+
+        # XXX warning: provisional code: the *_uri settings should not live in propertiestool.xml
+        uri_dict = {'tasktracker uri': None, 'cabochon uri': None, 'wordpress uri': None, 'twirlip uri': None}
+        for i in uri_dict.keys():
+            if config.has_option('applications', i):
+                uri_dict[i] = doc.createTextNode(config.get('applications', i))
+            else:
+                del uri_dict[i]
+
+        for node in doc.getElementsByTagName('property'):
+            name = node.getAttribute('name')
+            name_ = str(name).replace('_', ' ')
+            if uri_dict.has_key(name_):
+                node.appendChild(uri_dict[name_])
+            elif name == u'mailing_list_fqdn':
+                node.firstChild.data = unicode(mailing_list_fqdn)
+            
+        doc.writexml(open(propertiestool_path, 'w'))
 
 
 class SymlinkZopeConfig(ZopeConfigTask):
@@ -570,11 +631,11 @@ class ZEOProject(Project):
                 help='Location of Zope software'),
         Setting('opencore_site_id',
                 inherit_config=('general', 'opencore_site_id'),
-                default='{{project.req_settings.get("opencore_site_id") or "openplans"}}',
+                default='{{project.req_settings.get("opencore_site_id") or default_opencore_site_id}}',
                 help='id of opencore site object'),
         Setting('opencore_site_title',
                 inherit_config=('general', 'opencore_site_title'),
-                default='{{project.req_settings.get("opencore_site_title") or "OpenCore Site"}}',
+                default='{{project.req_settings.get("opencore_site_title") or default_opencore_site_title}}',
                 help='title of opencore site object'),
         ]
 
