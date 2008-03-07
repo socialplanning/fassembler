@@ -41,9 +41,10 @@ class CheckBasePorts(tasks.Task):
         if bad:
             msg = 'Cannot bind to port(s): %s' % ', '.join(map(str, bad))
             self.logger.warn(msg)
-            response = self.maker.ask('Continue despite unavailable ports?')
-            if response == 'y':
-                return
+            if self.maker.interactive:
+                response = self.maker.ask('Continue despite unavailable ports?')
+                if response == 'y':
+                    return
             raise CommandError(msg, show_usage=False)
         else:
             self.logger.info('All ports worked')
