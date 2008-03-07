@@ -5,20 +5,12 @@
   <include package="Products.Five" />
   <meta:redefinePermission from="zope2.Public" to="zope.Public" />
 
-
-  <!-- zopectl tests seem to be sensitive to the order in which we load
-       configuration.  Best seems to be loading all Products first, then
-       all package-includes.  This fixes #1980 (again).  -->
-
-  <!-- For Products, first do meta, then config, then overrides. -->
+  <!-- we need this ordering for meta zcml include -->
   <five:loadProducts file="meta.zcml"/>
-  <five:loadProducts />
-  <five:loadProductsOverrides />
-
-
-  <!-- Now for package-includes, first do meta, then config, then overrides. -->
   <include files="package-includes/*-meta.zcml" />
+  <five:loadProducts />
   <include files="package-includes/*-configure.zcml" />
+  <five:loadProductsOverrides />
   <includeOverrides files="package-includes/*-overrides.zcml" />
 
   <include files="opencore_custom.zcml" />
