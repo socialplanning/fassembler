@@ -210,7 +210,7 @@ oc_factory = make_factory(
 
 nycsr_factory = make_factory(
     'Nycstreets (partial stack)',
-    requirements_repo='https://svn.openplans.org/svn/build/requirements/nycstreets/trunk/',
+    requirements_repo='https://svn.openplans.org/svn/build/requirements/livablestreets/trunk/',
     baseport=BASEPORT + 100, #XXX hacky way to avoid port overlap.
     ftestsdir='opencore/src/sputnik/ftests/',
     fassembler_targets=minimal_opencore_targets,
