@@ -281,20 +281,20 @@ publicWebStatus = html.WebStatus(http_port='{{config.buildmaster_public_port}}',
 developerWebStatus = html.WebStatus(http_port='{{config.buildmaster_private_port}}', allowForce=True)
 
 
-# Mails all status only to the status list.
+# Mails only to the status list.
 listMailer = mail.MailNotifier(
-    mode='all',
-    subject='%(builder)s finished a build',
-    relayhost='mail.openplans.org',
-    extraRecipients=['opencore-builds@lists.openplans.org',
-                     ],
     fromaddr='buildbot@openplans.org',
-    sendToInterestedUsers=False)
+    mode='problem',  # People got annoyed by all the successes.
+    subject='%(builder)s FAILURE',
+    relayhost='mail.openplans.org',
+    lookup='openplans.org',
+    sendToInterestedUsers=False,
+    extraRecipients=['opencore-builds@lists.openplans.org'],
+    )
 
 
 # Notify by email anyone who has made changes to a build that
-# breaks. XXX Or at least it's supposed to; some people get mail, but
-# not PW ... anybody else not getting it?
+# breaks.
 breakMailer = mail.MailNotifier(
     fromaddr='buildbot@openplans.org', 
     mode='problem',
@@ -302,10 +302,7 @@ breakMailer = mail.MailNotifier(
     relayhost='mail.openplans.org', 
     lookup='openplans.org',
     sendToInterestedUsers=True,
-    extraRecipients=['opencore-builds@lists.openplans.org',
-                     ],
     )
-
 
 # An IRC status bot. Is there a way to get this to always announce
 # failures?
@@ -318,6 +315,7 @@ ircbot = words.IRC(host='irc.freenode.net',
 
 c['status'] = [developerWebStatus,
                breakMailer,
+               listMailer,
                ircbot,
                ]
 
