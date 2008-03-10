@@ -942,6 +942,7 @@ Responses:
             first_char=False):
         """
         Ask something, using message to say what.
+        If we're not running interactively, just return default.
 
         Responses are a list of the available responses, all lower
         case.  default, if given, is the default response if the user
@@ -953,6 +954,8 @@ Responses:
         response is necessary.  You may use things like
         ``['(b)ackup']`` in this case (parenthesis will be stripped).
         """
+        if not self.interactive:
+            return default
         responses = [res.lower() for res in responses]
         msg_responses = list(responses)
         if default:
