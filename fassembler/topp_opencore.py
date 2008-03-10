@@ -396,7 +396,17 @@ class RunZopectlScript(tasks.Task):
                              color='red')
 
 
-class OpenCoreProject(Project):
+class OpenCoreBase(Project):
+    defaults = dict(opencore_site_id='openplans',
+                    opencore_site_title='OpenCore Site',
+                    mailing_list_fqdn='lists.openplans.org',
+                    email_from_address='{{env.environ["USER"]}}@{{env.fq_hostname}}',
+                    )
+    def get_req_setting(self, setting):
+        return self.req_settings.get(setting, self.interpolate(self.defaults[setting]))
+
+
+class OpenCoreProject(OpenCoreBase):
     """
     Install OpenCore
     """
@@ -583,7 +593,7 @@ setglobal projtxt    '{{env.config.get("general", "projtxt")}}'
 
 
 
-class ZEOProject(Project):
+class ZEOProject(OpenCoreBase):
     """
     Install ZEO
     """
@@ -592,14 +602,6 @@ class ZEOProject(Project):
     title = 'Install ZEO'
 
     spec_filename = 'opencore'  # Re-use opencore-req.txt.
-
-    defaults = dict(opencore_site_id='openplans',
-                    opencore_site_title='OpenCore Site',
-                    mailing_list_fqdn='lists.openplans.org',
-                    email_from_address='{{env.environ["USER"]}}@{{env.fq_hostname}}',
-                    )
-    def get_req_setting(self, setting):
-        return self.req_settings.get(setting, self.interpolate(self.defaults[setting]))
 
     settings = [
         Setting('zeo_instance',
