@@ -23,7 +23,7 @@ OCBASEDIR='{{config.oc_basedir}}'
 
 # All the ports we care about...
 allports = range(BASEPORT, BASEPORT + 11)
-allports.extend(BASEPORT + 100, BASEPORT + 111)
+allports.extend(range(BASEPORT + 100, BASEPORT + 111))
 
 slavenames = ['slave1']
 slaves = [BuildSlave(name, '{{config.buildbot_passwd}}') for name in slavenames]
