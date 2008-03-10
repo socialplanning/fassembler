@@ -21,9 +21,9 @@ import subprocess
 BASEPORT=int('{{config.child_baseport}}')  # Used for the fassembler builds
 OCBASEDIR='{{config.oc_basedir}}'
 
-# All the ports we care about...
-allports = range(BASEPORT, BASEPORT + 11)
-allports.extend(range(BASEPORT + 100, BASEPORT + 111))
+# All the ports we care about... hacky
+allports = range(BASEPORT, BASEPORT + 11)  # for the trunk build.
+allports.extend(range(BASEPORT + 100, BASEPORT + 111))  # for the nyc build.
 
 slavenames = ['slave1']
 slaves = [BuildSlave(name, '{{config.buildbot_passwd}}') for name in slavenames]
@@ -185,11 +185,12 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                 haltOnFailure=1)
 
     # No really, you guys need to die. bug #2230.
+    # For some reason, portkill seems to always exit 1, so ignore "failures".
     fac.addStep(ShellCommand,
                 command=['{{os.path.join("..", "..", "bin", "portkill")}}',
                          ] + [str(port) for port in allports],
                 description='kill any running instances using the ports',
-                haltOnFailure=1)
+                haltOnFailure=False)
     return fac
 
 
