@@ -21,6 +21,10 @@ import subprocess
 BASEPORT=int('{{config.child_baseport}}')  # Used for the fassembler builds
 OCBASEDIR='{{config.oc_basedir}}'
 
+# All the ports we care about...
+allports = range(BASEPORT, BASEPORT + 11)
+allports.extend(BASEPORT + 100, BASEPORT + 111)
+
 slavenames = ['slave1']
 slaves = [BuildSlave(name, '{{config.buildbot_passwd}}') for name in slavenames]
 
@@ -96,6 +100,7 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
     fac.name = name
     
     # Accept certificates (for svn).
+    # XXX is there an easier way to find the right bin directory?
     fac.addStep(ShellCommand,
                 command='{{os.path.join("..", "..", "bin", "accept_certificates.sh")}}',
                 description=['accepting certificates', 'for svn'],
@@ -174,20 +179,17 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                 haltOnFailure=0)
 
     # Shut down subprocesses; wait a bit in case they take a while to die.
-    # This hopefully works around #2230.  If not, I'll add Jeff's
-    # portkill script, like commented out below.
     fac.addStep(ShellCommand,
                 command='%s/bin/supervisorctl shutdown && sleep 20' % OCBASEDIR,
                 description='shut down',
                 haltOnFailure=1)
 
-    ## # Cleanup.
-    ## # kill any programs running on the ports 
-    ## # this shouldn't be necessary
-    ## fac.addStep(ShellCommand, 
-    ##           command=['portkill.py', '<<zope-port>>', '<<zeo-port>>'],
-    ##           description='kill any running instances using the ports',
-    ##           haltOnFailure=1)
+    # No really, you guys need to die. bug #2230.
+    fac.addStep(ShellCommand,
+                command=['{{os.path.join("..", "..", "bin", "portkill")}}',
+                         ] + [str(port) for port in allports],
+                description='kill any running instances using the ports',
+                haltOnFailure=1)
     return fac
 
 

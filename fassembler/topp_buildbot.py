@@ -203,6 +203,11 @@ class BuildSlaveProject(BuildBotProject):
             '{{os.path.join(config.buildslave_dir, "bin", "accept_certificates.sh")}}',
             content_path='{{os.path.join(project.skel_dir, "accept_certificates.sh")}}',
             force_overwrite=True, svn_add=False, executable=True),
+        tasks.SourceInstall(
+            'Install the port killer script',
+            'https://svn.openplans.org/svn/standalone/portutils/trunk/',
+            'portutils'
+            ),
         tasks.Script(
             'Move aside the old config if it exists',
             'test -f {{config.buildslave_dir}}/buildbot.tac && mv -f {{config.buildslave_dir}}/buildbot.tac {{config.buildslave_dir}}/buildbot.tac.old || echo nothing to move',
