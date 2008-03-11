@@ -290,9 +290,15 @@ class DeliveranceProject(Project):
         Setting('host',
                 default='localhost',
                 help='Host to serve on'),
+        Setting('force_ssl',
+                inherit_config=('general', 'force_ssl'),
+                default='False',
+                help='Redirect ssl-only paths to https'),
         ]
 
     actions = [
+        tasks.SaveSetting('Save force_ssl setting',
+                          {'force_ssl': '{{config.force_ssl}}'}),
         tasks.VirtualEnv(),
         tasks.InstallSpec('Install Deliverance', '{{config.spec}}'),
         tasks.TestLxml('{{env.base_path}}/deliverance'),
