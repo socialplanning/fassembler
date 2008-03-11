@@ -135,7 +135,7 @@ class ToppProject(Project):
                 inherit_config=('general', 'etc_svn_subdir'),
                 help='svn subdirectory where data configuration is kept (will be created if necessary)'),
         Setting('db_prefix',
-                default='',
+                default='{{os.path.basename(env.base_path).replace(".", "_"}}_',
                 inherit_config=('general', 'db_prefix'),
                 help='The prefix to use for all database names'),
         Setting('streetsblog_uri',
