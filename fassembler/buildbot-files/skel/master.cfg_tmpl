@@ -52,22 +52,45 @@ c['slavePortnum'] = int('{{config.buildslave_port}}')
 # opencore builder will fire a build every time you change stuff in
 # sputnik, and you'll be on the blamelist.  I think this is similar to
 # what buildbot.zope.org does.
+
+def _startswith(path1, path2):
+    """Like str.startswith, but considers whole path fragments.
+    So _startswith('/foo/bar', '/foo') is true,
+    BUT _startswith('/foodfight',  '/foo') is false.
+    """
+    path1 = path1.split('/')
+    path2 = path2.split('/')
+    if path1[:len(path2)] == path2:
+        return True
+    return False
+    
 def split_file(path):
+    # Decide which SVN changes to ignore.
     pieces = path.split('/')
-    if pieces[0] not in ('opencore', 'sputnik', 'fassembler',
-                         'oc-tt', 'oc-js', 'oc-cab',
-                         'topp.featurelets', 'topp.utils',
-                         'CabochonClient',
-                         ):
+    for prefix in ('opencore', 'sputnik', 'fassembler',
+                   'oc-tt', 'oc-js', 'oc-cab',
+                   'topp.featurelets', 'topp.utils',
+                   'CabochonClient',
+                   'build/requirements/openplans',
+                   'build/requirements/livablestreets'
+                   ):
+        if _startswith(path, prefix):
+            subpath = path[len(prefix):]
+            pieces = subpath.split('/')
+            break
+    else:
         log.msg("ignoring file %s, not relevant?" % path)
         return None   # Ignore this file.
-    elif pieces[1] == 'trunk':
+
+    if pieces[0] == 'trunk':
+        branch = pieces[0]
+        filepath = '/'.join(pieces[1:])
+        return (branch, filepath)
+    elif pieces[0] == 'branches':
+        # Branches only get built if the builder is told to build that branch.
+        # But in order to decide that, it needs to know about them...
         branch = pieces[1]
         filepath = '/'.join(pieces[2:])
-        return (branch, filepath)
-    elif pieces[1] == 'branches':
-        branch = pieces[2]
-        filepath = '/'.join(pieces[3:])
         return (branch, filepath)
     else:
         log.msg("ignoring file %s, maybe a tag?" % path)
