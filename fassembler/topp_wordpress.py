@@ -2,6 +2,7 @@
 Builder for TOPP WordPress MU
 """
 
+import MySQLdb
 import os
 from fassembler.project import Project, Setting
 from fassembler import tasks
@@ -14,7 +15,7 @@ class CheckPHP(tasks.Task):
     php_cgi_exec = tasks.interpolated('php_cgi_exec')
 
     def __init__(self, php_cgi_exec, stacklevel=1):
-        super(CheckPHP, self).__init__('CheckPHP', stacklevel=stacklevel+1)
+        super(CheckPHP, self).__init__('Check PHP', stacklevel=stacklevel+1)
         self.php_cgi_exec = php_cgi_exec
 
     def run(self):
@@ -33,6 +34,26 @@ class CheckPHP(tasks.Task):
             raise Exception('PHP not compiled with required modules: %s' % missing_required)
 
             
+class DeleteExtraWPSiteRows(tasks.Task):
+    """Sometimes fassembling WordPress erroneously adds a row to the
+    wp_site table."""
+
+    db = tasks.interpolated('db')
+    user = tasks.interpolated('user')
+    passwd = tasks.interpolated('passwd')
+
+    def __init__(self, db, user, passwd, stacklevel=1):
+        super(DeleteExtraWPSiteRows, self).__init__('Delete extra rows in wp_site', stacklevel=stacklevel+1)
+        self.db = db
+        self.user = user
+        self.passwd = passwd
+
+    def run(self):
+        db = MySQLdb.connect(db=self.db, user=self.user, passwd=self.passwd)
+        c = db.cursor()
+        c.execute('delete from wp_site where id > 1')
+
+
 class WordPressProject(Project):
     """
     Install WordPress
@@ -110,6 +131,9 @@ class WordPressProject(Project):
                       '{{project.secret()}}'],
                      cwd='{{env.base_path}}/wordpress/src/wordpress-mu'),
         tasks.SaveURI(path='/blog'),
+        DeleteExtraWPSiteRows(db='{{config.db_name}}',
+                              user='{{config.db_username}}',
+                              passwd='{{config.db_password}}'),
         ]
 
     depends_on_projects = ['fassembler:topp']
