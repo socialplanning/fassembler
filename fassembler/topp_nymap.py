@@ -16,9 +16,9 @@ class NYMapProject(Project):
         Setting('svn',
                 default='http://svn.opengeo.org/vespucci/branches/woonerf/',
                 help='Location of nymap svn repository'),
-        Setting('geoserver_url',
-                default='http://artois.openplans.org/geoserver/ows/',
-                help='Location where GeoServer is running'),
+#        Setting('geoserver_url',
+#                default='http://artois.openplans.org/geoserver/ows/',
+#                help='Location where GeoServer is running'),
         ]
     
     actions = [
@@ -37,11 +37,11 @@ class NYMapProject(Project):
                       ## is not (see #2172):
                       theme=False,
                       ),
-        tasks.SaveURI(path='/maps/ows',
-                      project_name='{{project.name}}_geoserver',
-                      uri='{{config.geoserver_url}}',
-                      project_local=False,
-                      theme=False),
+#        tasks.SaveURI(path='/maps/ows',
+#                      project_name='{{project.name}}_geoserver',
+#                      uri='{{config.geoserver_url}}',
+#                      project_local=False,
+#                      theme=False),
         ]
 
     depends_on_projects = ['fassembler:topp']
