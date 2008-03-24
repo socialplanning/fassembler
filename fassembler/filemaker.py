@@ -934,10 +934,18 @@ Responses:
         if not self.interactive:
             return randpw()
         self.beep_if_necessary()
-        prompt = 'Input a password or press enter to generate a random one: '
-        prompt = self.logger.colorize(prompt, 'bold cyan')
-        inputpw = getpass(prompt).strip()
-        return inputpw or randpw()
+        prompt, prompt2 = 'Input a password or press enter to generate a random one: ', 'Confirm: '
+        if self.logger.supports_color(sys.stdout):
+            prompt, prompt2 = [self.logger.colorize(p, 'bold cyan') for p in prompt, prompt2]
+        for i in range(3):
+            inputpw = getpass(prompt).strip()
+            if not inputpw:
+                self.logger.info('Using randomly generated password')
+                return randpw()
+            inputpw2 = getpass(prompt2).strip()
+            if inputpw == inputpw2:
+                return inputpw
+        raise ValueError('Passwords did not match after 3 attempts')
 
     def ask(self, message, help=None, responses=['y', 'n'], default=None,
             first_char=False):
