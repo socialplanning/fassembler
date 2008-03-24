@@ -9,13 +9,14 @@ Everything happens in the Maker object.
 import os
 import sys
 import glob
-import subprocess
 import re
 import shutil
+import string
+import subprocess
+import tempita
 from difflib import unified_diff, context_diff
 from environ import random_string
-import string
-import tempita
+from getpass import getpass
 
 EXE_MODE = 0111
 
@@ -935,7 +936,7 @@ Responses:
         self.beep_if_necessary()
         prompt = 'Input a password or press enter to generate a random one: '
         prompt = self.logger.colorize(prompt, 'bold cyan')
-        inputpw = raw_input(prompt).strip()
+        inputpw = getpass(prompt).strip()
         return inputpw or randpw()
 
     def ask(self, message, help=None, responses=['y', 'n'], default=None,
