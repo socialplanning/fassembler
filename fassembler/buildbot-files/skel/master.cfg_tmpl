@@ -211,12 +211,20 @@ oc_factory = make_factory(
     flunc_suite='all',
     )
 
+minimal_livablestreets_targets = [
+    'fassembler:topp',
+    'fassembler:supervisor',
+    'fassembler:opencore',
+    'fassembler:deliverance',
+    'fassembler:zeo',
+    ]
+
 nycsr_factory = make_factory(
-    'Nycstreets (partial stack)',
+    'Livable Streets (partial stack)',
     requirements_repo='https://svn.openplans.org/svn/build/requirements/livablestreets/trunk/',
     baseport=BASEPORT + 100, #XXX hacky way to avoid port overlap.
     ftestsdir='opencore/src/sputnik/ftests/',
-    fassembler_targets=minimal_opencore_targets,
+    fassembler_targets=minimal_livablestreets_targets,
     flunc_suite='minimal',
     )
 
