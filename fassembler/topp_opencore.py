@@ -497,6 +497,7 @@ class OpenCoreProject(OpenCoreBase):
     start_script_template = """\
 #!/bin/sh
 cd {{env.base_path}}
+source ./opencore/bin/activate
 exec {{config.zope_instance}}/bin/runzope -X debug-mode=off
 """
     flunc_globals_template = """\
