@@ -1,0 +1,85 @@
+#!/usr/bin/env python
+
+import subprocess
+import optparse
+import sys
+import os
+
+parser = optparse.OptionParser(
+    usage='%prog [OPTIONS] [DIRS]',
+    description="""\
+Do svn status recursively.  If no directories are given, cwd is
+assumed.  It will search for all svn checkouts and show their status
+(if there is anything interesting).
+""")
+parser.add_option(
+    '-a', '--not-added',
+    action='store_true',
+    dest='uncommitted',
+    help='Show uncommitted files (?)')
+parser.add_option(
+    '-u', '--show-updates',
+    action='store_true',
+    dest='show_updates',
+    help='Show remotely-updated files (passes -u to svn status)')
+parser.add_option(
+    '--etc', '--include-etc',
+    action='store_true',
+    dest='include_etc',
+    help='Include etc/ in status')
+parser.add_option(
+    '-v', '--verbose',
+    action='count',
+    dest='verbose',
+    help='Be more verbose')
+
+def find_all_dirs(dirs, include_etc, verbose):
+    result = []
+    for dir in dirs:
+        # Using this instead of os.walk so we can abort the recursion
+        # when we find an .svn directory
+        result.extend(find_dirs(dir, include_etc, verbose))
+    return result
+
+def find_dirs(dir, include_etc, verbose):
+    if os.path.exists(os.path.join(dir, '.svn')):
+        return [dir]
+    result = []
+    for filename in os.listdir(dir):
+        if filename == 'etc' and not include_etc:
+            continue
+        filename = os.path.join(dir, filename)
+        if not os.path.isdir(filename):
+            continue
+        result.extend(find_dirs(filename, include_etc, verbose))
+    return result
+
+def show_status(dirs, show_updates, uncommitted, verbose):
+    command = ['svn', 'status']
+    if show_updates:
+        command.append('--show-updates')
+    command += dirs
+    proc = subprocess.Popen(command,
+                            stdout=subprocess.PIPE)
+    for line in proc.stdout:
+        if not line.strip():
+            continue
+        if ((line.strip().startswith('Performing status on external item')
+             or line.strip().startswith('X')
+             or line.strip().startswith('Status against revision'))
+            and verbose < 2):
+            continue
+        if not uncommitted and line.strip().startswith('?'):
+            continue
+        sys.stdout.write(line)
+        sys.stdout.flush()
+
+def main(args=None):
+    if args is None:
+        args = sys.argv[1:]
+    options, args = parser.parse_args(args)
+    dirs = find_all_dirs(args or ['.'], options.include_etc, options.verbose)
+    show_status(dirs, options.show_updates, options.uncommitted, options.verbose)
+
+if __name__ == '__main__':
+    main()
