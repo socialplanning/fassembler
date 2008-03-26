@@ -48,7 +48,7 @@ class ErrorEaterProject(Project):
 
 errorlistener_template = Template("""\
 [eventlistener:errorlistener]
-command = {{env.base_path}}/errorlistener/bin/supervisor-error-listener --queue-dir={{env.var}}/eventlistener/queue --http-config='{{env.base_path}}/etc/build.ini applications erroreater uri +/add-error'
+command = {{env.base_path}}/errorlistener/bin/supervisor-error-listener --queue-dir={{env.var}}/errorlistener/queue --http-config='{{env.base_path}}/etc/build.ini applications erroreater uri +/errors/add-error'
 # We handle our own queuing and threading, so we don't need multiple
 # listeners:
 numprocs = 1
