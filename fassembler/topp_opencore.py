@@ -500,11 +500,26 @@ cd {{env.base_path}}
 source ./opencore/bin/activate
 exec {{config.zope_instance}}/bin/runzope -X debug-mode=off
 """
+
+    maildrop_start_script_template = """\
+#!/bin/sh
+
+BASE="{{env.base-path}}"
+MAILDROPHOME="$BASE/opencore/src/opencore-bundle/MaildropHost/maildrop"
+CONFIG="$BASE/etc/opencore/maildrop_config.py"
+
+# Get the configuration (esp. $PYTHON)
+. $CONFIG
+
+exec $PYTHON $MAILDROPHOME/maildrop.py "$CONFIG"
+"""
+
     flunc_globals_template = """\
 setglobal admin      '{{config.zope_user}}'
 setglobal adminpw    '{{config.zope_password}}'
 setglobal projtxt    '{{env.config.get("general", "projtxt")}}'
 """
+
     actions = [
         tasks.VirtualEnv(),
         tasks.SetDistutilsValue('Disable zipped eggs',
@@ -559,10 +574,19 @@ setglobal projtxt    '{{env.config.get("general", "projtxt")}}'
                                   cwd='{{env.base_path}}/opencore/src/{{task.package_name}}',
                                   use_virtualenv=True)),
         tasks.InstallSupervisorConfig(),
+        tasks.InstallSupervisorConfig(script_name='maildrop'),
         tasks.EnsureFile('Write the start script',
                          '{{env.base_path}}/bin/start-{{project.name}}',
                          content=start_script_template,
                          svn_add=True, executable=True, overwrite=True),
+        tasks.EnsureFile('Write maildrop start script',
+                         '{{env.base_path}}/bin/start-maildrop',
+                         content=maildrop_start_script_template,
+                         svn_add=True, executable=True, overwrite=True),
+        tasks.EnsureFile('Copy maildrop config',
+                         '{{env.base_path}}/etc/opencore/maildrop_config.py',
+                         content_path='{{project.files_dir}}/maildrop_config.py',
+                         svn_add=True),
         tasks.SaveURI(uri='http://{{config.host}}:{{config.port}}/openplans',
                       uri_template='http://{{config.host}}:{{config.port}}/VirtualHostBase/{wsgi.url_scheme}/{HTTP_HOST}/openplans/projects/{project}/VirtualHostRoot{vh_SCRIPT_NAME}',
                       uri_template_main_site='http://{{config.host}}:{{config.port}}/VirtualHostBase/{wsgi.url_scheme}/{HTTP_HOST}/openplans/VirtualHostRoot/projects/{project}',
