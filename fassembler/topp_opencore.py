@@ -504,9 +504,9 @@ exec {{config.zope_instance}}/bin/runzope -X debug-mode=off
     maildrop_start_script_template = """\
 #!/bin/sh
 
-BASE="{{env.base-path}}"
+BASE="{{env.base_path}}"
 MAILDROPHOME="$BASE/opencore/src/opencore-bundle/MaildropHost/maildrop"
-CONFIG="$BASE/etc/opencore/maildrop_config.py"
+CONFIG="$BASE/etc/opencore/maildrop/config.py"
 
 # Get the configuration (esp. $PYTHON)
 . $CONFIG
@@ -584,7 +584,7 @@ setglobal projtxt    '{{env.config.get("general", "projtxt")}}'
                          content=maildrop_start_script_template,
                          svn_add=True, executable=True, overwrite=True),
         tasks.EnsureFile('Copy maildrop config',
-                         '{{env.base_path}}/etc/opencore/maildrop_config.py',
+                         '{{env.base_path}}/etc/opencore/maildrop/config.py',
                          content_path='{{project.files_dir}}/maildrop_config.py',
                          svn_add=True),
         tasks.SaveURI(uri='http://{{config.host}}:{{config.port}}/openplans',
