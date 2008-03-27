@@ -292,7 +292,7 @@ developerWebStatus = html.WebStatus(http_port='{{config.buildmaster_private_port
 # Mails only to the status list.
 listMailer = mail.MailNotifier(
     fromaddr='buildbot@openplans.org',
-    mode='problem',  # People got annoyed by all the successes.
+    mode='failure',  # People got annoyed by all the successes.
     subject='%(builder)s FAILURE',
     relayhost='mail.openplans.org',
     lookup='openplans.org',
@@ -305,7 +305,7 @@ listMailer = mail.MailNotifier(
 # breaks.
 breakMailer = mail.MailNotifier(
     fromaddr='buildbot@openplans.org', 
-    mode='problem',
+    mode='failure',
     subject='%(builder)s FAILURE, and sadly, you are on the blamelist',
     relayhost='mail.openplans.org', 
     lookup='openplans.org',
