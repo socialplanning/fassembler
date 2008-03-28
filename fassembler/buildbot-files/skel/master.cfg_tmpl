@@ -90,6 +90,7 @@ c['slaves'] = slaves
 
 
 def make_factory(name, baseport=BASEPORT, requirements_repo=None,
+                 zopectl_suites=['opencore'],
                  ftestsdir=None, flunc_suite='all',
                  fassembler_targets=[]):
     """
@@ -146,23 +147,13 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                 )
 
     # Run the zopectl unit tests.
-    fac.addStep(ShellCommand, 
-                command=['%s/opencore/zope/bin/zopetest' % OCBASEDIR, '-s',
-                         'Products.listen'],
-                description=['run listen unit', 'tests'],
-                haltOnFailure=False)
+    for suite in zopectl_suites:
+        fac.addStep(ShellCommand, 
+                    command=['%s/opencore/zope/bin/zopetest' % OCBASEDIR, '-s',
+                             suite],
+                    description=['run', suite, 'unit tests'],
+                    haltOnFailure=False)
 
-    fac.addStep(ShellCommand, 
-                command=['%s/opencore/zope/bin/zopetest' % OCBASEDIR, '-s',
-                         'Products.wicked'],
-                description=['run wicked unit', 'tests'],
-                haltOnFailure=False)
-
-    fac.addStep(ShellCommand,
-                command=['%s/opencore/zope/bin/zopetest' % OCBASEDIR, '-s',
-                         'opencore'],
-                description=['run opencore', 'unit tests'],
-                haltOnFailure=0)
 
     # Run the flunc tests. Wait a bit for services to come up.
     fac.addStep(ShellCommand, 
@@ -194,38 +185,37 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
     return fac
 
 
-minimal_opencore_targets = [
-    'fassembler:topp',
-    'fassembler:supervisor',
-    'fassembler:opencore',
-    'fassembler:deliverance',
-    'fassembler:cabochon',
-    'fassembler:twirlip',
-    'fassembler:zeo',
-    ]
-
 oc_factory = make_factory(
     'Openplans (partial stack)', baseport=BASEPORT,
     ftestsdir='opencore/src/opencore/ftests/',
-    fassembler_targets=minimal_opencore_targets,
+    fassembler_targets=[
+        'fassembler:topp',
+        'fassembler:supervisor',
+        'fassembler:opencore',
+        'fassembler:deliverance',
+        'fassembler:cabochon',
+        'fassembler:twirlip',
+        'fassembler:zeo',
+        ],
     flunc_suite='all',
+    zopectl_suites=['opencore', 'Products.listen', 'Products.wicked'],
     )
 
-minimal_livablestreets_targets = [
-    'fassembler:topp',
-    'fassembler:supervisor',
-    'fassembler:opencore',
-    'fassembler:deliverance',
-    'fassembler:zeo',
-    ]
 
 nycsr_factory = make_factory(
     'Livable Streets (partial stack)',
     requirements_repo='https://svn.openplans.org/svn/build/requirements/livablestreets/trunk/',
     baseport=BASEPORT + 100, #XXX hacky way to avoid port overlap.
     ftestsdir='opencore/src/sputnik/ftests/',
-    fassembler_targets=minimal_livablestreets_targets,
+    fassembler_targets=[
+        'fassembler:topp',
+        'fassembler:supervisor',
+        'fassembler:opencore',
+        'fassembler:deliverance',
+        'fassembler:zeo',
+        ],
     flunc_suite='minimal',
+    zopectl_suites=['opencore'],
     )
 
     
