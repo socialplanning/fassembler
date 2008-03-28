@@ -403,6 +403,9 @@ class OpenCoreBase(Project):
                     mailing_list_fqdn='lists.openplans.org',
                     email_from_address='{{env.environ["USER"]}}@{{env.fq_hostname}}',
                     )
+
+    files_dir = os.path.join(os.path.dirname(__file__), 'opencore-files')
+
     def get_req_setting(self, setting):
         return self.req_settings.get(setting, self.interpolate(self.defaults[setting]))
 
@@ -501,19 +504,6 @@ source ./opencore/bin/activate
 exec {{config.zope_instance}}/bin/runzope -X debug-mode=off
 """
 
-    maildrop_start_script_template = """\
-#!/bin/sh
-
-BASE="{{env.base_path}}"
-MAILDROPHOME="$BASE/opencore/src/opencore-bundle/MaildropHost/maildrop"
-CONFIG="$BASE/etc/opencore/maildrop/config.py"
-
-# Get the configuration (esp. $PYTHON)
-. $CONFIG
-
-exec $PYTHON $MAILDROPHOME/maildrop.py "$CONFIG"
-"""
-
     flunc_globals_template = """\
 setglobal admin      '{{config.zope_user}}'
 setglobal adminpw    '{{config.zope_password}}'
@@ -574,19 +564,10 @@ setglobal projtxt    '{{env.config.get("general", "projtxt")}}'
                                   cwd='{{env.base_path}}/opencore/src/{{task.package_name}}',
                                   use_virtualenv=True)),
         tasks.InstallSupervisorConfig(),
-        tasks.InstallSupervisorConfig(script_name='maildrop'),
         tasks.EnsureFile('Write the start script',
                          '{{env.base_path}}/bin/start-{{project.name}}',
                          content=start_script_template,
                          svn_add=True, executable=True, overwrite=True),
-        tasks.EnsureFile('Write maildrop start script',
-                         '{{env.base_path}}/bin/start-maildrop',
-                         content=maildrop_start_script_template,
-                         svn_add=True, executable=True, overwrite=True),
-        tasks.EnsureFile('Copy maildrop config',
-                         '{{env.base_path}}/etc/opencore/maildrop/config.py',
-                         content_path='{{project.files_dir}}/maildrop_config.py',
-                         svn_add=True),
         tasks.SaveURI(uri='http://{{config.host}}:{{config.port}}/openplans',
                       uri_template='http://{{config.host}}:{{config.port}}/VirtualHostBase/{wsgi.url_scheme}/{HTTP_HOST}/openplans/projects/{project}/VirtualHostRoot{vh_SCRIPT_NAME}',
                       uri_template_main_site='http://{{config.host}}:{{config.port}}/VirtualHostBase/{wsgi.url_scheme}/{HTTP_HOST}/openplans/VirtualHostRoot/projects/{project}',
@@ -713,6 +694,72 @@ exec {{config.zeo_instance}}/bin/runzeo
                       RunZopectlScript('{{os.path.join(env.base_path, "opencore/", task.script_name)}}',
                                        name="Additional zopectl script {{task.script_name}}")),
         StopZeo(),
+        ]
+
+    depends_on_projects = ['fassembler:opencore']
+
+
+class MaildropProject(OpenCoreBase):
+    """
+    Setup maildrop
+    """
+
+    name = 'maildrop'
+    title = 'Setup maildrop'
+
+    settings = [
+        Setting('smtp_host',
+                default='localhost',
+                help='Host to send mail to'),
+        Setting('smtp_port',
+                default='25',
+                help='Port to send mail to'),
+        Setting('smtp_tls',
+                default='0',
+                help='TLS usage with: 0, don\'t use; 1, try to use; 2, force TLS'),
+        Setting('smtp_auth_filename',
+                default='',
+                help='A file that contains username:password, for SMTP authentication'),
+        Setting('maildrop_interval',
+                default='120',
+                help='How long to wait between spool checks'),
+        Setting('debug_receiver',
+                default='',
+                help='An email address (or comma-separated multiple addresses) '
+                'where all email will be sent, overriding normal delivery'),
+        ]
+
+    maildrop_start_script_template = """\
+#!/bin/sh
+
+BASE="{{env.base_path}}"
+MAILDROPHOME="$BASE/opencore/src/opencore-bundle/MaildropHost/maildrop"
+CONFIG="$BASE/etc/opencore/maildrop/config.py"
+
+exec $BASE/opencore/bin/python $MAILDROPHOME/maildrop.py "$CONFIG"
+"""
+
+    replacement_config = """\
+import os
+base_path = os.environ['VIRTUAL_ENV']
+config_location = os.path.join(base_path, 'etc', 'opencore', 'maildrop', 'config.py')
+execfile(config_location)
+"""
+
+    actions = [
+        tasks.EnsureFile('Copy maildrop config',
+                         '{{env.base_path}}/etc/opencore/maildrop/config.py',
+                         content_path='{{project.files_dir}}/maildrop_config.py_tmpl',
+                         svn_add=True),
+        tasks.EnsureFile('Overwrite MaildropHost config.py',
+                         '{{env.base_path}}/opencore/src/opencore-bundle/MaildropHost/config.py',
+                         content=replacement_config,
+                         overwrite=True),
+        tasks.EnsureFile('Write maildrop start script',
+                         '{{env.base_path}}/bin/start-maildrop',
+                         content=maildrop_start_script_template,
+                         svn_add=True, executable=True, overwrite=True),
+        tasks.InstallSupervisorConfig(),
         ]
 
     depends_on_projects = ['fassembler:opencore']

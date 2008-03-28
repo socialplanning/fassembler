@@ -31,13 +31,13 @@ MAILDROP_HOME="/tmp/maildrop"
 # MAILDROP_LOG_FILE="/var/log/maildrop/maildrop.log"
 
 # The SMTP server to be used for sending out email (e.g. smtp-relay.domain.com)
-SMTP_HOST="localhost"
+SMTP_HOST={{repr(config.smtp_host)}}
 
 # The SMTP server port used for sending out email
-SMTP_PORT=25
+SMTP_PORT={{repr(int(config.smtp_port))}}
 
 # How long to wait between spool checks
-MAILDROP_INTERVAL=120
+MAILDROP_INTERVAL={{repr(int(config.maildrop_interval))}}
 
 # Set debug mode. This will PREVENT the daemon from detaching from
 # the controlling terminal! Do not use in production!
@@ -49,7 +49,7 @@ DEBUG=1
 # DEBUG_RECEIVER so email ends up in one mailbox but looks exactly like the
 # actual receiver would see it. Use for debugging purposes only. The value
 # is a string containing one or more comma-separated addresses.
-DEBUG_RECEIVER=""
+DEBUG_RECEIVER={{repr(config.debug_receiver)}}
 
 # Batch size for smtp-connection
 # = 0 means bulk all mails at once
@@ -62,13 +62,20 @@ MAILDROP_BATCH=0
 #   2 : Force TLS and fail if TLS is not available
 # If a username/password is specified for the SMTP server, it is recommended
 # to set the value to "2" to prevent password sniffing.
-MAILDROP_TLS=0
+MAILDROP_TLS={{repr(int(config.smtp_tls))}}
+
 
 # SMTP Authentication
 # If the login and password are provided, authentication is attempted.
 # If the authentication attempt fails, mail processing stops. Beware.
-MAILDROP_LOGIN=""
-MAILDROP_PASSWORD=""
+SMTP_AUTH_FILENAME={{repr(config.smtp_auth_filename)}}
+
+if SMTP_AUTH_FILENAME:
+    content = open(SMTP_AUTH_FILENAME).read().strip()
+    MAILDROP_LOGIN, MAILDROP_PASSWORD = content.split(':', 1)
+else:
+    MAILDROP_LOGIN=""
+    MAILDROP_PASSWORD=""
 
 # Wait between sending two mails, to avoid overloading the mail server
 # This should be a float, in seconds

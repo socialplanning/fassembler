@@ -43,6 +43,7 @@ setup(name='fassembler',
       deliverance = fassembler.topp_products:DeliveranceProject
       opencore = fassembler.topp_opencore:OpenCoreProject
       zeo = fassembler.topp_opencore:ZEOProject
+      maildrop = fassembler.topp_opencore:MaildropProject
       wordpress = fassembler.topp_wordpress:WordPressProject
       cabochon = fassembler.topp_products:CabochonProject
       twirlip = fassembler.topp_products:TwirlipProject
