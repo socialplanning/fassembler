@@ -741,7 +741,7 @@ exec $BASE/opencore/bin/python $MAILDROPHOME/maildrop.py "$CONFIG"
 
     replacement_config = """\
 import os
-base_path = os.environ['VIRTUAL_ENV']
+base_path = {{repr(env.base_path)}}
 config_location = os.path.join(base_path, 'etc', 'opencore', 'maildrop', 'config.py')
 execfile(config_location)
 """
