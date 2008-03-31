@@ -412,6 +412,12 @@ class RunZopectlScript(tasks.Task):
                              color='red')
 
 
+class PatchTwill(tasks.Task):
+    """patch twill so it doesn't print out those horrible AT LINE commands"""
+
+    def run(self):
+        import pdb;  pdb.set_trace()
+
 class OpenCoreBase(Project):
     defaults = dict(opencore_site_id='openplans',
                     opencore_site_title='OpenCore Site',
@@ -609,6 +615,7 @@ setglobal projprefs    '{{env.config.get("general", "projprefs")}}'
             '{{env.base_path}}/{{config.ftests_path}}/globals.conf',
             content=flunc_globals_template,
             svn_add=False, overwrite=True),
+        PatchTwill('Patch twill configuration'),
         ]
     
 

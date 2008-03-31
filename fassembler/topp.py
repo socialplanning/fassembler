@@ -153,7 +153,7 @@ class ToppProject(Project):
                 default='{{project.req_settings.get("projtxt", "project")}}',
                 help='Displayed name for opencore project/group'),
 
-        Setting('projtxt',
+        Setting('projprefs',
                 default='{{project.req_settings.get("projprefs", "Preferences")}}',
                 help='Displayed name for opencore project/group settings'),
 
