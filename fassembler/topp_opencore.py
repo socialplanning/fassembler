@@ -2,20 +2,19 @@
 Installation of the TOPP OpenCore environment.
 """
 
-import os
-import sys
-import subprocess
-import urllib
-import shutil
-from socket import getfqdn
-from fassembler.project import Project, Setting
 from fassembler import tasks
-interpolated = tasks.interpolated
-import warnings
+from fassembler.project import Project, Setting
 from glob import glob
-from subprocess import Popen, PIPE
 from time import sleep
 from xml.dom import minidom
+import os
+import shutil
+import subprocess
+import sys
+import urllib
+import warnings
+
+interpolated = tasks.interpolated
 
 if sys.version >= (2, 5):
     raise ImportError(
@@ -783,9 +782,14 @@ execfile(config_location)
                          content=maildrop_start_script_template,
                          svn_add=True, executable=True, overwrite=True),
         tasks.InstallSupervisorConfig(),
+        StartZeo(),
+        RunZopectlScript('{{env.base_path}}/opencore/src/opencore/add_maildrop.py',
+                         name='Add a MaildropHost object'),
+        StopZeo(),
         ]
 
-    depends_on_projects = ['fassembler:opencore']
+
+    depends_on_projects = ['fassembler:zeo']
 
 
 if __name__ == '__main__':
