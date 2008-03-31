@@ -22,7 +22,7 @@ if sys.version >= (2, 5):
 
 warnings.filterwarnings('ignore', 'tempnam is .*')
 
-tarball_version = '2.9.8openplans.2'
+tarball_version = '2.9.8openplans.3'
 tarball_url = 'https://svn.openplans.org/eggs/OpenplansZope-%s.tar.bz2' % tarball_version
 orig_zope_source = 'http://www.zope.org/Products/Zope/2.9.8/Zope-2.9.8-final.tgz'
 
@@ -30,9 +30,9 @@ orig_zope_source = 'http://www.zope.org/Products/Zope/2.9.8/Zope-2.9.8-final.tgz
 def retrieve(url, filename):
     """
     Download a file and store it at filename.
-    Prior to python 2.5, urllib is too stupid to
-    complain if the download is interrupted.
-    So we manually check the size.
+
+    Prior to python 2.5, urllib is too stupid to complain if the
+    download is interrupted.  So we manually check the size.
     """
     fn, headers = urllib.urlretrieve(url, filename)
     expected = int(headers.getheader('Content-Length'))
