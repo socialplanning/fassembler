@@ -181,6 +181,7 @@ class ToppProject(Project):
                            'streetsblog_uri': '{{config.streetsblog_uri}}',
                            'streetfilms_uri': '{{config.streetfilms_uri}}',
                            'projtxt': '{{config.projtxt}}',
+                           'projprefs': '{{config.projprefs}}',
                            'etc_svn_subdir': '{{config.etc_svn_subdir}}',
                            }),
         tasks.SaveSetting(
