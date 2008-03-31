@@ -508,6 +508,7 @@ exec {{config.zope_instance}}/bin/runzope -X debug-mode=off
 setglobal admin      '{{config.zope_user}}'
 setglobal adminpw    '{{config.zope_password}}'
 setglobal projtxt    '{{env.config.get("general", "projtxt")}}'
+setglobal projprefs    '{{env.config.get("general", "projprefs")}}'
 """
 
     actions = [
