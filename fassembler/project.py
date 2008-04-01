@@ -225,6 +225,7 @@ class Project(object):
         ns['maker'] = self.maker
         ns['project'] = self
         ns['os'] = os
+        ns['re'] = re
         ns.add_all_sections(self.config)
         ns['config'] = ns[self.config_section]
         return ns
