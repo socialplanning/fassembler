@@ -10,7 +10,7 @@
 PYTHON="/usr/bin/python"
 
 # The working directory keeping the spool and var directories
-MAILDROP_HOME="/tmp/maildrop"
+MAILDROP_HOME="{{env.var}}/maildrop-spool"
 
 # You can override the spool directory with this directive
 # Without it, it'll be the "spool" subdirectory of $MAILDROP_HOME

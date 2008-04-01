@@ -781,6 +781,8 @@ execfile(config_location)
                          '{{env.base_path}}/bin/start-maildrop',
                          content=maildrop_start_script_template,
                          svn_add=True, executable=True, overwrite=True),
+        tasks.EnsureDir('Create spool directory',
+                        '{{env.var}}/maildrop-spool'),
         tasks.InstallSupervisorConfig(),
         StartZeo(),
         RunZopectlScript('{{env.base_path}}/opencore/src/opencore/add_maildrop.py',
