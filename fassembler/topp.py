@@ -168,6 +168,8 @@ class ToppProject(Project):
                           base_repository='{{config.etc_svn_repo}}',
                           on_create_set_props={'svn:ignore': 'projects.txt\n'},
                           create_if_necessary=True),
+        tasks.SvnCheckout('check out requirements/', '{{config.requirements_svn_repo}}',
+                          'requirements'),
         EnvironRefresh(),
         tasks.SaveSetting('Save var setting',
                           {'var': '{{os.path.abspath(config.var)}}'}),
@@ -200,8 +202,6 @@ class ToppProject(Project):
              section='google_maps_keys'),
         
         tasks.EnsureDir('Make sure var directory exists', '{{env.var}}', svn_add=False),
-        tasks.SvnCheckout('check out requirements/', '{{config.requirements_svn_repo}}',
-                          'requirements'),
         tasks.EnsureFile('Write OpenPlans shared secret to var/secret.txt if it does not exist',
                          '{{env.var}}/secret.txt',
                          '{{env.random_string(40)}}',
