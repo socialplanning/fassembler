@@ -90,6 +90,19 @@ c['slaves'] = slaves
 #########################################################################
 
 class ToppShellCommand(ShellCommand):
+
+    def __init__(self, *args, **kw):
+        # Force colorization off in fassembler child processes.
+        # Do that by forcing these env vars blank.
+        # (actually it's cmdutils, used by fassembler, that checks these).
+        # But on principle, we still allow the user to override this.
+        kw.setdefault('env', {})
+        kw['env'].setdefault('LSCOLORS', '')
+        kw['env'].setdefault('LS_COLORS', '')
+        kw['env'].setdefault('COLORTERM', '')
+        kw['env'].setdefault('CLICOLOR', '')
+        ShellCommand.__init__(self, *args, **kw)
+    
     # Print something not so stupid as "shell_9" when there are
     # problems.  It was pretty time-consuming to figure out where
     # in buildbot this happens.
@@ -102,6 +115,7 @@ class ToppShellCommand(ShellCommand):
     def descriptionDone(self):
         # Writing out two separate descriptions is too much work.
         return self.description
+
 
 
 def make_factory(name, baseport=BASEPORT, requirements_repo=None,
