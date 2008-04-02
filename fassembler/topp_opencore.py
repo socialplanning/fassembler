@@ -429,7 +429,7 @@ class PatchTwill(tasks.Task):
         lines = [ line for line in lines if "print 'AT LINE:'" not in lines ]
 
         parse = file(filename, 'w')
-        print >> parse, ''.joine(lines)
+        print >> parse, ''.join(lines)
 
 
 class OpenCoreBase(Project):
