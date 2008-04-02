@@ -429,7 +429,7 @@ class PatchTwill(tasks.Task):
                                     env=env,
                                     stdout=subprocess.PIPE).communicate()[0].strip()
         parse = file(filename)
-        lines = parse.read()
+        lines = parse.readlines()
         parse.close()
 
         lines = [ line for line in lines if "print 'AT LINE:'" not in line ]
