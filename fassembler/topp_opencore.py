@@ -629,7 +629,7 @@ setglobal projprefs    '{{env.config.get("general", "projprefs")}}'
             '{{env.base_path}}/{{config.ftests_path}}/globals.conf',
             content=flunc_globals_template,
             svn_add=False, overwrite=True),
-        PatchTwill('Patch twill configuration to avoid printing extraneous "AT LINE"s'),
+        #PatchTwill('Patch twill configuration to avoid printing extraneous "AT LINE"s'),
         ]
     
 
