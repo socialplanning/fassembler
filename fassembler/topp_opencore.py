@@ -419,8 +419,14 @@ class PatchTwill(tasks.Task):
     
 
     def run(self):
+        
+        # get around readline printing strange things 
+        # see: http://www.openplans.org/projects/opencore/lists/openplans-svn/archive/2008/04/1207154035776
+        env = os.environ.copy()
+        env['TERM'] = '' 
         filename = subprocess.Popen(["%s" % os.path.join(self.venv_property(), 'bin', 'python'), 
                                      '-c', 'import twill.parse; print twill.parse.__file__.rstrip("c")'], 
+                                    env=env,
                                     stdout=subprocess.PIPE).communicate()[0].strip()
         parse = file(filename)
         lines = parse.read()
@@ -630,7 +636,7 @@ setglobal projprefs    '{{env.config.get("general", "projprefs")}}'
             '{{env.base_path}}/{{config.ftests_path}}/globals.conf',
             content=flunc_globals_template,
             svn_add=False, overwrite=True),
-        #PatchTwill('Patch twill configuration to avoid printing extraneous "AT LINE"s'),
+#        PatchTwill('Patch twill configuration to avoid printing extraneous "AT LINE"s'),
         ]
     
 
