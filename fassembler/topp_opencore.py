@@ -412,10 +412,25 @@ class RunZopectlScript(tasks.Task):
 
 
 class PatchTwill(tasks.Task):
-    """patch twill so it doesn't print out those horrible AT LINE commands"""
+    """
+    patch twill so it doesn't print out those horrible AT LINE commands;
+    this should be removed if upstream fix is committed
+    """
+    
 
     def run(self):
-        import pdb;  pdb.set_trace()
+        filename = subprocess.Popen(["%s" % os.path.join(self.venv_property(), 'bin', 'python'), 
+                                     '-c', 'import twill.parse; print twill.parse.__file__.rstrip("c")'], 
+                                    stdout=subprocess.PIPE).communicate()[0].strip()
+        parse = file(filename)
+        lines = parse.read()
+        parse.close()
+
+        lines = [ line for line in lines if "print 'AT LINE:'" not in lines ]
+
+        parse = file(filename, 'w')
+        print >> parse, ''.joine(lines)
+
 
 class OpenCoreBase(Project):
     defaults = dict(opencore_site_id='openplans',
@@ -614,7 +629,7 @@ setglobal projprefs    '{{env.config.get("general", "projprefs")}}'
             '{{env.base_path}}/{{config.ftests_path}}/globals.conf',
             content=flunc_globals_template,
             svn_add=False, overwrite=True),
-#        PatchTwill('Patch twill configuration'),
+        PatchTwill('Patch twill configuration to avoid printing extraneous "AT LINE"s'),
         ]
     
 
