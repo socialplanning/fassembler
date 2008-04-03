@@ -195,6 +195,7 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                 command=['%s/opencore/bin/flunc' % OCBASEDIR,
                          '-p', '%s/%s' % (OCBASEDIR, ftestsdir),
                          '-t', 'http://localhost:%d' % baseport,
+                         '--verbose',
                          flunc_suite],
                 description='run flunc tests',
                 haltOnFailure=0)
