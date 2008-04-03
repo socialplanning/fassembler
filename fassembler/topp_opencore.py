@@ -533,6 +533,10 @@ class OpenCoreProject(OpenCoreBase):
         Setting('ftests_path',
                 default='{{project.req_settings.get("ftests_path", "opencore/src/opencore/ftests")}}',
                 help='Relative path to ftests'),
+        Setting('opencore_vacuum_whitelist',
+                inherit_config=('general', 'opencore_vacuum_whitelist'),
+                default='{{",".join((env.config.get("general", "streetsblog_uri"), env.config.get("general", "streetfilms_uri")))}}',
+                help='whitelist of safe sites for javascript authentication api'),
         ]
 
     files_dir = os.path.join(os.path.dirname(__file__), 'opencore-files')
@@ -554,6 +558,9 @@ setglobal projprefs    '{{env.config.get("general", "projprefs")}}'
 """
 
     actions = [
+        tasks.SaveSetting('Save application settings',
+                          {'opencore_vacuum_whitelist': '{{config.opencore_vacuum_whitelist}}'},
+                          section='applications'),
         tasks.VirtualEnv(),
         tasks.SetDistutilsValue('Disable zipped eggs',
                                 'easy_install', 'zip_ok', 'False'),
@@ -704,9 +711,6 @@ exec {{config.zeo_instance}}/bin/runzeo
                            'email_from_address': '{{config.email_from_address}}',
                            'mailing_list_fqdn': '{{config.mailing_list_fqdn}}',
                           }),
-        tasks.SaveSetting('Save application settings',
-                          {'opencore_vacuum_whitelist': 'http://woonerf.streetsblog.org,http://www.streetsblog.org'},
-                          section='applications'),
         ## FIXME: this is kind of lame (recreating a venv we know exists),
         #  but needed for later steps:
         tasks.VirtualEnv(path='opencore'),
