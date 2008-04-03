@@ -10,10 +10,6 @@ import sys
 
 interpolated = tasks.interpolated
 
-twisted_dirname = 'Twisted-2.5.0'
-tarball_url = 'http://tmrc.mit.edu/mirror/twisted/Twisted/2.5/%s.tar.bz2' % twisted_dirname
-
-
 def get_host_info():
     uname = os.uname()
     platform = sys.platform.title()
@@ -33,29 +29,6 @@ def get_host_info():
     return hostname, platform, version
 
 
-class GetTwistedSource(tasks.InstallTarball):
-
-    # easy_install twisted isn't possible, see
-    # http://twistedmatrix.com/trac/ticket/1286
-    # so we install from a tarball.
-    
-    _tarball_url = tarball_url
-    _src_name = twisted_dirname
-    _marker = interpolated('_marker')
-
-    def __init__(self, stacklevel=1):
-        super(GetTwistedSource, self).__init__(stacklevel=stacklevel+1)
-        self._marker = '{{os.path.join(task.dest_path, ".marker")}}'
-
-    def post_unpack_hook(self):
-        # This is just a marker file to show for future runs that we
-        # successfully downloaded and unpacked the tarball.
-        open(self._marker, 'w').write('')
-
-    def is_up_to_date(self):
-        return os.path.exists(self._marker)
-
-
 editwarning = '''!!! WARNING !!! This is a generated file.  DO NOT EDIT!
 
 Instead you should edit (and commit) the tmpl file in the fassembler
@@ -66,8 +39,6 @@ regenerate this file.
 class BuildBotProject(Project):
     """Buildbot base project class"""
 
-
-    _twisted_src = twisted_dirname
 
     files_dir = os.path.join(os.path.dirname(__file__), 'buildbot-files')
     skel_dir = os.path.join(files_dir, 'skel')
@@ -139,12 +110,6 @@ class BuildBotProject(Project):
         tasks.VirtualEnv(),
         tasks.InstallSpec('Install buildbot dependencies',
                           '{{config.spec}}'),
-        GetTwistedSource(),
-        tasks.Script('Install Twisted',
-                     ['python', 'setup.py', 'install'],
-                     use_virtualenv=True,
-                     cwd='{{os.path.join(env.base_path, project.name, "src", project._twisted_src)}}'
-                     ),
         # XXX This fails about half the time, because sourceforge sucks.
         # Just re-run until it works.
         tasks.EasyInstall('Install buildbot', 'buildbot>=0.7.7'),
