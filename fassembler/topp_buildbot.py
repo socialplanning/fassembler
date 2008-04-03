@@ -110,9 +110,6 @@ class BuildBotProject(Project):
         tasks.VirtualEnv(),
         tasks.InstallSpec('Install buildbot dependencies',
                           '{{config.spec}}'),
-        # XXX This fails about half the time, because sourceforge sucks.
-        # Just re-run until it works.
-        tasks.EasyInstall('Install buildbot', 'buildbot>=0.7.7'),
         ]
 
 
