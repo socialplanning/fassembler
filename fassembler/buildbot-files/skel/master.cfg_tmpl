@@ -184,7 +184,7 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
 
     # Run the flunc tests. Wait a bit for services to come up.
     fac.addStep(ToppShellCommand, 
-                command='%s/bin/supervisord && sleep 10' % OCBASEDIR,
+                command='%s/bin/supervisord && sleep 20' % OCBASEDIR,
                 description=['start services', 'for functional tests'],
                 haltOnFailure=1)
 
