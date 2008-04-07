@@ -125,7 +125,8 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                  zopectl_suites=['opencore'],
                  ftestsdir=None, flunc_suite='all',
                  fassembler_targets=[],
-                 ports=[]):
+                 ports=[],
+                 set_portal_props=False):
     """
     We have multiple very similar builds that just use different
     requirements_svn_repo. Hence, this factory function.
@@ -198,14 +199,15 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                 description=['start services', 'for functional tests'],
                 haltOnFailure=True)
 
-    if flunc_suite == 'all':
+    # Don't halt on failure for any of these! We need shutdown to run.
+    if set_portal_props:
         # Temporary hack to configure wordpress_uri in the portal properties.
         # as per http://trac.openplans.org/openplans/wiki/BuildInstructions
         fac.addStep(ToppShellCommand,
                     command='svn cat https://svn.openplans.org/svn/scripts/build/set_uris.py | python',
                     description=['hack to set wp uri', 'on portal properties'],
-                    haltOnFailure=True,
-                    workdir=OCBASEDIR + '/build',
+                    haltOnFailure=False,
+                    workdir='build/' + OCBASEDIR,
                     )
                     
 
@@ -218,7 +220,6 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                 description='run flunc tests',
                 haltOnFailure=False)
 
-    # Shut down subprocesses; wait a bit in case they take a while to die.
     fac.addStep(ToppShellCommand,
                 command='%s/bin/supervisorctl shutdown && sleep 20' % OCBASEDIR,
                 description='shut down',
@@ -268,6 +269,7 @@ full_ls_factory = make_factory(
         ],
     flunc_suite='all', ports=lsfull_ports,
     zopectl_suites=['opencore'],
+    set_portal_props=True
     )
     
 ############################################################################
