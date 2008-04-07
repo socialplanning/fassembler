@@ -974,7 +974,7 @@ Responses:
         # files before returning
         try:
             try:
-                proc = Popen(["dougdiff", "-s", "-o", dest_fn, orig_name, new_name])
+                proc = Popen(["sdiff", "-s", "-o", dest_fn, orig_name, new_name])
                 proc.wait()
                 return True
             finally:
