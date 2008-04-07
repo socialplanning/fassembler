@@ -872,7 +872,7 @@ class Maker(object):
             removed, len(cur_content.splitlines()), msg))
         if message:
             print message
-        prompt = 'Overwrite %s [y/n/d/B/?] ' % dest_fn
+        prompt = 'Overwrite %s [y/n/d/b/m/?] ' % dest_fn
         prompt = self.logger.colorize(prompt, 'bold cyan')
         while 1:
             if self.all_answer is None:
@@ -910,6 +910,11 @@ class Maker(object):
                 import traceback
                 traceback.print_stack()
                 continue
+            elif response == 'm':
+                if self.merge_difference(dest_fn, new_content, cur_content):
+                    return False
+                else:
+                    self.logger.error('An error was encountered while trying to merge the two files')
             else:
                 if response[0] != '?':
                     print 'Unknown command: %s' % response
@@ -922,8 +927,61 @@ Responses:
   D(iff):   Show a unified diff of the proposed changes (dc=context diff)
   B(ackup): Save the current file contents to a .bak file
             (and overwrite)
-  Type "all Y/N/B" to use Y/N/B for answer to all future questions
+  M(erge):  Perform a side-by-side merge of the affected files
+  Type "all Y/N/B/M" to use Y/N/B/M for answer to all future questions
 '''
+
+    def merge_difference(self, dest_fn, new_content, cur_content):
+        """
+        Take changed contents, and a destination filename, and performs a side
+        by side merge using sdiff
+        """
+        # In order to ensure that we don't leak temporary files, we perform
+        # this in three stages, creation, setup, and working with the files.
+        from subprocess import Popen, PIPE
+        import tempfile
+        import os
+        # Phase 1: Temporary file creation
+        # If this fails, we'll close and delete any files that did succeed
+        try:
+            orig_fd, orig_name = tempfile.mkstemp(prefix=dest_fn + '_orig_')
+        except:
+            return False
+        try:
+            new_fd, new_name = tempfile.mkstemp(prefix=dest_fn + '_new_')
+        except:
+            os.close(orig_fd)
+            os.unlink(orig_name)
+            return False
+
+        # Phase 2: write out the content
+        # If there is some sort of failure, we'll close and delete the files we
+        # created in phase 1
+        try:
+            try:
+                os.write(orig_fd, cur_content)
+                os.write(new_fd, new_content)
+            finally:
+                os.close(orig_fd)
+                os.close(new_fd)
+        except:
+            os.unlink(orig_name)
+            os.unlink(new_name)
+            return False
+
+        # Phase 3: working with the files
+        # No matter what happens here, we'll be sure to remove the temporary
+        # files before returning
+        try:
+            try:
+                proc = Popen(["dougdiff", "-s", "-o", dest_fn, orig_name, new_name])
+                proc.wait()
+                return True
+            finally:
+                os.unlink(orig_name)
+                os.unlink(new_name)
+        except:
+            return False
 
     def ask_password(self):
         """
