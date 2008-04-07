@@ -22,9 +22,10 @@ BASEPORT=int('{{config.child_baseport}}')  # Used for the fassembler builds
 OCBASEDIR='{{config.oc_basedir}}'
 
 # All the ports we care about... hacky
-allports = range(BASEPORT, BASEPORT + 11)  # for the trunk build.
-allports.extend(range(BASEPORT + 100, BASEPORT + 111))  # for the LS build.
-allports.extend(range(BASEPORT + 200, BASEPORT + 211))  # for the full LS build.
+trunkports =  range(BASEPORT, BASEPORT + 11)  # for the trunk build.
+lsmini_ports = range(BASEPORT + 100, BASEPORT + 111)  # for the LS build.
+lsfull_ports = range(BASEPORT + 200, BASEPORT + 211)  # for the full LS build.
+allports = trunkports = lsfull_ports + lsmini_ports
 
 
 slavenames = ['slave1']
@@ -123,7 +124,8 @@ class ToppShellCommand(ShellCommand):
 def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                  zopectl_suites=['opencore'],
                  ftestsdir=None, flunc_suite='all',
-                 fassembler_targets=[]):
+                 fassembler_targets=[],
+                 ports=[]):
     """
     We have multiple very similar builds that just use different
     requirements_svn_repo. Hence, this factory function.
@@ -139,6 +141,14 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                 )
 
     # Clean up after previous runs.
+    # For some reason, portkill seems to always exit 1, so ignore "failures".
+    if ports:
+        fac.addStep(ToppShellCommand,
+                    command=['{{os.path.join("..", "..", "bin", "portkill")}}',
+                             ] + [str(port) for port in ports],
+                    description=['kill any running', 'instances using', 'the ports'],
+                    haltOnFailure=False)
+    
     fac.addStep(ToppShellCommand, command="rm -rf %s *bz2 *gz *zip" % OCBASEDIR,
                 description='remove old files',
                 )
@@ -147,12 +157,12 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
     fac.addStep(ToppShellCommand,
                 command='svn export https://svn.openplans.org/svn/fassembler/trunk/fassembler-boot.py',   # string instead of list causes it to be run via sh.
                 description=['get fassembler', 'bootstrap script'],
-                haltOnFailure=1)
+                haltOnFailure=True)
 
     fac.addStep(ToppShellCommand,
                 command=['python', 'fassembler-boot.py', 'oc'],
                 description='bootstrap fassembler',
-                haltOnFailure=1)
+                haltOnFailure=True)
 
     # Run the build.
     buildcmd = ['%s/bin/fassembler' % OCBASEDIR,
@@ -167,11 +177,11 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
     fac.addStep(ToppShellCommand,
                 command=buildcmd + ['fassembler:topp'],
                 description=['build fassembler:topp'],
-                haltOnFailure=1)
+                haltOnFailure=True)
     fac.addStep(ToppShellCommand,
                 command=buildcmd + fassembler_targets,
                 description=['build', name, 'and dependencies'],
-                haltOnFailure=1)
+                haltOnFailure=True)
 
     # Run the zopectl unit tests.
     for suite in zopectl_suites:
@@ -186,7 +196,18 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
     fac.addStep(ToppShellCommand, 
                 command='%s/bin/supervisord && sleep 20' % OCBASEDIR,
                 description=['start services', 'for functional tests'],
-                haltOnFailure=1)
+                haltOnFailure=True)
+
+    if flunc_suite == 'all':
+        # Temporary hack to configure wordpress_uri in the portal properties.
+        # as per http://trac.openplans.org/openplans/wiki/BuildInstructions
+        fac.addStep(ToppShellCommand,
+                    command='svn cat https://svn.openplans.org/svn/scripts/build/set_uris.py | python',
+                    description=['hack to set wp uri', 'on portal properties'],
+                    haltOnFailure=True,
+                    workdir=OCBASEDIR + '/build',
+                    )
+                    
 
     fac.addStep(ToppShellCommand, 
                 command=['%s/opencore/bin/flunc' % OCBASEDIR,
@@ -195,21 +216,14 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                          '--verbose',
                          flunc_suite],
                 description='run flunc tests',
-                haltOnFailure=0)
+                haltOnFailure=False)
 
     # Shut down subprocesses; wait a bit in case they take a while to die.
     fac.addStep(ToppShellCommand,
                 command='%s/bin/supervisorctl shutdown && sleep 20' % OCBASEDIR,
                 description='shut down',
-                haltOnFailure=1)
+                haltOnFailure=True)
 
-    # No really, you guys need to die. bug #2230.
-    # For some reason, portkill seems to always exit 1, so ignore "failures".
-    fac.addStep(ToppShellCommand,
-                command=['{{os.path.join("..", "..", "bin", "portkill")}}',
-                         ] + [str(port) for port in allports],
-                description=['kill any running', 'instances using', 'the ports'],
-                haltOnFailure=False)
     return fac
 
 
@@ -224,7 +238,7 @@ oc_factory = make_factory(
         'fassembler:twirlip',
         'fassembler:zeo',
         ],
-    flunc_suite='all',
+    flunc_suite='all', ports=trunkports,
     zopectl_suites=['opencore', 'Products.listen', 'Products.wicked'],
     )
 
@@ -240,7 +254,7 @@ livable_factory = make_factory(
         'fassembler:deliverance',
         'fassembler:zeo',
         ],
-    flunc_suite='minimal',
+    flunc_suite='minimal', ports=lsmini_ports,
     zopectl_suites=['opencore'],
     )
 
@@ -252,7 +266,7 @@ full_ls_factory = make_factory(
     fassembler_targets=[
         'all',
         ],
-    flunc_suite='all',
+    flunc_suite='all', ports=lsfull_ports,
     zopectl_suites=['opencore'],
     )
     
