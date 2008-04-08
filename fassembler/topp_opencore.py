@@ -325,6 +325,9 @@ class SymlinkZopeConfig(ZopeConfigTask):
                                   self.zope_profile_path)
 
 
+def zeo_running(zeoctl_path):
+    return 'pid' in subprocess.Popen([zeoctl_path, 'status'], stdout=subprocess.PIPE).communicate()[0])
+
 class StartZeo(tasks.Task):
 
     description = "Start zeo"
@@ -333,13 +336,12 @@ class StartZeo(tasks.Task):
         super(StartZeo, self).__init__('Start zeo', stacklevel=stacklevel+1)
 
     def run(self):
-        if self.maker.simulate:
-            return
         zeoctl_path = self.interpolate('{{env.base_path}}/opencore/zeo/bin/zeoctl')
+        if self.maker.simulate or zeo_running(zeoctl_path):
+            return
         subprocess.Popen([zeoctl_path, 'start'], stdout=subprocess.PIPE).communicate()
         elapsed, TIMEOUT = 0, 30
-        while (elapsed < TIMEOUT and
-               'pid' not in subprocess.Popen([zeoctl_path, 'status'], stdout=subprocess.PIPE).communicate()[0]):
+        while (elapsed < TIMEOUT and not zeo_running(zeoctl_path):
             self.logger.notify('Sleeping while zeo starts...')
             sleep(1)
             elapsed += 1
@@ -357,9 +359,9 @@ class StopZeo(tasks.Task):
         super(StopZeo, self).__init__('Stop zeo', stacklevel=stacklevel+1)
 
     def run(self):
-        if self.maker.simulate:
-            return
         zeoctl_path = self.interpolate('{{env.base_path}}/opencore/zeo/bin/zeoctl')
+        if self.maker.simulate or not zeo_running(zeoctl_path):
+            return
         subprocess.Popen([zeoctl_path, 'stop'], stdout=subprocess.PIPE).communicate()
         elapsed, TIMEOUT = 0, 30
         while (elapsed < TIMEOUT and
