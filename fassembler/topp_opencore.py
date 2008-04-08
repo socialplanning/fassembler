@@ -4,6 +4,7 @@ Installation of the TOPP OpenCore environment.
 
 from fassembler import tasks
 from fassembler.project import Project, Setting
+from fassembler.util import can_connect_to
 from glob import glob
 from time import sleep
 from xml.dom import minidom
@@ -336,9 +337,11 @@ class StartZeo(tasks.Task):
         super(StartZeo, self).__init__('Start zeo', stacklevel=stacklevel+1)
 
     def run(self):
-        zeoctl_path = self.interpolate('{{env.base_path}}/opencore/zeo/bin/zeoctl')
-        if self.maker.simulate or zeo_status_contains(zeoctl_path, 'pid'):
+        if self.maker.simulate:
             return
+        zeoctl_path = self.interpolate('{{env.base_path}}/opencore/zeo/bin/zeoctl')
+        if zeo_status_contains(zeoctl_path, 'pid'):
+            raise Exception('Zeo is running already. Please stop zeo before running.')
         subprocess.Popen([zeoctl_path, 'start'], stdout=subprocess.PIPE).communicate()
         elapsed, TIMEOUT = 0, 30
         while elapsed < TIMEOUT and not zeo_status_contains(zeoctl_path, 'pid'):
@@ -359,9 +362,11 @@ class StopZeo(tasks.Task):
         super(StopZeo, self).__init__('Stop zeo', stacklevel=stacklevel+1)
 
     def run(self):
-        zeoctl_path = self.interpolate('{{env.base_path}}/opencore/zeo/bin/zeoctl')
-        if self.maker.simulate or zeo_status_contains(zeoctl_path, 'not running'):
+        if self.maker.simulate:
             return
+        zeoctl_path = self.interpolate('{{env.base_path}}/opencore/zeo/bin/zeoctl')
+        if zeo_status_contains(zeoctl_path, 'not running'):
+            raise Exception('Expected Zeo to be running but it is not.')
         subprocess.Popen([zeoctl_path, 'stop'], stdout=subprocess.PIPE).communicate()
         elapsed, TIMEOUT = 0, 30
         while elapsed < TIMEOUT and not zeo_status_contains(zeoctl_path, 'not running'):
