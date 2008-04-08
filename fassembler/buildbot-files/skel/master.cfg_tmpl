@@ -25,7 +25,7 @@ OCBASEDIR='{{config.oc_basedir}}'
 trunkports =  range(BASEPORT, BASEPORT + 11)  # for the trunk build.
 lsmini_ports = range(BASEPORT + 100, BASEPORT + 111)  # for the LS build.
 lsfull_ports = range(BASEPORT + 200, BASEPORT + 211)  # for the full LS build.
-allports = trunkports = lsfull_ports + lsmini_ports
+allports = trunkports + lsfull_ports + lsmini_ports
 
 
 slavenames = ['slave1']
@@ -332,7 +332,8 @@ buildFullLSNightly  = scheduler.Nightly(
 
 c['schedulers'] = [buildOnChange, buildOpencoreNightly,
                    buildLivablestreetsNightly,
-                   buildFullLSNightly]
+                   buildFullLSNightly
+                   ]
 
 
 
