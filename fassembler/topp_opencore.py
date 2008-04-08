@@ -326,7 +326,7 @@ class SymlinkZopeConfig(ZopeConfigTask):
 
 
 def zeo_running(zeoctl_path):
-    return 'pid' in subprocess.Popen([zeoctl_path, 'status'], stdout=subprocess.PIPE).communicate()[0])
+    return 'pid' in subprocess.Popen([zeoctl_path, 'status'], stdout=subprocess.PIPE).communicate()[0]
 
 class StartZeo(tasks.Task):
 
