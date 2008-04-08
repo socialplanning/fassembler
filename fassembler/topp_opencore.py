@@ -4,7 +4,6 @@ Installation of the TOPP OpenCore environment.
 
 from fassembler import tasks
 from fassembler.project import Project, Setting
-from fassembler.util import can_connect_to
 from glob import glob
 from time import sleep
 from xml.dom import minidom
