@@ -664,7 +664,7 @@ class CheckMySQLDatabase(Task):
     description = """
     Check that the database {{task.db_name}}@{{task.db_host}} exists
     (accessing it with u/p {{config.db_username}}/{{repr(config.db_password)}}).
-    If it does not exist, create the database.  If the databsae does
+    If it does not exist, create the database.  If the database does
     exist, make sure that the user has full access.
 
     This will connect as root to create the database if necessary,
