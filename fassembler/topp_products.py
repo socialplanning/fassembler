@@ -2,10 +2,8 @@
 Misc. builders for various smaller topp products
 """
 
-import os
-from fassembler.project import Project, Setting
 from fassembler import tasks
-from tempita import Template
+from fassembler.project import Project, Setting
 
 class ScriptTranscluderProject(Project):
     """
