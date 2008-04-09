@@ -146,9 +146,9 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
     if ports:
         fac.addStep(ToppShellCommand,
                     command=['{{os.path.join("..", "..", "bin", "portkill")}}',
-                             ] + [str(port) for port in ports],
+                             '-v'] + [str(port) for port in ports],
                     description=['kill any running', 'instances using', 'the ports'],
-                    haltOnFailure=False)
+                    haltOnFailure=False, flunkOnFailure=False)
     
     fac.addStep(ToppShellCommand, command="rm -rf %s *bz2 *gz *zip" % OCBASEDIR,
                 description='remove old files',
@@ -191,11 +191,17 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                              'test', '-s',
                              suite],
                     description=['run', suite, 'unit tests'],
-                    haltOnFailure=False)
+                    haltOnFailure=False, flunkOnFailure=True)
 
     # Run the flunc tests. Wait a bit for services to come up.
+    #
+    # Assume that ports[1] is Zope and takes a long time.
+    # Something like:
+    # while true; do sleep 1; if [ `netstat -nl | grep %d` != "" ]; then break; else sleep 1; fi; done' % (OCBASEDIR, ports[1]),
+    # But this doesn't seem to help; Zope binds the port pretty early but doesn't respond
+    # until it's really up, so we get Deliverance errors.
     fac.addStep(ToppShellCommand, 
-                command='%s/bin/supervisord && sleep 20' % OCBASEDIR,
+                command='%s/bin/supervisord && sleep 10 && wget --retry-connrefused --tries=10 -T 100 --spider http://localhost:%d' % (OCBASEDIR, ports[1]),
                 description=['start services', 'for functional tests'],
                 haltOnFailure=True)
 
@@ -218,7 +224,7 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                          '--verbose',
                          flunc_suite],
                 description='run flunc tests',
-                haltOnFailure=False)
+                haltOnFailure=False, flunkOnFailure=True)
 
     fac.addStep(ToppShellCommand,
                 command='%s/bin/supervisorctl shutdown && sleep 20' % OCBASEDIR,
@@ -299,8 +305,8 @@ full_livablestreets_builders = [
 
 
 c['builders'] = opencore_builders + \
-                livablestreets_builders + \
-                full_livablestreets_builders
+                livablestreets_builders #+ \
+                #full_livablestreets_builders
 
 ###########################################################################
 # SCHEDULERS - control when the master decides to fire off a build.
@@ -332,7 +338,7 @@ buildFullLSNightly  = scheduler.Nightly(
 
 c['schedulers'] = [buildOnChange, buildOpencoreNightly,
                    buildLivablestreetsNightly,
-                   buildFullLSNightly
+                   #buildFullLSNightly
                    ]
 
 
