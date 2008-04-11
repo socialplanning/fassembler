@@ -108,7 +108,7 @@ class TaskTrackerProject(Project):
         tasks.SaveCabochonSubscriber({'delete_project' : '/projects/{id}/tasks/project/destroy'}, use_base_port=True),
         ]
 
-    depends_on_projects = ['fassembler:topp']
+    depends_on_projects = ['fassembler:topp', 'fassembler:cabochon']
     depends_on_executables = ['mysql_config']
 
 class CabochonProject(Project):
