@@ -60,6 +60,7 @@ def split_file(path):
     pieces = path.split('/')
     if pieces[0] not in ('opencore', 'sputnik', 'fassembler',
                          'oc-tt', 'oc-js', 'oc-cab',
+                         'oc-feed', 'oc-vacuum',
                          'topp.featurelets', 'topp.utils',
                          'CabochonClient',
                          ):
@@ -222,6 +223,15 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                          '-p', '%s/%s' % (OCBASEDIR, ftestsdir),
                          '-t', 'http://localhost:%d' % baseport,
                          '--verbose',
+                         # Put err.html on stdout as a temporary hack for
+                         # http://trac.openplans.org/openplans/ticket/2561
+                         # A better solution would be to somehow serve
+                         # the file and provide a clickable link to
+                         # it, but that would take actual work.  If we
+                         # want to do that, start by getting the file
+                         # from the slave to the master, via
+                         # buildbot/steps/transfer.py.
+                         '--dump-html', '-',
                          flunc_suite],
                 description='run flunc tests',
                 haltOnFailure=False, flunkOnFailure=True)
@@ -305,8 +315,8 @@ full_livablestreets_builders = [
 
 
 c['builders'] = opencore_builders + \
-                livablestreets_builders #+ \
-                #full_livablestreets_builders
+                livablestreets_builders + \
+                full_livablestreets_builders
 
 ###########################################################################
 # SCHEDULERS - control when the master decides to fire off a build.
@@ -338,7 +348,7 @@ buildFullLSNightly  = scheduler.Nightly(
 
 c['schedulers'] = [buildOnChange, buildOpencoreNightly,
                    buildLivablestreetsNightly,
-                   #buildFullLSNightly
+                   buildFullLSNightly
                    ]
 
 
