@@ -988,7 +988,15 @@ Responses:
         Prompt user to input a password.
         """
         def randpw():
-            return random_string(12, string.ascii_letters + string.digits + "_-!;")
+            while True:
+                pw = random_string(12, string.ascii_letters + string.digits + "_-!;")
+                # Don't start with special characters; if the
+                # generated password starts with "__", it breaks Twill.parse.
+                # (odds of this happening were 1/4356)
+                if pw[0] in string.ascii_letters + string.digits:
+                    break
+            return pw
+            
         if not self.interactive:
             return randpw()
         self.beep_if_necessary()
