@@ -61,6 +61,7 @@ def split_file(path):
     if pieces[0] not in ('opencore', 'sputnik', 'fassembler',
                          'oc-tt', 'oc-js', 'oc-cab',
                          'oc-feed', 'oc-vacuum',
+                         'oc-geotagging',
                          'topp.featurelets', 'topp.utils',
                          'CabochonClient',
                          ):
