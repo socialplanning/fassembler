@@ -187,21 +187,26 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                 haltOnFailure=True)
 
     # Run the zopectl unit tests.
-    for suite in zopectl_suites:
+    for i, suite in enumerate(zopectl_suites):
         fac.addStep(ToppShellCommand, 
                     command=['%s/opencore/zope/bin/zopectl' % OCBASEDIR,
                              'test', '-s',
                              suite],
                     description=['run', suite, 'unit tests'],
                     haltOnFailure=False, flunkOnFailure=True)
+        if i < len(zopectl_suites) -1:
+            # Nobody knows why ZopeTestCase tests sometimes fail
+            # if they're not run in a virgin (no .pyc) environment.
+            # WTF. http://www.openplans.org/projects/opencore/blog/2007/11/29/my-daily-wtf/
+            fac.addStep(ToppShellCommand,
+                        description=['hack to avoid', 'ZopeTestCase wtf'],
+                        command=('find %s/opencore/src/ -name *pyc'
+                                 '-exec rm -f {} \;' % OCBASEDIR),
+                        haltOnFailure=False, flunkOnFailure=False)
 
-    # Run the flunc tests. Wait a bit for services to come up.
-    #
-    # Assume that ports[1] is Zope and takes a long time.
-    # Something like:
-    # while true; do sleep 1; if [ `netstat -nl | grep %d` != "" ]; then break; else sleep 1; fi; done' % (OCBASEDIR, ports[1]),
-    # But this doesn't seem to help; Zope binds the port pretty early but doesn't respond
-    # until it's really up, so we get Deliverance errors.
+    # Run the flunc tests. Wait a bit for services to come up,
+    # to avoid errors from deliverance.
+    # Assume that ports[1] is Zope and takes the longest time.
     fac.addStep(ToppShellCommand, 
                 command='%s/bin/supervisord && sleep 10 && wget --retry-connrefused --tries=10 -T 100 --spider http://localhost:%d' % (OCBASEDIR, ports[1]),
                 description=['start services', 'for functional tests'],
