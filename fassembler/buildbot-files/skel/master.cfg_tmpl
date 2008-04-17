@@ -187,22 +187,13 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                 haltOnFailure=True)
 
     # Run the zopectl unit tests.
-    for i, suite in enumerate(zopectl_suites):
+    for suite in zopectl_suites:
         fac.addStep(ToppShellCommand, 
                     command=['%s/opencore/zope/bin/zopectl' % OCBASEDIR,
                              'test', '-s',
                              suite],
                     description=['run', suite, 'unit tests'],
                     haltOnFailure=False, flunkOnFailure=True)
-        if i < len(zopectl_suites) -1:
-            # Nobody knows why ZopeTestCase tests sometimes fail
-            # if they're not run in a virgin (no .pyc) environment.
-            # WTF. http://www.openplans.org/projects/opencore/blog/2007/11/29/my-daily-wtf/
-            fac.addStep(ToppShellCommand,
-                        description=['hack to avoid', 'ZopeTestCase wtf'],
-                        command=('find %s/opencore/src/ -name "*pyc"'
-                                 ' -exec rm -f {} \;' % OCBASEDIR),
-                        haltOnFailure=False, flunkOnFailure=False)
 
     # Run the flunc tests. Wait a bit for services to come up,
     # to avoid errors from deliverance.
@@ -262,7 +253,7 @@ oc_factory = make_factory(
         'fassembler:zeo',
         ],
     flunc_suite='all', ports=trunkports,
-    zopectl_suites=['opencore', 'Products.listen', 'Products.wicked'],
+    zopectl_suites=['opencore', 'Products.wicked'],
     )
 
 
