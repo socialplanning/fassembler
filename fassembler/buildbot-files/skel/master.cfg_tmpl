@@ -200,8 +200,8 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
             # WTF. http://www.openplans.org/projects/opencore/blog/2007/11/29/my-daily-wtf/
             fac.addStep(ToppShellCommand,
                         description=['hack to avoid', 'ZopeTestCase wtf'],
-                        command=('find %s/opencore/src/ -name *pyc'
-                                 '-exec rm -f {} \;' % OCBASEDIR),
+                        command=('find %s/opencore/src/ -name "*pyc"'
+                                 ' -exec rm -f {} \;' % OCBASEDIR),
                         haltOnFailure=False, flunkOnFailure=False)
 
     # Run the flunc tests. Wait a bit for services to come up,
