@@ -408,7 +408,15 @@ class RunZopectlScript(tasks.Task):
                                            stdout=subprocess.PIPE,
                                            stderr=subprocess.PIPE)
             self.logger.notify('Script running (PID %s)' % script_proc.pid)
-            script_proc.communicate()
+            stdout, stderr = script_proc.communicate()
+            if script_proc.returncode:
+                self.maker.beep_if_necessary()
+                self.logger.warn('Stderr from failed child process:',
+                                 color='red')
+                self.logger.warn(stderr)
+                raise Exception('Command exited %d: %r' %
+                                (script_proc.returncode,
+                                 ' '.join(process_args)))
         else:
             self.maker.beep_if_necessary()
             self.logger.warn('Tried to run zopectl script at %s but the '
