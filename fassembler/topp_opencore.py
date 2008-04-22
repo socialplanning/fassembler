@@ -99,11 +99,19 @@ def make_tarball():
     print 'Moving %s to %s' % (base_name, dest_name)
     shutil.move(os.path.join(dir, base_name), dest_name)
     patch_dir = os.path.join(os.path.dirname(__file__), 'opencore-files', 'patches')
+    # Apply patches.
     for fn in os.listdir(patch_dir):
         fn = os.path.abspath(os.path.join(patch_dir, fn))
-        print 'Running patch -p0 --forward -i %s' % fn
-        proc = subprocess.Popen(['patch', '-p0', '--forward', '-i', fn], cwd=dest_name)
-        proc.communicate()
+        if not os.path.isfile(fn):
+            # Skip directories, anything other than a file or link.
+            continue
+        args = ['patch', '-p0', '--forward', '-i', fn]
+        print 'Running %s' % ' '.join(args)
+        proc = subprocess.Popen(args, cwd=dest_name)
+        stdout, stderr = proc.communicate()
+        if proc.returncode:
+            raise OSError("Got return code %d from %s\nstderr:\n%s" %
+                          (proc.returncode, ' '.join(args), stderr))
     print 'Creating %s' % filename
     print 'Running tar cfj %s Zope (in %s)' % (filename, dir)
     proc = subprocess.Popen(['tar', 'cfj', filename, 'Zope'], cwd=dir)
@@ -341,7 +349,7 @@ class StartZeo(tasks.Task):
         zeoctl_path = self.interpolate('{{env.base_path}}/opencore/zeo/bin/zeoctl')
         if zeo_status_contains(zeoctl_path, 'pid'):
             raise Exception('Zeo is running already. Please stop zeo before running.')
-        subprocess.Popen([zeoctl_path, 'start'], stdout=subprocess.PIPE).communicate()
+        self.maker.run_command([zeoctl_path, 'start'])
         elapsed, TIMEOUT = 0, 30
         while elapsed < TIMEOUT and not zeo_status_contains(zeoctl_path, 'pid'):
             self.logger.notify('Sleeping while zeo starts...')
@@ -366,7 +374,7 @@ class StopZeo(tasks.Task):
         zeoctl_path = self.interpolate('{{env.base_path}}/opencore/zeo/bin/zeoctl')
         if zeo_status_contains(zeoctl_path, 'not running'):
             raise Exception('Expected Zeo to be running but it is not.')
-        subprocess.Popen([zeoctl_path, 'stop'], stdout=subprocess.PIPE).communicate()
+        self.maker.run_command([zeoctl_path, 'stop'])
         elapsed, TIMEOUT = 0, 30
         while elapsed < TIMEOUT and not zeo_status_contains(zeoctl_path, 'not running'):
             self.logger.notify('Sleeping while zeo stops...')
@@ -404,19 +412,7 @@ class RunZopectlScript(tasks.Task):
             zopectl_path = self.interpolate('{{env.base_path}}/opencore/zope/bin/zopectl')
             process_args = [zopectl_path, 'run', self.script_path]
             process_args.append(self.script_args)
-            script_proc = subprocess.Popen(process_args,
-                                           stdout=subprocess.PIPE,
-                                           stderr=subprocess.PIPE)
-            self.logger.notify('Script running (PID %s)' % script_proc.pid)
-            stdout, stderr = script_proc.communicate()
-            if script_proc.returncode:
-                self.maker.beep_if_necessary()
-                self.logger.warn('Stderr from failed child process:',
-                                 color='red')
-                self.logger.warn(stderr)
-                raise Exception('Command exited %d: %r' %
-                                (script_proc.returncode,
-                                 ' '.join(process_args)))
+            self.maker.run_command(process_args)
         else:
             self.maker.beep_if_necessary()
             self.logger.warn('Tried to run zopectl script at %s but the '

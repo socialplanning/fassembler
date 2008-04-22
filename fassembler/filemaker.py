@@ -629,7 +629,8 @@ class Maker(object):
             raise OSError(
                 "The expected executable %s was not found (%s)"
                 % (cmd, e))
-        self.logger.info('Running %s' % self._format_command(cmd))
+        self.logger.info('Running %s (PID %s)' % (self._format_command(cmd),
+                                                  proc.pid))
         if env != os.environ:
             self.logger.debug('Using environment overrides: %s' % dict_diff(env, os.environ))
         if cwd != self.base_path:
