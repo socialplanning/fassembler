@@ -27,21 +27,6 @@ tarball_url = 'https://svn.openplans.org/eggs/OpenplansZope-%s.tar.bz2' % tarbal
 orig_zope_source = 'http://www.zope.org/Products/Zope/2.9.8/Zope-2.9.8-final.tgz'
 
 
-def retrieve(url, filename):
-    """
-    Download a file and store it at filename.
-
-    Prior to python 2.5, urllib is too stupid to complain if the
-    download is interrupted.  So we manually check the size.
-    """
-    fn, headers = urllib.urlretrieve(url, filename)
-    expected = int(headers.getheader('Content-Length'))
-    retrieved = os.stat(filename).st_size    
-    assert expected <= retrieved, \
-           ("Download url %s failed! Expected %d bytes; got %d in file %s" %
-            (url, expected, retrieved, filename))
-
-
 class InstallZope(tasks.InstallTarball):
 
     version_path = interpolated('version_path')
@@ -86,7 +71,13 @@ def make_tarball():
         print '%s already exists; not downloading' % tgz_filename
     else:
         print 'Downloading %s to %s' % (orig_zope_source, tgz_filename)
-        retrieve(orig_zope_source, tgz_filename)
+        proc = subprocess.Popen(['wget', '-q', orig_zope_source, '-O',
+                                 tgz_filename])
+        stdout, stderr = proc.communicate()
+        if proc.returncode:
+            raise Exception("Failure downloading %s:\n%s" % (orig_zope_source,
+                                                            stderr))
+        
     print 'Unpacking'
     print 'Running tar zfx %s (in %s)' % (tgz_filename, dir)
     proc = subprocess.Popen(['tar', 'zfx', os.path.basename(tgz_filename)], cwd=dir)
@@ -170,7 +161,7 @@ class GetBundleTarball(tasks.Task):
         delete_tmp_fn = False
         try:
             if not self.maker.simulate:
-                retrieve(url, tmp_fn)
+                self.maker.retrieve(url, tmp_fn)
             self.maker.ensure_dir(self.dest)
             self.logger.notify('Unpacking into %s' % self.dest)
             ## FIXME: is it really okay just to unpack right over whatever might already be there?

@@ -8,7 +8,6 @@ import os
 import re
 import subprocess
 import sys
-import urllib
 import urlparse
 
 from fassembler.distutilspatch import find_distutils_file, update_distutils_file
@@ -1498,10 +1497,18 @@ class InstallTarball(Task):
             else:
                 self.logger.notify('Downloading %s to %s' % (url, tmp_fn))
                 if not self.maker.simulate:
-                    urllib.urlretrieve(url, tmp_fn)
+                    self.maker.retrieve(url, tmp_fn)
             self.maker.ensure_dir(os.path.dirname(self.dest_path))
+            if tmp_fn.endswith('gz'):
+                tarflags = 'zfx'
+            elif tmp_fn.endswith('bz2'):
+                tarflags = 'jfx'
+            elif tmp_fn.endswith('tar'):
+                tarflags = 'fx'
+            else:
+                raise Exception("Don't know how to untar file %r" % tmp_fn)
             self.maker.run_command(
-                'tar', 'jfx', tmp_fn,
+                'tar', tarflags, tmp_fn,
                 cwd=os.path.dirname(self.dest_path))
             self.post_unpack_hook()
             delete_tmp_fn = True

@@ -1117,6 +1117,14 @@ Responses:
             else:
                 assert 0
 
+    def retrieve(self, url, filename):
+        """Download a file and store it at filename.
+        Depends on wget because urllib isn't reliable enough with large files
+        and real networks.
+        """
+        self.run_command(['wget', '-q', url, '-O', filename])
+
+
 def popdefault(dict, name, default=None):
     """
     Used to handle keyword-only arguments.
