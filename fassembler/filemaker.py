@@ -8,7 +8,6 @@ Everything happens in the Maker object.
 # This was originally based on paste.filemaker
 import os
 import sys
-import glob
 import re
 import shutil
 import string
@@ -939,7 +938,7 @@ Responses:
         """
         # In order to ensure that we don't leak temporary files, we perform
         # this in three stages, creation, setup, and working with the files.
-        from subprocess import Popen, PIPE
+        from subprocess import Popen
         import tempfile
         import os
         # Phase 1: Temporary file creation
@@ -1122,7 +1121,7 @@ Responses:
         Depends on wget because urllib isn't reliable enough with large files
         and real networks.
         """
-        self.run_command(['wget', '-q', url, '-O', filename])
+        self.run_command(['wget', url, '-O', filename])
 
 
 def popdefault(dict, name, default=None):
