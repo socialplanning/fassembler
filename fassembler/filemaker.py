@@ -1121,7 +1121,7 @@ Responses:
         Depends on wget because urllib isn't reliable enough with large files
         and real networks.
         """
-        self.run_command(['wget', url, '-O', filename])
+        self.run_command(['wget', '--no-check-certificate', url, '-O', filename])
 
 
 def popdefault(dict, name, default=None):
