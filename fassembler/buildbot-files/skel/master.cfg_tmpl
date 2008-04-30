@@ -75,6 +75,20 @@ def split_file(path):
         branch = pieces[2]
         filepath = '/'.join(pieces[3:])
         return (branch, filepath)
+    elif pieces[1] == 'plugins':
+        if len(pieces) > 3: 
+            if pieces[3] == 'branches' and len(pieces) > 4:
+                branch = pieces[4]
+                filepath = '/'.join(pieces[4:])
+            else:
+                branch = pieces[3]
+                filepath = '/'.join(pieces[3:])
+            return (branch, filepath)
+        else:
+            log.msg("ignoring file %s, maybe a tag?" % path)
+            return None
+        filepath = '/'.join(pieces[3:])
+        return (branch, filepath)
     else:
         log.msg("ignoring file %s, maybe a tag?" % path)
         return None
