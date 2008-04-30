@@ -135,6 +135,27 @@ class ToppShellCommand(ShellCommand):
         # Writing out two separate descriptions is too much work.
         return self.description
 
+class ToppShellScript(ToppShellCommand):
+
+    """Given source text of a bash script, run it on the build
+    slave."""
+
+    def __init__(self, *args, **kw):
+        """
+        Needs a 'sourcetext' keyword arg, and optionally 'scriptargs'
+        (a single string of all arguments, which should already be
+        quoted as necessary).
+        """
+        commandvars = kw.copy()
+        commandvars.setdefault('scriptargs', '')
+        commandvars['delim'] = '__123_END_OF_SCRIPT_123__'
+        # This works as expected, and seems pretty safe against quote
+        # issues and the like.  Uses a somewhat obscure bash trick: a
+        # here document with disabled param substitution (by
+        # single-quoting the delimiter).
+        command = "cat <<'%(delim)s' | bash -s %(scriptargs)s\n%(sourcetext)s\n%(delim)s\n" % commandvars
+        kw['command'] = command
+        ToppShellCommand.__init__(self, *args, **kw)
 
 
 def make_factory(name, baseport=BASEPORT, requirements_repo=None,
