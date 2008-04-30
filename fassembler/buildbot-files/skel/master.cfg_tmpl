@@ -173,6 +173,8 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
     
     # Accept certificates (for svn).
     # XXX is there an easier way to find the right bin directory?
+    # XXX We should instead use ToppShellScript so slaves don't have to
+    # be updated if the script changes.
     fac.addStep(ToppShellCommand,
                 command='{{os.path.join("..", "..", "bin", "accept_certificates.sh")}}',
                 description=['accept svn certs',],
@@ -180,6 +182,8 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
 
     # Clean up after previous runs.
     # For some reason, portkill seems to always exit 1, so ignore "failures".
+    # XXX We should instead use ToppShellScript so slaves don't have to
+    # be updated if the script changes.
     if ports:
         fac.addStep(ToppShellCommand,
                     command=['{{os.path.join("..", "..", "bin", "portkill")}}',
@@ -193,12 +197,8 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
 
     # Bootstrap the topp build tools (fassembler).
     fac.addStep(ToppShellCommand,
-                command='svn export https://svn.openplans.org/svn/fassembler/trunk/fassembler-boot.py',   # string instead of list causes it to be run via sh.
-                description=['get fassembler', 'bootstrap script'],
-                haltOnFailure=True)
-
-    fac.addStep(ToppShellCommand,
-                command=['python', 'fassembler-boot.py', 'oc'],
+                # string instead of list causes it to be run via sh.
+                command='svn cat https://svn.openplans.org/svn/fassembler/trunk/fassembler-boot.py | python - oc',
                 description='bootstrap fassembler',
                 haltOnFailure=True)
 
@@ -238,8 +238,7 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
     sleep 10
     wget --retry-connrefused --tries=10 -T 100 --spider http://localhost:%d
     """ % (OCBASEDIR, ports[1])
-    fac.addStep(ToppShellScript, #ShellCommand, 
-                #command='%s/bin/supervisord && sleep 10 && wget --retry-connrefused --tries=10 -T 100 --spider http://localhost:%d' % (OCBASEDIR, ports[1]),
+    fac.addStep(ToppShellScript,
                 sourcetext=startscript,
                 description=['start services', 'for functional tests'],
                 haltOnFailure=True)
