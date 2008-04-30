@@ -110,6 +110,7 @@ class BuildBotProject(Project):
         tasks.VirtualEnv(),
         tasks.InstallSpec('Install buildbot dependencies',
                           '{{config.spec}}'),
+
         ]
 
 
@@ -160,6 +161,9 @@ class BuildSlaveProject(BuildBotProject):
         ]
 
     actions = BuildBotProject.actions + [
+        tasks.EnsureDir('Make sure src directory exists',
+                        '{{os.path.join(config.buildslave_dir, "src")}}',
+                        svn_add=False),
         tasks.EnsureFile(
             'Install the accept_certificates script',
             '{{os.path.join(config.buildslave_dir, "bin", "accept_certificates.sh")}}',
@@ -196,10 +200,5 @@ class BuildSlaveProject(BuildBotProject):
              '{{os.path.join(config.buildslave_dir, "info", "admin")}}',
              content_path='{{os.path.join(project.skel_dir, "admin_tmpl")}}',
              force_overwrite=True, svn_add=False),
-        tasks.EnsureFile(
-            'Install the test wrapper maker',
-            '{{os.path.join(config.buildslave_dir, "bin", "mkzopetest.sh")}}',
-            content_path='{{os.path.join(project.skel_dir, "mkzopetest.sh")}}',
-            force_overwrite=True, svn_add=False, executable=True),
 
         ]
