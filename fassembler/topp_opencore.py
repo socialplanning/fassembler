@@ -90,20 +90,30 @@ def make_tarball(tarball_version, tarball_url_dir, orig_zope_source):
         shutil.rmtree(dest_name)
     print 'Moving %s to %s' % (base_name, dest_name)
     shutil.move(os.path.join(dir, base_name), dest_name)
-    patch_dir = os.path.join(os.path.dirname(__file__), 'opencore-files', 'patches')
-    # Apply patches.
-    for fn in os.listdir(patch_dir):
-        fn = os.path.abspath(os.path.join(patch_dir, fn))
-        if not os.path.isfile(fn):
-            # Skip directories, anything other than a file or link.
-            continue
-        args = ['patch', '-p0', '--forward', '-i', fn]
-        print 'Running %s' % ' '.join(args)
-        proc = subprocess.Popen(args, cwd=dest_name)
-        stdout, stderr = proc.communicate()
-        if proc.returncode:
-            raise OSError("Got return code %d from %s\nstderr:\n%s" %
-                          (proc.returncode, ' '.join(args), stderr))
+    patch_dir_prefix = os.path.join(os.path.dirname(__file__),
+                                    'opencore-files',
+                                    'patches')
+    patch_dirs = glob(patch_dir_prefix+'*')
+    patch_dir = None
+    for pdir in patch_dirs:
+        pdir_version = pdir.split('_')[-1]
+        if tarball_version.startswith(pdir_version):
+            patch_dir = pdir
+            break
+    if patch_dir is not None:
+        # Apply patches.
+        for fn in os.listdir(patch_dir):
+            fn = os.path.abspath(os.path.join(patch_dir, fn))
+            if not os.path.isfile(fn):
+                # Skip directories, anything other than a file or link.
+                continue
+            args = ['patch', '-p0', '--forward', '-i', fn]
+            print 'Running %s' % ' '.join(args)
+            proc = subprocess.Popen(args, cwd=dest_name)
+            stdout, stderr = proc.communicate()
+            if proc.returncode:
+                raise OSError("Got return code %d from %s\nstderr:\n%s" %
+                              (proc.returncode, ' '.join(args), stderr))
     print 'Creating %s' % filename
     print 'Running tar cfj %s Zope (in %s)' % (filename, dir)
     proc = subprocess.Popen(['tar', 'cfj', filename, 'Zope'], cwd=dir)

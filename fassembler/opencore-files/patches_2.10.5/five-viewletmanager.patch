@@ -1,0 +1,21 @@
+Index: lib/python/Products/Five/viewlet/manager.py
+===================================================================
+--- lib/python/Products/Five/viewlet/manager.py	(revision 84292)
++++ lib/python/Products/Five/viewlet/manager.py	(working copy)
+@@ -25,6 +25,7 @@
+ from Products.Five.browser.pagetemplatefile import ZopeTwoPageTemplateFile
+ 
+ aq_base = Acquisition.aq_base
++aq_inner = Acquisition.aq_inner
+ 
+ class ViewletManagerBase(origManagerBase, Acquisition.Explicit):
+     """A base class for Viewlet managers to work in Zope2"""
+@@ -65,7 +66,7 @@
+         # the object has a real context from which to determine owner
+         # security.
+         for name, viewlet in viewlets:
+-            viewlet = viewlet.__of__(viewlet.context)
++            viewlet = viewlet.__of__(aq_inner(viewlet.context))
+             if guarded_hasattr(viewlet, 'render'):
+                 results.append((name, viewlet))
+         return results
