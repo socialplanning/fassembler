@@ -22,18 +22,14 @@ if sys.version >= (2, 5):
 
 warnings.filterwarnings('ignore', 'tempnam is .*')
 
-tarball_version = '2.9.8openplans.3'
-tarball_url = 'https://svn.openplans.org/eggs/OpenplansZope-%s.tar.bz2' % tarball_version
-orig_zope_source = 'http://www.zope.org/Products/Zope/2.9.8/Zope-2.9.8-final.tgz'
-
 
 class InstallZope(tasks.InstallTarball):
 
     version_path = interpolated('version_path')
-    _tarball_url = tarball_url
-    _orig_source = orig_zope_source
+    _tarball_url = interpolated('_tarball_url')
+    _orig_source = interpolated('_orig_source')
     _src_name = 'Zope'
-    _tarball_version = tarball_version
+    _tarball_version = interpolated('_tarball_version')
 
     description = """
     Install {{task._src_name}} into {{task.dest_path}}.
@@ -45,6 +41,9 @@ class InstallZope(tasks.InstallTarball):
     def __init__(self, stacklevel=1):
         super(InstallZope, self).__init__(stacklevel)
         self.version_path = '{{task.dest_path}}/opencore_tarball_version.txt'
+        self._tarball_url = '{{config.zope_tarball_url}}'
+        self._orig_source = '{{config.zope_orig_source}}'
+        self._tarball_version = '{{config.zope_tarball_version}'
 
     def is_up_to_date(self):
         if os.path.exists(self.version_path):
@@ -60,7 +59,9 @@ class InstallZope(tasks.InstallTarball):
                                svn_add=False)
 
 
-def make_tarball():
+def make_tarball(tarball_version, tarball_url_dir, orig_zope_source):
+    tarball_url = '%s/OpenplansZope-%s.tar.bz2' % (tarball_url_dir,
+                                                   tarball_version)
     filename = os.path.basename(tarball_url)
     dir = 'tmp-download'
     if not os.path.exists(dir):
@@ -509,6 +510,15 @@ class OpenCoreProject(OpenCoreBase):
         Setting('email_confirmation',
                 default='1',  # opencore ftests expect it turned on!
                 help='Whether to send email configuration'),
+        Setting('zope_tarball_version',
+                default='2.9.8openplans.3',
+                help='Version suffix for the Zope source tarball'),
+        Setting('zope_tarball_url',
+                default='{{config.opencore_bundle_tar_dir}}/OpenplansZope-{{config.zope_tarball_version}}.tar.bz2',
+                help='URL of the Zope source tarball'),
+        Setting('zope_orig_source',
+                default='http://www.zope.org/Products/Zope/2.9.8/Zope-2.9.8-final.tgz',
+                help='URL of the original Zope source tarball upon which the OpenPlans tarball is based'),
         ## FIXME: this could differ for different profiles
         ## e.g., there's another bundle at:
         ##   https://svn.openplans.org/svn/deployment/products-plone25
@@ -821,4 +831,7 @@ execfile(config_location)
 
 
 if __name__ == '__main__':
-    make_tarball()
+    if len(sys.argv) < 4:
+        print 'Usage: %s TARBALL_VERSION TARBALL_URL_DIR ZOPE_SOURCE_URL' % sys.argv[0]
+        sys.exit()
+    make_tarball(sys.argv[1], sys.argv[2], sys.argv[3])
