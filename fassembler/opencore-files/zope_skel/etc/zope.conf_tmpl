@@ -85,7 +85,7 @@ default-zpublisher-encoding utf-8
   topp_secret_filename  {{env.config.get('general', 'topp_secret_filename')}}
 </product-config>
 
-%import Products.ClockServer
+{{if config.zope_tarball_version.startswith('2.9')}}%import Products.ClockServer{{endif}}
 <clock-server>
   {{# FIXME: should /openplans/ be a variable?  It used to be in topp.build.opencore}}
   method /openplans/portal_catalog_queue/manage_process
