@@ -22,18 +22,14 @@ if sys.version >= (2, 5):
 
 warnings.filterwarnings('ignore', 'tempnam is .*')
 
-tarball_version = '2.9.8openplans.3'
-tarball_url = 'https://svn.openplans.org/eggs/OpenplansZope-%s.tar.bz2' % tarball_version
-orig_zope_source = 'http://www.zope.org/Products/Zope/2.9.8/Zope-2.9.8-final.tgz'
-
 
 class InstallZope(tasks.InstallTarball):
 
     version_path = interpolated('version_path')
-    _tarball_url = tarball_url
-    _orig_source = orig_zope_source
+    _tarball_url = interpolated('_tarball_url')
+    _orig_source = interpolated('_orig_source')
     _src_name = 'Zope'
-    _tarball_version = tarball_version
+    _tarball_version = interpolated('_tarball_version')
 
     description = """
     Install {{task._src_name}} into {{task.dest_path}}.
@@ -45,6 +41,9 @@ class InstallZope(tasks.InstallTarball):
     def __init__(self, stacklevel=1):
         super(InstallZope, self).__init__(stacklevel)
         self.version_path = '{{task.dest_path}}/opencore_tarball_version.txt'
+        self._tarball_url = '{{config.zope_tarball_url}}'
+        self._orig_source = '{{config.zope_orig_source}}'
+        self._tarball_version = '{{config.zope_tarball_version}}'
 
     def is_up_to_date(self):
         if os.path.exists(self.version_path):
@@ -60,7 +59,9 @@ class InstallZope(tasks.InstallTarball):
                                svn_add=False)
 
 
-def make_tarball():
+def make_tarball(tarball_version, tarball_url_dir, orig_zope_source):
+    tarball_url = '%s/OpenplansZope-%s.tar.bz2' % (tarball_url_dir,
+                                                   tarball_version)
     filename = os.path.basename(tarball_url)
     dir = 'tmp-download'
     if not os.path.exists(dir):
@@ -89,20 +90,30 @@ def make_tarball():
         shutil.rmtree(dest_name)
     print 'Moving %s to %s' % (base_name, dest_name)
     shutil.move(os.path.join(dir, base_name), dest_name)
-    patch_dir = os.path.join(os.path.dirname(__file__), 'opencore-files', 'patches')
-    # Apply patches.
-    for fn in os.listdir(patch_dir):
-        fn = os.path.abspath(os.path.join(patch_dir, fn))
-        if not os.path.isfile(fn):
-            # Skip directories, anything other than a file or link.
-            continue
-        args = ['patch', '-p0', '--forward', '-i', fn]
-        print 'Running %s' % ' '.join(args)
-        proc = subprocess.Popen(args, cwd=dest_name)
-        stdout, stderr = proc.communicate()
-        if proc.returncode:
-            raise OSError("Got return code %d from %s\nstderr:\n%s" %
-                          (proc.returncode, ' '.join(args), stderr))
+    patch_dir_prefix = os.path.join(os.path.dirname(__file__),
+                                    'opencore-files',
+                                    'patches')
+    patch_dirs = glob(patch_dir_prefix+'*')
+    patch_dir = None
+    for pdir in patch_dirs:
+        pdir_version = pdir.split('_')[-1]
+        if tarball_version.startswith(pdir_version):
+            patch_dir = pdir
+            break
+    if patch_dir is not None:
+        # Apply patches.
+        for fn in os.listdir(patch_dir):
+            fn = os.path.abspath(os.path.join(patch_dir, fn))
+            if not os.path.isfile(fn):
+                # Skip directories, anything other than a file or link.
+                continue
+            args = ['patch', '-p0', '--forward', '-i', fn]
+            print 'Running %s' % ' '.join(args)
+            proc = subprocess.Popen(args, cwd=dest_name)
+            stdout, stderr = proc.communicate()
+            if proc.returncode:
+                raise OSError("Got return code %d from %s\nstderr:\n%s" %
+                              (proc.returncode, ' '.join(args), stderr))
     print 'Creating %s' % filename
     print 'Running tar cfj %s Zope (in %s)' % (filename, dir)
     proc = subprocess.Popen(['tar', 'cfj', filename, 'Zope'], cwd=dir)
@@ -416,8 +427,6 @@ class PatchTwill(tasks.Task):
     patch twill so it doesn't print out those horrible AT LINE commands;
     this should be removed if upstream fix is committed
     """
-    
-
     def run(self):
         
         # get around readline printing strange things 
@@ -437,6 +446,20 @@ class PatchTwill(tasks.Task):
         parse = file(filename, 'w')
         print >> parse, ''.join(lines)
         parse.close()
+
+
+class PatchFive(tasks.Patch):
+    """
+    The Five product might be in the opencore bundle, or we might be
+    using the one in the Zope tree, depending on the Zope version.
+    The Zope version will already have been patched; we want this one
+    to fail silently if there's no Five in the bundle.
+    """
+    def run(self):
+        if not os.path.exists(self.dest):
+            self.logger.notify('No Five in opencore bundle, skipping patch')
+            return
+        return tasks.Patch.run(self)
 
 
 class OpenCoreBase(Project):
@@ -509,6 +532,15 @@ class OpenCoreProject(OpenCoreBase):
         Setting('email_confirmation',
                 default='1',  # opencore ftests expect it turned on!
                 help='Whether to send email configuration'),
+        Setting('zope_tarball_version',
+                default='2.9.8openplans.3',
+                help='Version suffix for the Zope source tarball'),
+        Setting('zope_tarball_url',
+                default='{{config.opencore_bundle_tar_dir}}/OpenplansZope-{{config.zope_tarball_version}}.tar.bz2',
+                help='URL of the Zope source tarball'),
+        Setting('zope_orig_source',
+                default='http://www.zope.org/Products/Zope/2.9.8/Zope-2.9.8-final.tgz',
+                help='URL of the original Zope source tarball upon which the OpenPlans tarball is based'),
         ## FIXME: this could differ for different profiles
         ## e.g., there's another bundle at:
         ##   https://svn.openplans.org/svn/deployment/products-plone25
@@ -557,6 +589,7 @@ setglobal projtxt    '{{env.config.get("general", "projtxt")}}'
 setglobal projprefs    '{{env.config.get("general", "projprefs")}}'
 """
 
+
     actions = [
         tasks.SaveSetting('Save application settings',
                           {'opencore_vacuum_whitelist': '{{config.opencore_vacuum_whitelist}}'},
@@ -602,9 +635,9 @@ setglobal projprefs    '{{env.config.get("general", "projprefs")}}'
                         exclude_glob='{{env.base_path}}/opencore/src/opencore-bundle/ClockServer'),
         ## FIXME: linkzope and linkzopebinaries?
         PlaceZopeConfig('Copy Zope etc into build etc'),
-        tasks.Patch(name='Patch Five viewlet security acquisition (see http://trac.openplans.org/openplans/ticket/2026)',
-                    files='{{env.base_path}}/fassembler/src/fassembler/fassembler/opencore-files/five-viewletmanager.patch',
-                    dest='{{env.base_path}}/opencore/src/opencore-bundle/Five'),
+        PatchFive(name='Patch Five viewlet security acquisition (see http://trac.openplans.org/openplans/ticket/2026)',
+                  files='{{env.base_path}}/fassembler/src/fassembler/fassembler/opencore-files/five-viewletmanager.patch',
+                  dest='{{env.base_path}}/src/opencore-bundle/Five'),
         SymlinkZopeConfig('Symlink Zope configuration'),
         tasks.ForEach('Run zinstalls',
                       'package_name',
@@ -645,7 +678,7 @@ setglobal projprefs    '{{env.config.get("general", "projprefs")}}'
             svn_add=False, overwrite=True),
         PatchTwill('Patch twill configuration to avoid printing extraneous "AT LINE"s'),
         ]
-    
+
 
     depends_on_projects = ['fassembler:topp']
 
@@ -821,4 +854,7 @@ execfile(config_location)
 
 
 if __name__ == '__main__':
-    make_tarball()
+    if len(sys.argv) < 4:
+        print 'Usage: %s TARBALL_VERSION TARBALL_URL_DIR ZOPE_SOURCE_URL' % sys.argv[0]
+        sys.exit()
+    make_tarball(sys.argv[1], sys.argv[2], sys.argv[3])
