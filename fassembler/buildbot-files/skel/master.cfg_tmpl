@@ -271,6 +271,7 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
 
 oc_factory = make_factory(
     'Openplans (partial stack)', baseport=BASEPORT,
+    requirements_repo='https://svn.openplans.org/svn/build/requirements/openplans/trunk',
     ftestsdir='opencore/src/opencore/ftests/',
     fassembler_targets=[
         'fassembler:supervisor',
