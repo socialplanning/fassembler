@@ -762,7 +762,7 @@ class CheckMySQLDatabase(Task):
         conn = MySQLdb.connect(
             host=self.db_host,
             user='root',
-            **self.passkw(self.db_root_password))
+            **self.passkw(self._root_password_override or self.db_root_password))
         plan = 'CREATE DATABASE %s' % self.db_name
         self.logger.info('Executing %s' % plan)
         if not self.maker.simulate:
