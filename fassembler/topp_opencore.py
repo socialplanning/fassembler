@@ -596,7 +596,8 @@ setglobal projprefs    '{{env.config.get("general", "projprefs")}}'
 
     actions = [
         tasks.SaveSetting('Save application settings',
-                          {'opencore_vacuum_whitelist': '{{config.opencore_vacuum_whitelist}}'},
+                          {'opencore_vacuum_whitelist': '{{config.opencore_vacuum_whitelist}}',
+                           'opencore_embed_whitelist':  '{{config.opencore_embed_whitelist}}',}
                           section='applications'),
         tasks.VirtualEnv(),
         tasks.SetDistutilsValue('Disable zipped eggs',
