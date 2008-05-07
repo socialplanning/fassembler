@@ -836,6 +836,18 @@ class Maker(object):
 
     all_answer = None
 
+    def colorize_diff(self, text):
+        """Colorize a diff for output on a terminal, if possible.
+        """
+        if not self.logger.supports_color(sys.stdout):
+            return text
+        try:
+            from pygments import highlight, lexers, formatters
+        except ImportError:
+            return text
+        return highlight(text, lexers.get_lexer_by_name('diff'),
+                         formatters.get_formatter_by_name('terminal'))
+
     def ask_difference(self, dest_fn, message, new_content, cur_content):
         """
         Ask about the differences between two files, and whether the
@@ -902,9 +914,9 @@ class Maker(object):
             elif response[0] == 'n':
                 return False
             elif response == 'dc':
-                print '\n'.join(c_diff)
+                print self.colorize_diff('\n'.join(c_diff))
             elif response[0] == 'd':
-                print '\n'.join(u_diff)
+                print self.colorize_diff('\n'.join(u_diff))
             elif response[0] == 't':
                 # Hidden feature
                 import traceback
