@@ -3,7 +3,6 @@ import socket
 from fassembler.config import ConfigParser
 import string
 import random
-import subprocess
 from datetime import datetime
 
 secret_chars = string.ascii_letters + string.digits + '!@#$%^&*()[]|_-+=;:.,<>'
