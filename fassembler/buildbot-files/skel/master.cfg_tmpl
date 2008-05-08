@@ -174,6 +174,8 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
     # XXX is there an easier way to find the right bin directory?
     # XXX We should instead use ToppShellScript so slaves don't have to
     # be updated if the script changes.
+    # Or, use buildbot's FileDownload to first send the file from
+    # master to slave.
     fac.addStep(ToppShellCommand,
                 command='{{os.path.join("..", "..", "bin", "accept_certificates.sh")}}',
                 description=['accept svn certs',],
