@@ -156,9 +156,6 @@ class ToppProject(Project):
         Setting('projprefs',
                 default='{{project.req_settings.get("projprefs", "Preferences")}}',
                 help='Displayed name for opencore project/group settings'),
-        Setting('openplans_svn_revision',
-                help='revision number to override anything in req files (only applies to checkouts from svn.openplans.org)',
-                default=''),
 
         ]
 
@@ -188,7 +185,6 @@ class ToppProject(Project):
                            'projtxt': '{{config.projtxt}}',
                            'projprefs': '{{config.projprefs}}',
                            'etc_svn_subdir': '{{config.etc_svn_subdir}}',
-                           'openplans_svn_revision': '{{config.openplans_svn_revision}}'
                            }),
         tasks.SaveSetting(
             'Save google maps API key settings',
@@ -234,7 +230,7 @@ class SupervisorProject(Project):
                 default='10',
                 help='Offset from base_port for HTTP server'),
         ]
-
+    
     actions = [
         tasks.VirtualEnv(),
         tasks.InstallSpec('Install Supervisor',

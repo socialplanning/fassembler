@@ -380,18 +380,11 @@ class SvnCheckout(Task):
         if base and self.create_if_necessary and base.startswith('file:'):
             self.confirm_repository(base)
         full_repo = self.full_repository
-        revision = None
         if self.create_if_necessary:
             created = self.confirm_directory(full_repo)
         else:
             created = False
-            if full_repo.count('svn.openplans.org'):
-                try:
-                    revision = self.environ.config.get(
-                        'general', 'openplans_svn_revision') or revision
-                except:
-                    pass
-        self.maker.checkout_svn(full_repo, self.dest, revision=revision)
+        self.maker.checkout_svn(full_repo, self.dest)
         if created and self.on_create_set_props:
             for name, value in sorted(self.on_create_set_props.items()):
                 self.logger.notify('Setting property %s to %r' % (name, value))
@@ -1127,12 +1120,6 @@ class InstallSpec(Task):
         if match:
             svn = svn[:match.start()]
             revision = match.group(1)
-        if svn.count('svn.openplans.org'):
-            try:
-                revision = self.environ.config.get(
-                    'general', 'openplans_svn_revision') or revision
-            except:
-                pass
         ops.append(svn)
         if name is None:
             parts = [p for p in svn.split('/') if p]

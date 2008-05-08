@@ -380,4 +380,5 @@ class Setting(object):
                 value = value.encode('string_escape')
             return value
         return repr(value)
+            
         
