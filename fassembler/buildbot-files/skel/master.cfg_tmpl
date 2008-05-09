@@ -221,7 +221,14 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                 command=buildcmd + fassembler_targets,
                 description=['build', name, 'and dependencies'],
                 haltOnFailure=True)
-
+    # What got built? Useful for forensics.
+    ocbin = '%s/opencore/bin/' % OCBASEDIR
+    poachscript = ("%s/easy_install "
+                   "https://svn.openplans.org/svn/PoachEggs/trunk/"
+                   " && %s/poach-eggs --freeze=-" % (ocbin, ocbin))
+    fac.addStep(ToppShellScript, sourcetext=poachscript,
+                description=["What got built", "for opencore?"],
+                haltOnFailure=False, flunkOnFailure=False)
     # Run the zopectl unit tests.
     for suite in zopectl_suites:
         fac.addStep(ToppShellCommand, 
