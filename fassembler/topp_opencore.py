@@ -265,19 +265,22 @@ class PlaceZopeConfig(ZopeConfigTask):
                             self.build_profile_path,
                             add_dest_to_svn=True)
 
+
         # fix values in properties.xml and propertiestool.xml
-        # FIXME this should be done with templates
+        # XXX these settings should eventually live in build.ini and
+        # opencore should retrieve them via the IProvideSiteConfig utility
 
         def get_from_config(option, section='general'):
             if self.environ.config.has_option(section, option):
                 return self.environ.config.get(section, option)
             return self.project.get_req_setting(option)
 
+        properties_path = '%s/properties.xml' % self.build_profile_path
+        doc = minidom.parse(properties_path)
+
         email_from_address = get_from_config('email_from_address')
         opencore_site_title = get_from_config('opencore_site_title')
 
-        properties_path = '%s/properties.xml' % self.build_profile_path
-        doc = minidom.parse(properties_path)
         for node in doc.getElementsByTagName('property'):
             name = node.getAttribute('name')
             if name == u'title':
@@ -292,20 +295,9 @@ class PlaceZopeConfig(ZopeConfigTask):
 
         mailing_list_fqdn = get_from_config('mailing_list_fqdn')
 
-        # XXX warning: provisional code: the *_uri settings should not live in propertiestool.xml
-        uri_dict = {'tasktracker uri': None, 'cabochon uri': None, 'wordpress uri': None, 'twirlip uri': None}
-        for i in uri_dict.keys():
-            if self.environ.config.has_option('applications', i):
-                uri_dict[i] = doc.createTextNode(self.environ.config.get('applications', i))
-            else:
-                del uri_dict[i]
-
         for node in doc.getElementsByTagName('property'):
             name = node.getAttribute('name')
-            name_ = str(name).replace('_', ' ')
-            if uri_dict.has_key(name_):
-                node.appendChild(uri_dict[name_])
-            elif name == u'mailing_list_fqdn':
+            if name == u'mailing_list_fqdn':
                 node.firstChild.data = unicode(mailing_list_fqdn)
             
         doc.writexml(open(propertiestool_path, 'w'))
