@@ -385,7 +385,7 @@ class SvnCheckout(Task):
             created = self.confirm_directory(full_repo)
         else:
             created = False
-            if full_repo.count('svn.openplans.org'):
+            if full_repo.count('svn.openplans.org/svn'):
                 try:
                     revision = self.environ.config.get(
                         'general', 'openplans_svn_revision') or revision
@@ -1127,7 +1127,7 @@ class InstallSpec(Task):
         if match:
             svn = svn[:match.start()]
             revision = match.group(1)
-        if svn.count('svn.openplans.org'):
+        if svn.count('svn.openplans.org/svn'):
             try:
                 revision = self.environ.config.get(
                     'general', 'openplans_svn_revision') or revision
