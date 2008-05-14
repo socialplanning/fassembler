@@ -666,8 +666,7 @@ class CheckMySQLDatabase(Task):
     If it does not exist, create the database.  If the database does
     exist, make sure that the user has full access.
 
-    This will connect as root to create the database if necessary,
-    using {{if not task.db_root_password}}no password{{else}}the password {{repr(task.db_root_password)}}{{endif}}
+    This will connect as root to create the database if necessary.
     """
 
     def __init__(self, name, db_name='{{config.db_name}}',
