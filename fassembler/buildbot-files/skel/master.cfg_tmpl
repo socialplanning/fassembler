@@ -175,7 +175,7 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
     # Run the build.
     buildcmd = ['%s/bin/fassembler' % OCBASEDIR,
                 '--no-interactive',
-		'-vvv',  # very very verbose!
+		'-vv',  # pretty verbose!
                 'var=%s/var' % OCBASEDIR,
                 'base_port=%d' % baseport,]
     if requirements_repo:
