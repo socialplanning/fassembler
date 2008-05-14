@@ -61,7 +61,7 @@ svnurls = [
 ]
 
 c['change_source'] = [
-    SVNPoller(svnurl=url
+    SVNPoller(svnurl=url,
               pollinterval=180,
               split_file=None
               )
