@@ -42,63 +42,31 @@ c['buildbotURL'] = '{{config.buildbot_url}}'
 
 c['slavePortnum'] = int('{{config.buildslave_port}}')
 
-
-# Buildbot only allows tracking ONE change source for the entire
-# buildmaster config.  Rats. So if we want to track multiple source
-# trees, I think we need multiple buildmasters with different configs.
-# (I talked to Brian W. at PyCon and he confirmed this.)
-#
-# As a hackaround for now, we'll watch our entire repository but use a
-# split_file callback that ignores large parts of the tree.  This
-# means we get only the changes we care about - BUT then both the
-# sputnik and opencore builders see all those changes, even though the
-# 'sputnik' stuff is not relevant to the opencore builder. So the
-# opencore builder will fire a build every time you change stuff in
-# sputnik, and you'll be on the blamelist.  I think this is similar to
-# what buildbot.zope.org does.
-def split_file(path):
-    pieces = path.split('/')
-    if pieces[0] not in ('opencore', 'sputnik', 'fassembler',
-                         'oc-tt', 'oc-js', 'oc-cab',
-                         'oc-feed', 'oc-vacuum',
-                         'oc-geotagging',
-                         'topp.featurelets', 'topp.utils',
-                         'CabochonClient',
-                         ):
-        log.msg("ignoring file %s, not relevant?" % path)
-        return None   # Ignore this file.
-    elif pieces[1] == 'trunk':
-        branch = pieces[1]
-        filepath = '/'.join(pieces[2:])
-        return (branch, filepath)
-    elif pieces[1] == 'branches':
-        branch = pieces[2]
-        filepath = '/'.join(pieces[3:])
-        return (branch, filepath)
-    elif pieces[1] == 'plugins':
-        if len(pieces) > 3: 
-            if pieces[3] == 'branches' and len(pieces) > 4:
-                branch = pieces[4]
-                filepath = '/'.join(pieces[4:])
-            else:
-                branch = pieces[3]
-                filepath = '/'.join(pieces[3:])
-            return (branch, filepath)
-        else:
-            log.msg("ignoring file %s, maybe a tag?" % path)
-            return None
-        filepath = '/'.join(pieces[3:])
-        return (branch, filepath)
-    else:
-        log.msg("ignoring file %s, maybe a tag?" % path)
-        return None
+svnurls = [
+    'https://svn.openplans.org/svn/CabochonClient',
+    'https://svn.openplans.org/svn/StreetsWiki',
+    'https://svn.openplans.org/svn/WSSEAuth',
+    'https://svn.openplans.org/svn/ZCMLLoader',
+    'https://svn.openplans.org/svn/bundles',
+    'https://svn.openplans.org/svn/fassembler',
+    'https://svn.openplans.org/svn/oc-js',
+    'https://svn.openplans.org/svn/opencore',
+    'https://svn.openplans.org/svn/opencore/plugins',
+    'https://svn.openplans.org/svn/sputnik',
+    'https://svn.openplans.org/svn/topp.featurelets',
+    'https://svn.openplans.org/svn/topp.utils',
+    'https://svn.openplans.org/svn/transcluder',
+    'https://svn.openplans.org/svn/build/requirements/openplans',
+    'https://svn.openplans.org/svn/build/requirements/livablestreets',
+]
 
 c['change_source'] = [
-    SVNPoller(svnurl='https://svn.openplans.org/svn/',
+    SVNPoller(svnurl=url
               pollinterval=180,
-              split_file=split_file,
+              split_file=None
               )
-]
+    for url in svnurls]
+
 
 # Build slaves that are allowed to attach.
 c['slaves'] = slaves
@@ -194,6 +162,7 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
     
     fac.addStep(ToppShellCommand, command="rm -rf %s *bz2 *gz *zip" % OCBASEDIR,
                 description='remove old files',
+                haltOnFailure=False, flunkOnFailure=False
                 )
 
     # Bootstrap the topp build tools (fassembler).
@@ -221,6 +190,7 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                 command=buildcmd + fassembler_targets,
                 description=['build', name, 'and dependencies'],
                 haltOnFailure=True)
+
     # What got built? Useful for forensics.
     ocbin = '%s/opencore/bin/' % OCBASEDIR
     poachscript = ("%s/easy_install "
@@ -229,6 +199,7 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
     fac.addStep(ToppShellScript, sourcetext=poachscript,
                 description=["What got built", "for opencore?"],
                 haltOnFailure=False, flunkOnFailure=False)
+
     # Run the zopectl unit tests.
     for suite in zopectl_suites:
         fac.addStep(ToppShellCommand, 
