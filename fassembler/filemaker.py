@@ -664,7 +664,9 @@ class Maker(object):
             stderr = ''
         else:
             stdout, stderr = proc.communicate()
-        if proc.returncode and not expect_returncode:
+        # Bug #2128: The return code isn't set just by calling communicate;
+        # you have to call wait().
+        if proc.wait() and not expect_returncode:
             if log_error:
                 self.logger.log(slice(self.logger.WARN, self.logger.FATAL),
                                 'Running %s' % self._format_command(cmd), color='bold red')

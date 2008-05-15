@@ -75,6 +75,7 @@ def make_tarball(tarball_version, tarball_url_dir, orig_zope_source):
         proc = subprocess.Popen(['wget', '-q', orig_zope_source, '-O',
                                  tgz_filename])
         stdout, stderr = proc.communicate()
+        proc.wait()
         if proc.returncode:
             raise Exception("Failure downloading %s:\n%s" % (orig_zope_source,
                                                             stderr))
@@ -82,7 +83,7 @@ def make_tarball(tarball_version, tarball_url_dir, orig_zope_source):
     print 'Unpacking'
     print 'Running tar zfx %s (in %s)' % (tgz_filename, dir)
     proc = subprocess.Popen(['tar', 'zfx', os.path.basename(tgz_filename)], cwd=dir)
-    proc.communicate()
+    proc.wait()
     base_name = os.path.splitext(os.path.basename(tgz_filename))[0]
     dest_name = os.path.join(dir, 'Zope')
     if os.path.exists(dest_name):
@@ -111,13 +112,13 @@ def make_tarball(tarball_version, tarball_url_dir, orig_zope_source):
             print 'Running %s' % ' '.join(args)
             proc = subprocess.Popen(args, cwd=dest_name)
             stdout, stderr = proc.communicate()
-            if proc.returncode:
+            if proc.wait():
                 raise OSError("Got return code %d from %s\nstderr:\n%s" %
                               (proc.returncode, ' '.join(args), stderr))
     print 'Creating %s' % filename
     print 'Running tar cfj %s Zope (in %s)' % (filename, dir)
     proc = subprocess.Popen(['tar', 'cfj', filename, 'Zope'], cwd=dir)
-    proc.communicate()
+    proc.wait()
     # use compileall?
     # delete the dir?
     # upload?
