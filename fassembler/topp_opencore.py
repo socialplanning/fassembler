@@ -75,8 +75,7 @@ def make_tarball(tarball_version, tarball_url_dir, orig_zope_source):
         proc = subprocess.Popen(['wget', '-q', orig_zope_source, '-O',
                                  tgz_filename])
         stdout, stderr = proc.communicate()
-        proc.wait()
-        if proc.returncode:
+        if proc.wait():
             raise Exception("Failure downloading %s:\n%s" % (orig_zope_source,
                                                             stderr))
         

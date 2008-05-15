@@ -389,8 +389,7 @@ def call_subprocess(cmd, show_stdout=True,
                 logger.info(line)
     else:
         proc.communicate()
-    proc.wait()
-    if proc.returncode:
+    if proc.wait():
         if raise_on_returncode:
             if all_output:
                 logger.notify('Complete output from command %s:' % cmd_desc)

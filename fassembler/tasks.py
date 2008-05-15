@@ -1403,7 +1403,7 @@ class TestLxml(Task):
                                      '-c', '"from lxml import etree"'],
                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             proc.communicate()
-            if proc.returncode != 0:
+            if proc.wait() != 0:
                 raise Exception('Lxml did not build properly')
             self.logger.notify('Lxml built properly')
         else:
