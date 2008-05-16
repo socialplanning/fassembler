@@ -7,12 +7,15 @@ Everything happens in the Maker object.
 # Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 # This was originally based on paste.filemaker
 import os
-import sys
 import re
 import shutil
 import string
 import subprocess
+import sys
+import tempfile
 import tempita
+import util
+
 from difflib import unified_diff, context_diff
 from environ import random_string
 from getpass import getpass
@@ -662,11 +665,12 @@ class Maker(object):
                     self.logger.show_progress()
             stdout = ''.join(stdout)
             stderr = ''
+            # Bug #2128: The return code isn't set just by reading stdout;
+            # you have to call wait() or communicate().
+            proc.wait()
         else:
             stdout, stderr = proc.communicate()
-        # Bug #2128: The return code isn't set just by calling communicate;
-        # you have to call wait().
-        if proc.wait() and not expect_returncode:
+        if proc.returncode and not expect_returncode:
             if log_error:
                 self.logger.log(slice(self.logger.WARN, self.logger.FATAL),
                                 'Running %s' % self._format_command(cmd), color='bold red')
@@ -952,9 +956,7 @@ Responses:
         """
         # In order to ensure that we don't leak temporary files, we perform
         # this in three stages, creation, setup, and working with the files.
-        from subprocess import Popen
-        import tempfile
-        import os
+
         # Phase 1: Temporary file creation
         # If this fails, we'll close and delete any files that did succeed
         try:
@@ -988,7 +990,7 @@ Responses:
         # files before returning
         try:
             try:
-                proc = Popen(["sdiff", "-s", "-o", dest_fn, orig_name, new_name])
+                proc = subprocess.Popen(["sdiff", "-s", "-o", dest_fn, orig_name, new_name])
                 proc.wait()
                 return True
             finally:

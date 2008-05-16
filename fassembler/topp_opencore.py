@@ -13,6 +13,7 @@ import subprocess
 import sys
 import urllib
 import warnings
+import util
 
 interpolated = tasks.interpolated
 
@@ -58,7 +59,7 @@ class InstallZope(tasks.InstallTarball):
         self.maker.ensure_file(self.version_path, self._tarball_version,
                                svn_add=False)
 
-
+    
 def make_tarball(tarball_version, tarball_url_dir, orig_zope_source):
     tarball_url = '%s/OpenplansZope-%s.tar.bz2' % (tarball_url_dir,
                                                    tarball_version)
@@ -72,17 +73,11 @@ def make_tarball(tarball_version, tarball_url_dir, orig_zope_source):
         print '%s already exists; not downloading' % tgz_filename
     else:
         print 'Downloading %s to %s' % (orig_zope_source, tgz_filename)
-        proc = subprocess.Popen(['wget', '-q', orig_zope_source, '-O',
-                                 tgz_filename])
-        stdout, stderr = proc.communicate()
-        if proc.wait():
-            raise Exception("Failure downloading %s:\n%s" % (orig_zope_source,
-                                                            stderr))
+        util.popen(['wget', '-q', orig_zope_source, '-O', tgz_filename])
         
     print 'Unpacking'
     print 'Running tar zfx %s (in %s)' % (tgz_filename, dir)
-    proc = subprocess.Popen(['tar', 'zfx', os.path.basename(tgz_filename)], cwd=dir)
-    proc.wait()
+    util.popen(['tar', 'zfx', os.path.basename(tgz_filename)], cwd=dir)
     base_name = os.path.splitext(os.path.basename(tgz_filename))[0]
     dest_name = os.path.join(dir, 'Zope')
     if os.path.exists(dest_name):
@@ -109,17 +104,13 @@ def make_tarball(tarball_version, tarball_url_dir, orig_zope_source):
                 continue
             args = ['patch', '-p0', '--forward', '-i', fn]
             print 'Running %s' % ' '.join(args)
-            proc = subprocess.Popen(args, cwd=dest_name)
-            stdout, stderr = proc.communicate()
-            if proc.wait():
-                raise OSError("Got return code %d from %s\nstderr:\n%s" %
-                              (proc.returncode, ' '.join(args), stderr))
+            util.popen(args, cwd=dest_name)
     print 'Creating %s' % filename
     print 'Running tar cfj %s Zope (in %s)' % (filename, dir)
-    proc = subprocess.Popen(['tar', 'cfj', filename, 'Zope'], cwd=dir)
-    proc.wait()
+    util.popen(['tar', 'cfj', filename, 'Zope'], cwd=dir)
+    print "Removing %s/%s" % (dir, 'Zope')
+    shutil.rmtree(os.path.join(dir, 'Zope'))
     # use compileall?
-    # delete the dir?
     # upload?
     print 'You may want to run this now:'
     print '  scp %s flow.openplans.org:/www/svn.openplans.org/eggs/' % os.path.join(dir, filename)
@@ -424,11 +415,12 @@ class PatchTwill(tasks.Task):
         # get around readline printing strange things 
         # see: http://www.openplans.org/projects/opencore/lists/openplans-svn/archive/2008/04/1207154035776
         env = os.environ.copy()
-        env['TERM'] = '' 
-        filename = subprocess.Popen(["%s" % os.path.join(self.venv_property(), 'bin', 'python'), 
-                                     '-c', 'import twill.parse; print twill.parse.__file__.rstrip("c")'], 
-                                    env=env,
-                                    stdout=subprocess.PIPE).communicate()[0].strip()
+        env['TERM'] = ''
+        err, stdout, stderr = util.popen(
+            ["%s" % os.path.join(self.venv_property(), 'bin', 'python'), 
+             '-c', 'import twill.parse; print twill.parse.__file__.rstrip("c")'], 
+            env=env)
+        filename = stdout.strip()
         parse = file(filename)
         lines = parse.readlines()
         parse.close()
