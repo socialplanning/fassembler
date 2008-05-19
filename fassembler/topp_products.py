@@ -292,6 +292,10 @@ class DeliveranceProject(Project):
                 inherit_config=('general', 'force_ssl'),
                 default='False',
                 help='Redirect ssl-only paths to https'),
+        Setting('default_rules_repo',
+                default='{{project.req_settings.get("rules_repo", "https://svn.openplans.org/svn/build/rules/openplans")}}',
+                help='Default svn location of deliverance rules',
+                )
         ]
 
     actions = [
@@ -302,6 +306,9 @@ class DeliveranceProject(Project):
         tasks.TestLxml('{{env.base_path}}/deliverance'),
         tasks.SvnCheckout('Checkout openplans_hooks',
                           '{{config.openplans_hooks_repo}}', '{{project.name}}/src/openplans_hooks'),
+        tasks.SvnCheckout('Checkout default rules',
+                          '{{config.default_rules_repo}}',
+                          '{{env.var}}/deliverance/default_rules'),
         tasks.InstallPasteConfig(path='deliverance/src/deliverancevhoster/fassembler_config.ini_tmpl'),
         tasks.InstallPasteStartup(),
         tasks.InstallSupervisorConfig(),
