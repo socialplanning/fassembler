@@ -160,7 +160,7 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                     description=['kill any running', 'instances using', 'the ports'],
                     haltOnFailure=False, flunkOnFailure=False)
     
-    fac.addStep(ToppShellCommand, command="rm -rf %s *bz2 *gz *zip" % OCBASEDIR,
+    fac.addStep(ToppShellCommand, command="time rm -rf %s *bz2 *gz *zip" % OCBASEDIR,
                 description='remove old files',
                 haltOnFailure=False, flunkOnFailure=False
                 )
