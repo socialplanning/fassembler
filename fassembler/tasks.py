@@ -1317,8 +1317,6 @@ class ForEach(Task):
     variable = interpolated('variable')
 
     def __init__(self, name, variable, value, tasks, stacklevel=1):
-        import pdb; pdb.set_trace()
-        
         super(ForEach, self).__init__(name, stacklevel=stacklevel+1)
         self.variable = variable
         self.value = value
@@ -1331,8 +1329,6 @@ class ForEach(Task):
         return [l.strip() for l in self.interpolate(self.value).splitlines() if l.strip()]
 
     def iter_subtasks(self):
-        import pdb; pdb.set_trace()
-        
         values = self.values
         if not values:
             self.logger.debug('No values in %s' % self.name)

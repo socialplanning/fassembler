@@ -332,7 +332,6 @@ class StartZeo(tasks.Task):
         if self.maker.simulate:
             return
         zeoctl_path = self.interpolate('{{env.base_path}}/opencore/zeo/bin/zeoctl')
-        # XXX we should check the actual port here.
         if zeo_status_contains(zeoctl_path, 'pid'):
             raise Exception('Zeo is running already. Please stop zeo before running.')
         self.maker.run_command([zeoctl_path, 'start'])
@@ -349,7 +348,7 @@ class StartZeo(tasks.Task):
 
 class StopZeo(tasks.Task):
     
-    description = "Stop zeo"
+    description = "Start zeo"
 
     def __init__(self, stacklevel=1):
         super(StopZeo, self).__init__('Stop zeo', stacklevel=stacklevel+1)
@@ -405,72 +404,6 @@ class RunZopectlScript(tasks.Task):
                              'path does not exist' % self.script_path,
                              color='red')
 
-
-class RunZopeScriptsWithZeo(tasks.Task):
-
-    description = "Start zeo, run all zopectl scripts, stop zeo"
-
-    script_path = interpolated('script_path')
-    script_args = interpolated('script_args')
-
-    def __init__(self, stacklevel=1, subtasks=[]):
-        super(RunZopeScriptsWithZeo, self).__init__(self.description,
-                                                    stacklevel=stacklevel+1)
-
-        self.subtasks = []
-        for subtask in subtasks:
-            subtask
-        self.subtasks = subtasks
-        self.startzeo = StartZeo(stacklevel=stacklevel)
-        self.stopzeo = StopZeo(stacklevel=stacklevel)
-
-    def iter_subtasks(self):
-        # We do NOT want the project to iterate over our subtasks,
-        # because we want to treat everything atomically: eg. if zeo
-        # doesn't start and the user hits 'c', we should not run any
-        # scripts.
-        # This means we have to define bind() and run() specially
-        # to handle the subtasks.
-        return []
-
-    def bind(self, *args, **kw):
-        super(RunZopeScriptsWithZeo, self).bind(*args, **kw)
-        for task in [self.startzeo] + self.subtasks + [self.stopzeo]:
-            task.bind(*args, **kw)
-            task.confirm_settings()
-            task.setup_build_properties()
-
-    def run(self):
-        if not self.maker.simulate:
-            self.startzeo.run()
-        try:
-            for task in self.subtasks:
-                self.logger.notify("running subtask: %s" % task.title)
-                task.run()
-                # XXX BROKEN, START OVER
-                #
-                # Because the project doesn't know about our subtasks
-                # and sub-subtasks etc, we have to iterate over them
-                # explicitly. Blech.  XXX THIS DOES NOT WORK because
-                # the grandchild tasks have not been bound. I could
-                # try to hack around that in bind() above, but I won't
-                # be able to iterate over the grandchildren in there
-                # because... iter_subtasks can't be called until bind
-                # has succeeded.  Aaargh. So basically I can't use
-                # nested tasks without giving all control to the
-                # Project, which defaults the whole purpose of this
-                # class.
-                #
-                # XXX START OVER! maybe just a special-purpose class
-                # that takes all the args I need and does everything,
-                # instead of trying to be smart and delegating to
-                # subtasks.
-                for t in task.iter_subtasks():
-                    t.run()
-        finally:
-            if not self.maker.simulate:
-                self.stopzeo.run()
-            
 
 class PatchTwill(tasks.Task):
     """
@@ -818,24 +751,20 @@ exec {{config.zeo_instance}}/bin/runzeo
                         '{{env.var}}/zeo'),
         # ZEO doesn't really have a uri
         tasks.InstallSupervisorConfig(script_name='opencore-zeo'),
-        RunZopeScriptsWithZeo(
-            subtasks=[
-                RunZopectlScript('{{env.base_path}}/opencore/src/opencore/do_nothing.py',
-                                 name='Run initial zopectl to bypass failure-on-first-start'),
-                RunZopectlScript('{{env.base_path}}/opencore/src/opencore/add_openplans.py',
-                                 ## XXX add_openplans.py wasn't doing anything with this argument:
-                                 #script_args='{{env.config.get("general", "etc_svn_subdir")}}', 
-                                 name='Add OpenPlans site'),
-                tasks.ForEach('Run additional opencore-req.txt zopectl scripts',
-                              'script_name',
-                              '{{project.req_settings.get("zopectl_scripts")}}',
-                              RunZopectlScript('{{os.path.join(env.base_path, "opencore/", task.script_name)}}',
-                                               name="Additional zopectl script {{task.script_name}}"),
-                              )
-                ])
-        
+        StartZeo(),
+        RunZopectlScript('{{env.base_path}}/opencore/src/opencore/do_nothing.py',
+                         name='Run initial zopectl to bypass failure-on-first-start'),
+        RunZopectlScript('{{env.base_path}}/opencore/src/opencore/add_openplans.py',
+                         ## XXX add_openplans.py wasn't doing anything with this argument:
+                         #script_args='{{env.config.get("general", "etc_svn_subdir")}}', 
+                         name='Add OpenPlans site'),
+        tasks.ForEach('Run additional opencore-req.txt zopectl scripts',
+                      'script_name',
+                      '{{project.req_settings.get("zopectl_scripts")}}',
+                      RunZopectlScript('{{os.path.join(env.base_path, "opencore/", task.script_name)}}',
+                                       name="Additional zopectl script {{task.script_name}}")),
+        StopZeo(),
         ]
-
 
     depends_on_projects = ['fassembler:opencore']
 
@@ -903,7 +832,6 @@ execfile(config_location)
         tasks.EnsureDir('Create spool directory',
                         '{{env.var}}/maildrop-spool'),
         tasks.InstallSupervisorConfig(),
-        # XXX Change this to using RunZopeScriptsWithZeo
         StartZeo(),
         RunZopectlScript('{{env.base_path}}/opencore/src/opencore/add_maildrop.py',
                          name='Add a MaildropHost object'),
@@ -912,7 +840,7 @@ execfile(config_location)
 
 
     depends_on_projects = ['fassembler:zeo']
-        
+
 
 if __name__ == '__main__':
     if len(sys.argv) < 4:

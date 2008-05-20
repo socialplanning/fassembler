@@ -52,6 +52,7 @@ class BuildBotProject(Project):
 
     settings = [
         Setting('buildbot_url',
+                inherit_config=('general', 'buildbot_url'),
                 default='http://{{project.hostname}}.openplans.org:{{config.buildmaster_private_port}}/',
                 help='Public URL of the buildbot web page',
                 ),
@@ -110,7 +111,9 @@ class BuildBotProject(Project):
         tasks.VirtualEnv(),
         tasks.InstallSpec('Install buildbot dependencies',
                           '{{config.spec}}'),
-
+        tasks.SaveSetting('Save buildbot settings',
+                          {'buildbot_url': '{{config.buildbot_url}}'},
+                          section='general'),
         ]
 
 
@@ -183,7 +186,7 @@ class BuildSlaveProject(BuildBotProject):
             'Make a buildbot slave',
             ['bin/buildbot', 'create-slave',
              '--keepalive=60',  # Jeff warns that they lose connection at default
-	     '--umask=022',  # it's 077 by default.
+	     '--umask=002',  # it's 077 by default.
              '.',
              '{{config.buildmaster_host}}:{{config.buildslave_port}}',
              '{{config.buildslave_name}}',
