@@ -60,10 +60,44 @@ svnurls = [
     'https://svn.openplans.org/svn/build/requirements/livablestreets',
 ]
 
+def split_file(path):
+    # As per the buildbot docs, this must return (branchname, filepath).
+    # This is a pretty flexible-but-stupid implementation that accepts
+    # 'branches' or 'tags' anywhere in the path, as per the SVN convention.
+    pieces = path.split('/')
+    if 'tags' in pieces:
+        log.msg("ignoring file %s, maybe a tag?" % path)
+        return None
+    try:
+        branchi = pieces.index('branches')
+    except ValueError:
+        branchi = None
+    try:
+        trunki = pieces.index('trunk')
+    except ValueError:
+        trunki = None
+    if branchi is not None:
+        try:
+            branch = pieces[branchi + 1]
+            filepath = '/'.join(pieces[branchi + 2:])
+            log.msg("got branch %s, path %s" % (branch, filepath))
+            return (branch, filepath)
+        except IndexError:
+            pass
+    elif trunki is not None:
+        try:
+            filepath = '/'.join(pieces[trunki + 1:])
+            log.msg("got trunk, path %s" % filepath)
+            return ('trunk', filepath)
+        except IndexError:
+            pass
+    log.msg("Not sure what to do with file %s, let's build anyway")
+    return (None, path)
+
 c['change_source'] = [
     SVNPoller(svnurl=url,
               pollinterval=180,
-              split_file=None
+              split_file=split_file
               )
     for url in svnurls]
 

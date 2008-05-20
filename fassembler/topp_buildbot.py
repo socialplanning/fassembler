@@ -183,7 +183,7 @@ class BuildSlaveProject(BuildBotProject):
             'Make a buildbot slave',
             ['bin/buildbot', 'create-slave',
              '--keepalive=60',  # Jeff warns that they lose connection at default
-	     '--umask=022',  # it's 077 by default.
+	     '--umask=002',  # it's 077 by default.
              '.',
              '{{config.buildmaster_host}}:{{config.buildslave_port}}',
              '{{config.buildslave_name}}',
