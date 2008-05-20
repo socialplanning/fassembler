@@ -440,6 +440,7 @@ ircbot = words.IRC(host='irc.freenode.net',
 
 
 c['status'] = [developerWebStatus,
+               publicWebStatus,
                breakMailer,
                listMailer,
                ircbot,
