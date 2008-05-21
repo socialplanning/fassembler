@@ -83,5 +83,5 @@ class ErrorListenerProject(Project):
                         '{{env.var}}/logs/errorlistener'),
         ]
 
-    depends_on_projects = ['fassembler:topp', 'fassembler:supervisor']
+    depends_on_projects = ['fassembler:topp', 'fassembler:supervisor', 'fassembler:erroreater']
     
