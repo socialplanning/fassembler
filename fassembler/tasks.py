@@ -839,13 +839,14 @@ class SaveSetting(Task):
     section = interpolated('section')
 
     def __init__(self, name, variables, section='general',
-                 overwrite_if_empty=True, stacklevel=1):
+                 overwrite_if_empty=True, overwrite=False, stacklevel=1):
         assert isinstance(variables, dict), (
             "The variables parameter should be a dictionary")
         super(SaveSetting, self).__init__(name, stacklevel=stacklevel+1)
         self.variables = variables
         self.section = section
         self.overwrite_if_empty = overwrite_if_empty
+        self.overwrite = overwrite
 
     def run(self):
         config = self.environ.config
@@ -856,12 +857,8 @@ class SaveSetting(Task):
                 section, key = key
             else:
                 section = self.section
-            has_option = config.has_option(section, key)
-            if has_option and self.overwrite_if_empty and not config.get(section, key):
-                self.logger.debug('Overwriting empty setting [%s] %s (with value %r)'
-                                  % (section, key, value))
-                has_option = False
-            if not has_option:
+            should_write = self.should_write_setting(section, key, value)
+            if should_write:
                 config.set(section, key, value)
             else:
                 if value != config.get(section, key):
@@ -869,6 +866,17 @@ class SaveSetting(Task):
                         'Not overwriting build.ini option [%s] %s = %r (new value would have been %r)'
                         % (section, key, config.get(section, key), value))
         self.environ.save()
+
+    def should_write_setting(self, section, key, value):
+        if self.overwrite:
+            return True
+        if not self.environ.config.has_option(section, key):
+            return True
+        if self.overwrite_if_empty and not self.environ.config.get(section, key):
+            return True
+        if value == self.environ.config.get(section, key):
+            return True
+        return False
  
     def format_variables(self, variables):
         """
@@ -882,7 +890,12 @@ class SaveSetting(Task):
                 section, key = key
             else:
                 section = default_section
-            output.append('[%s] %s = %r' % (section, key, variables[key]))
+            if not self.should_write_setting(section, key, variables[key]):
+                output.append(
+                    'will not write [%s] %s = %r (current value: %r)'
+                    % (section, key, variables[key], self.environ.config.get(section, key)))
+            else:
+                output.append('[%s] %s = %r' % (section, key, variables[key]))
         return output
 
 class SaveURI(SaveSetting):

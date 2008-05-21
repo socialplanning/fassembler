@@ -188,7 +188,7 @@ class ToppProject(Project):
                            'projprefs': '{{config.projprefs}}',
                            'etc_svn_subdir': '{{config.etc_svn_subdir}}',
                            'localbuild': '{{config.localbuild}}',
-                           }),
+                           }, overwrite=True),
         tasks.SaveSetting(
             'Save google maps API key settings',
             {'openplans.org': 'ABQIAAAAPg0JzaavflEP5HFbvAW11BTB3-H4wTAao1hskyzZKyTqTR1AJRQIyIkPAwUg3Qm5pFsqk78fbsrjDQ',

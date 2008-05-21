@@ -1,6 +1,7 @@
 import os
 import socket
 from fassembler.config import ConfigParser
+from fassembler.util import asbool
 import string
 import random
 from datetime import datetime
@@ -87,6 +88,10 @@ class Environment(object):
             if os.path.exists(self.config_filename):
                 self._parser.read(self.config_filename)
         return self._parser
+
+    @property
+    def localbuild(self):
+        return asbool(self.config.get('general', 'localbuild'))
 
     def refresh_config(self):
         """
