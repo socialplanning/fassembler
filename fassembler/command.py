@@ -152,7 +152,7 @@ def main(options, args):
     projects = []
     for project_name in project_names:
         logger.debug('Finding package %s' % project_name)
-        ProjectClass = find_project_class(project_name, logger)
+        project_name, ProjectClass = find_project_class(project_name, logger)
         if ProjectClass is None:
             raise CommandError('Could not find project %s' % project_name, show_usage=False)
         project = ProjectClass(project_name, maker, environ, logger, config)
@@ -289,25 +289,26 @@ def find_project_class(project_name, logger):
     except pkg_resources.DistributionNotFound, e:
         if ep_name != 'main':
             ## FIXME: log something?
-            return None
+            return project_name, None
         logger.debug('Could not get distribution %s: %s' % (project_name, e))
         options = list(pkg_resources.iter_entry_points('fassembler.project', project_name))
         if not options:
             logger.fatal('NO entry points in [fassembler.project] found with name %s' % project_name)
-            return None
+            return project_name, None
         if len(options) > 1:
             logger.fatal('More than one entry point in [fassembler.project] found with name %s: %s'
                          % (project_name, ', '.join(map(repr, options))))
-            return None
-        return options[0].load()
+            return project_name, None
+        project_name = '%s:%s' % (options[0].dist.project_name, project_name)
+        return project_name, options[0].load()
     else:
         ep = dist.get_entry_info('fassembler.project', ep_name)
         if not ep:
             logger.fatal('Distribution %s (at %s) does not have an entry point %r'
                          % (dist.project_name, dist.location, ep_name))
-            return None
+            return project_name, None
         logger.debug('Found entry point %s:main = %s' % (dist, ep))
-        return ep.load()
+        return project_name, ep.load()
 
 def load_configs(configs):
     """
