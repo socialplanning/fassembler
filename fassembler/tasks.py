@@ -848,16 +848,28 @@ class SaveSetting(Task):
         self.overwrite_if_empty = overwrite_if_empty
 
     def run(self):
-        if not self.environ.config.has_section(self.section):
-            self.environ.config.add_section(self.section)
+        config = self.environ.config
+        if not config.has_section(self.section):
+            config.add_section(self.section)
         for key, value in self.variables.items():
             if isinstance(key, (tuple, list)):
                 section, key = key
             else:
                 section = self.section
-            self.environ.config.set(section, key, value)
+            has_option = config.has_option(section, key)
+            if has_option and self.overwrite_if_empty and not config.get(section, key):
+                self.logger.debug('Overwriting empty setting [%s] %s (with value %r)'
+                                  % (section, key, value))
+                has_option = False
+            if not has_option:
+                config.set(section, key, value)
+            else:
+                if value != config.get(section, key):
+                    self.logger.notify(
+                        'Not overwriting build.ini option [%s] %s = %r (new value would have been %r)'
+                        % (section, key, config.get(section, key), value))
         self.environ.save()
-
+ 
     def format_variables(self, variables):
         """
         Format the given variable dictionary for human reading.

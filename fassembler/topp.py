@@ -152,11 +152,13 @@ class ToppProject(Project):
         Setting('projtxt',
                 default='{{project.req_settings.get("projtxt", "project")}}',
                 help='Displayed name for opencore project/group'),
-
         Setting('projprefs',
                 default='{{project.req_settings.get("projprefs", "Preferences")}}',
                 help='Displayed name for opencore project/group settings'),
-
+        Setting('localbuild',
+                inherit_config=('general', 'streetfilms_uri'),
+                default='False',
+                help="Specifies whether this is a single developer's build"),
         ]
 
     actions = [
@@ -185,11 +187,10 @@ class ToppProject(Project):
                            'projtxt': '{{config.projtxt}}',
                            'projprefs': '{{config.projprefs}}',
                            'etc_svn_subdir': '{{config.etc_svn_subdir}}',
+                           'localbuild': '{{config.localbuild}}',
                            }),
         tasks.SaveSetting(
             'Save google maps API key settings',
-            # XXX These clobber existing settings for the same hosts,
-            # do I have to create a Setting for each one to avoid that?
             {'openplans.org': 'ABQIAAAAPg0JzaavflEP5HFbvAW11BTB3-H4wTAao1hskyzZKyTqTR1AJRQIyIkPAwUg3Qm5pFsqk78fbsrjDQ',
              'localhost': 'ABQIAAAACgq_R1LiJejH1-2eRRyQvBTwM0brOpm-All5BF6PoaKBxRWWERRkYcknpt7YAYi-YjtUb5J69-e2Hg',
              'nohost': 'bogus_key_used_for_tests',
