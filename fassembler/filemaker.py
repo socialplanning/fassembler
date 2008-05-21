@@ -70,7 +70,8 @@ class Maker(object):
         self.quick = quick
         self.beep = beep
     
-    def copy_file(self, src, dest=None, dest_dir=None, template_vars=None, interpolater=None, overwrite=False):
+    def copy_file(self, src, dest=None, dest_dir=None, template_vars=None,
+                  interpolater=None, overwrite=False, svn_add=True):
         """
         Copy a file from the source location to somewhere in the
         destination.
@@ -113,13 +114,12 @@ class Maker(object):
                         return
                 overwrite = True
 
-        self.ensure_file(dest, contents, overwrite=overwrite, executable=os.stat(src).st_mode&0111)
+        self.ensure_file(dest, contents, overwrite=overwrite, 
+                         executable=os.stat(src).st_mode&0111, svn_add=svn_add)
         if contents != raw_contents:
             if not self.simulate:
-                # If we use ensure_file we get an unneeded log message
-                f = open(self._orig_filename(dest), 'wb')
-                f.write(raw_contents)
-                f.close()
+                self.ensure_file(self._orig_filename(dest), raw_contents, overwrite=True,
+                                 svn_add=svn_add, quiet=True)
 
     def _orig_filename(self, filename):
         """
@@ -372,7 +372,8 @@ class Maker(object):
         else:
             self.logger.debug("Directory already exists: %s" % self.display_path(dir))
 
-    def ensure_file(self, filename, content, svn_add=True, package=False, overwrite=False, executable=False):
+    def ensure_file(self, filename, content, svn_add=True, package=False,
+                    overwrite=False, executable=False, quiet=False):
         """
         Ensure a file named ``filename`` exists with the given
         content.  If ``--interactive`` has been enabled, this will ask
@@ -381,7 +382,8 @@ class Maker(object):
         filename = self.path(filename)
         self.ensure_dir(os.path.dirname(filename), svn_add=svn_add, package=package)
         if not os.path.exists(filename):
-            self.logger.info('Creating %s' % filename)
+            if not quiet:
+                self.logger.info('Creating %s' % filename)
             if not self.simulate:
                 f = open(filename, 'wb')
                 f.write(content)
@@ -396,18 +398,21 @@ class Maker(object):
         f.close()
         base_content = self._get_base_contents(filename)
         if content == old_content:
-            self.logger.info('File %s matches expected content' % filename)
+            if not quiet:
+                self.logger.info('File %s matches expected content' % filename)
             if executable and not os.stat(filename).st_mode&0111:
                 self.make_executable(filename)
             return
         show_overwrite_warning = True
         if base_content and base_content == old_content:
-            self.logger.notify('File %s was not edited and content has changed, overwriting'
-                               % self.display_path(filename),
-                               color='cyan')
+            if not quiet:
+                self.logger.notify('File %s was not edited and content has changed, overwriting'
+                                   % self.display_path(filename),
+                                   color='cyan')
             show_overwrite_warning = False
         elif not overwrite:
-            self.logger.notify('Warning: file %s does not match expected content' % filename)
+            if not quiet:
+                self.logger.notify('Warning: file %s does not match expected content' % filename)
             if self.interactive:
                 response = self.ask_difference(filename, None, content, old_content)
                 if not response:
@@ -416,7 +421,8 @@ class Maker(object):
                 return
 
         if show_overwrite_warning:
-            self.logger.notify('Overwriting %s with new content' % filename)
+            if not quiet:
+                self.logger.notify('Overwriting %s with new content' % filename)
         if not self.simulate:
             f = open(filename, 'wb')
             f.write(content)
