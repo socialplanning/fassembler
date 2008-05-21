@@ -517,13 +517,13 @@ class OpenCoreProject(OpenCoreBase):
                 default='1',  # opencore ftests expect it turned on!
                 help='Whether to send email configuration'),
         Setting('zope_tarball_version',
-                default='2.9.8openplans.3',
+                default='2.9.9openplans.1',
                 help='Version suffix for the Zope source tarball'),
         Setting('zope_tarball_url',
                 default='{{config.opencore_bundle_tar_dir}}/OpenplansZope-{{config.zope_tarball_version}}.tar.bz2',
                 help='URL of the Zope source tarball'),
         Setting('zope_orig_source',
-                default='http://www.zope.org/Products/Zope/2.9.8/Zope-2.9.8-final.tgz',
+                default='http://www.zope.org/Products/Zope/2.9.9/Zope-2.9.9-final.tgz',
                 help='URL of the original Zope source tarball upon which the OpenPlans tarball is based'),
         ## FIXME: this could differ for different profiles
         ## e.g., there's another bundle at:

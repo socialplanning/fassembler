@@ -1,0 +1,13 @@
+Index: lib/python/AccessControl/__init__.py
+===================================================================
+--- lib/python/AccessControl/__init__.py	(revision 72483)
++++ lib/python/AccessControl/__init__.py	(working copy)
+@@ -29,3 +29,8 @@
+ 
+ import DTML
+ del DTML
++
++# Products has become a namespace package; it may not contain any
++# code.  Therefore, we put the '__ac_permissions__' attribute in there
++import Products
++Products.__ac_permissions__ = ()
