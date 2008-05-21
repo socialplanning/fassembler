@@ -98,20 +98,26 @@ class Project(object):
             self.logger.set_section(self.name+'.'+task.name)
             self.logger.notify('== %s ==' % task.name, color='bold green')
             self.logger.indent += 2
-            try:
+            while 1:
                 try:
-                    self.logger.debug('Task Plan:')
-                    self.logger.debug(indent(str(task), '  '))
-                    task.run()
-                finally:
-                    self.logger.indent -= 2
-            except (KeyboardInterrupt, CommandError):
-                raise
-            except:
-                should_continue = self.maker.handle_exception(sys.exc_info(), can_continue=True)
-                if not should_continue:
-                    self.logger.fatal('Project %s aborted.' % self.title, color='red')
-                    raise CommandError('Aborted', show_usage=False)
+                    try:
+                        self.logger.debug('Task Plan:')
+                        self.logger.debug(indent(str(task), '  '))
+                        task.run()
+                    finally:
+                        self.logger.indent -= 2
+                except (KeyboardInterrupt, CommandError):
+                    raise
+                except:
+                    should_continue = self.maker.handle_exception(sys.exc_info(), can_continue=True,
+                                                                  can_retry=True)
+                    if should_continue == 'retry':
+                        self.logger.notify('Retrying task %s' % task.name)
+                        continue
+                    if not should_continue:
+                        self.logger.fatal('Project %s aborted.' % self.title, color='red')
+                        raise CommandError('Aborted', show_usage=False)
+                break
         self.environ.add_built_project(self.project_name)
 
     def bind_tasks(self):
