@@ -197,7 +197,7 @@ class ToppProject(Project):
              'dev.nycstreets.org': 'ABQIAAAACgq_R1LiJejH1-2eRRyQvBQ42FaFWNur_4XCSEHkUOZhqT-5LhT80_6nqiuC2nvOrzbvOLN0PC7grg',
              'dev.yourstreets.org': 'ABQIAAAACgq_R1LiJejH1-2eRRyQvBQbz6J6EYtXVUBa7BucdbOEH1SrphRUT2-E4Pe2M5U4iDeS9qzQXHoT1A',
              },
-             section='google_maps_keys'),
+             section='google_maps_keys', overwrite=False),
         
         tasks.EnsureDir('Make sure var directory exists', '{{env.var}}', svn_add=False),
         tasks.EnsureFile('Write OpenPlans shared secret to var/secret.txt if it does not exist',

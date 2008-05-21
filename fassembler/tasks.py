@@ -839,7 +839,7 @@ class SaveSetting(Task):
     section = interpolated('section')
 
     def __init__(self, name, variables, section='general',
-                 overwrite_if_empty=True, overwrite=False, stacklevel=1):
+                 overwrite_if_empty=True, overwrite=True, stacklevel=1):
         assert isinstance(variables, dict), (
             "The variables parameter should be a dictionary")
         super(SaveSetting, self).__init__(name, stacklevel=stacklevel+1)
