@@ -281,16 +281,16 @@ def find_project_class(project_name, logger):
     class that is being referred to, using entry points.
     """
     if ':' in project_name:
-        project_name, ep_name = project_name.split(':', 1)
+        dist_name, ep_name = project_name.split(':', 1)
     else:
         ep_name = 'main'
     try:
-        dist = pkg_resources.get_distribution(project_name)
+        dist = pkg_resources.get_distribution(dist_name)
     except pkg_resources.DistributionNotFound, e:
         if ep_name != 'main':
             ## FIXME: log something?
             return project_name, None
-        logger.debug('Could not get distribution %s: %s' % (project_name, e))
+        logger.debug('Could not get distribution %s: %s' % (dist_name, e))
         options = list(pkg_resources.iter_entry_points('fassembler.project', project_name))
         if not options:
             logger.fatal('NO entry points in [fassembler.project] found with name %s' % project_name)
@@ -299,8 +299,7 @@ def find_project_class(project_name, logger):
             logger.fatal('More than one entry point in [fassembler.project] found with name %s: %s'
                          % (project_name, ', '.join(map(repr, options))))
             return project_name, None
-        project_name = '%s:%s' % (options[0].dist.project_name, project_name)
-        return project_name, options[0].load()
+        return ep_name(options[0]), options[0].load()
     else:
         ep = dist.get_entry_info('fassembler.project', ep_name)
         if not ep:
