@@ -187,7 +187,6 @@ class Namespace(DictMixin):
                 template_content = tmpl.content
                 if len(template_content) < 80 and len(template_content.strip().splitlines()) == 1:
                     print 'Template: %s' % template_content
-                retry = False
                 while 1:
                     ## FIXME: should beep here
                     response = raw_input('What to do? [(c)ancel/(q)uit/(r)etry/(s)how source/(n)amespace/(t)raceback/(p)db/(e)xecute/(r)etry/] ')
@@ -198,9 +197,6 @@ class Namespace(DictMixin):
                         break
                     elif char == 'q':
                         raise CommandError('Aborted', show_usage=False)
-                    elif char == 'r':
-                        retry = True
-                        break
                     elif char == 's':
                         print 'Template:'
                         print template_content
@@ -219,22 +215,8 @@ class Namespace(DictMixin):
                     elif char == 'p':
                         import pdb
                         pdb.set_trace()
-                    elif char == 'e':
-                        expr = response[1:].strip()
-                        if not expr:
-                            print 'Use "e express_to_execute"'
-                            continue
-                        try:
-                            exec compile(expr, '<e>', "single") in self.dict
-                        except KeyboardInterrupt:
-                            raise
-                        except:
-                            print 'Error in expression %s:' % expr
-                            traceback.print_exc()
                     else:
                         print 'Invalid input: %r' % char
-                if retry:
-                    return self.execute_template(tmpl)
                 raise
             finally:
                 _in_broken_ns = False
