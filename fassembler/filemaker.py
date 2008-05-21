@@ -1062,7 +1062,13 @@ Responses:
             responses = [res.strip('()')[0] for res in responses]
         while 1:
             self.beep_if_necessary()
-            response = raw_input(full_message).strip().lower()
+            while 1:
+                try:
+                    response = raw_input(full_message).strip().lower()
+                except EOFError:
+                    # This can happen when a user hits ^Z
+                    continue
+                break
             if not response:
                 if default:
                     if first_char:
@@ -1088,20 +1094,26 @@ Responses:
             sys.stdout.write(chr(7))
             sys.stdout.flush()
             
-    def handle_exception(self, exc_info, can_continue=False):
+    def handle_exception(self, exc_info, can_continue=False, can_retry=False):
         """
         Give an interactive way to handle an exception.
 
         If can_continue is true, then the user is given the option to
         quit (abort the whole thing) or continue.  Not everything can
         be continued.
+
+        If can_retry is true, then the user is given a retry option, and
+        if they select it then this method returns the string 'retry'.
+        It is up to the caller to actually retry.
         """
         self.logger.fatal('Error: %s' % exc_info[1], color='bold red')
         if not self.interactive:
             raise exc_info[0], exc_info[1], exc_info[2]
         responses = ['(t)raceback', '(q)uit']
         if can_continue:
-            responses.append('(c)continue')
+            responses.append('(c)ontinue')
+        if can_retry:
+            responses.append('(r)etry')
         if self.logger.section:
             length = len(self.logger._section_logs)
             if length:
@@ -1122,6 +1134,8 @@ Responses:
                 return True
             elif response == 'q':
                 return False
+            elif response == 'r':
+                return 'retry'
             elif response == 'v':
                 print self.logger.section_text()
             elif response == 'p':

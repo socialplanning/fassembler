@@ -9,6 +9,7 @@ from time import sleep
 from xml.dom import minidom
 import os
 import shutil
+import socket
 import subprocess
 import sys
 import urllib
@@ -318,58 +319,6 @@ class SymlinkZopeConfig(ZopeConfigTask):
                                   self.zope_profile_path)
 
 
-def zeo_status_contains(zeoctl_path, substr):
-    return substr in subprocess.Popen([zeoctl_path, 'status'], stdout=subprocess.PIPE).communicate()[0]
-
-class StartZeo(tasks.Task):
-
-    description = "Start zeo"
-
-    def __init__(self, stacklevel=1):
-        super(StartZeo, self).__init__('Start zeo', stacklevel=stacklevel+1)
-
-    def run(self):
-        if self.maker.simulate:
-            return
-        zeoctl_path = self.interpolate('{{env.base_path}}/opencore/zeo/bin/zeoctl')
-        if zeo_status_contains(zeoctl_path, 'pid'):
-            raise Exception('Zeo is running already. Please stop zeo before running.')
-        self.maker.run_command([zeoctl_path, 'start'])
-        elapsed, TIMEOUT = 0, 30
-        while elapsed < TIMEOUT and not zeo_status_contains(zeoctl_path, 'pid'):
-            self.logger.notify('Sleeping while zeo starts...')
-            sleep(1)
-            elapsed += 1
-            if elapsed == TIMEOUT:
-               self.logger.warn("Could not start zeo after trying for %d seconds" % TIMEOUT, color='red')
-               self.maker.beep_if_necessary()
-        self.logger.notify('Zeo started')
-
-
-class StopZeo(tasks.Task):
-    
-    description = "Start zeo"
-
-    def __init__(self, stacklevel=1):
-        super(StopZeo, self).__init__('Stop zeo', stacklevel=stacklevel+1)
-
-    def run(self):
-        if self.maker.simulate:
-            return
-        zeoctl_path = self.interpolate('{{env.base_path}}/opencore/zeo/bin/zeoctl')
-        if zeo_status_contains(zeoctl_path, 'not running'):
-            raise Exception('Expected Zeo to be running but it is not.')
-        self.maker.run_command([zeoctl_path, 'stop'])
-        elapsed, TIMEOUT = 0, 30
-        while elapsed < TIMEOUT and not zeo_status_contains(zeoctl_path, 'not running'):
-            self.logger.notify('Sleeping while zeo stops...')
-            sleep(1)
-            elapsed += 1
-            if elapsed == TIMEOUT:
-               self.logger.warn("Could not stop zeo after trying for %d seconds" % TIMEOUT, color='red')
-               self.maker.beep_if_necessary()
-        self.logger.notify('Zeo stopped')
-
 
 class RunZopectlScript(tasks.Task):
 
@@ -403,6 +352,123 @@ class RunZopectlScript(tasks.Task):
             self.logger.warn('Tried to run zopectl script at %s but the '
                              'path does not exist' % self.script_path,
                              color='red')
+
+
+class RunZopeScriptsWithZeo(tasks.Task):
+
+    description = "Start zeo, run all zopectl scripts, stop zeo"
+
+    script_path = interpolated('script_path')
+    script_args = interpolated('script_args')
+
+    def __init__(self, *subtasks, **kw):
+        stacklevel = kw.get('stacklevel', 1)
+        super(RunZopeScriptsWithZeo, self).__init__(self.description,
+                                                    stacklevel=stacklevel+1)
+        self.subtasks = subtasks
+
+    def iter_subtasks(self):
+        # We do NOT want the project to iterate over our subtasks,
+        # because we want to treat everything atomically: eg. if zeo
+        # doesn't start and the user hits 'c', we should not run any
+        # scripts.
+        # This means we have to define bind() and run() specially
+        # to handle the subtasks.
+        return []
+
+    def bind(self, *args, **kw):
+        super(RunZopeScriptsWithZeo, self).bind(*args, **kw)
+        subtasks = []
+        for task in self.subtasks:
+            self._bind_tasks(task, *args, **kw)
+
+    def _bind_tasks(self, task, *args, **kw):
+        task.bind(*args, **kw)
+        task.confirm_settings()
+        task.setup_build_properties()
+        for subtask in task.iter_subtasks():
+            self._bind_tasks(subtask, *args, **kw)
+
+    def run(self):
+        self.start_zeo()
+        try:
+            for task in self.subtasks:
+                self._run_task(task)
+        finally:
+            self.stop_zeo()
+
+    def _run_task(self, task):
+        self.logger.notify("running subtask: %s" % task.title)
+        self.logger.indent += 2
+        try:
+            task.run()
+            for subtask in task.iter_subtasks():
+                self._run_task(subtask)
+        finally:
+            self.logger.indent -= 2
+
+
+    ## ZEO start/stop methods: ##
+
+    @property
+    def zeo_port(self):
+        return int(self.interpolate('{{config.zeo_port}}'))
+
+    @property
+    def zeo_host(self):
+        return self.interpolate('{{config.zeo_host}}')
+
+    @property
+    def zeoctl_path(self):
+        return self.interpolate('{{env.base_path}}/opencore/zeo/bin/zeoctl')
+
+
+    def start_zeo(self):
+        if self.maker.simulate:
+            return
+        port = self.zeo_port
+        host = self.zeo_host
+        sock = socket.socket()
+        try:
+            try:
+                sock.bind((host, port))
+            except socket.error, exc:
+                if exc.args[0] == 48: # address in use
+                    self.logger.warn('Note: ports can sometimes take a minute to be freed after stopping ZEO')
+                    self.logger.warn('Retry if you think the port should be free')
+                    raise Exception('The ZEO Address %s:%s is already in use: %s' % (host, port, exc))
+                else:
+                    raise Exception('Cannot bind to ZEO port at %s:%s: %s' % (host, port, exc))
+        finally:
+            sock.close()
+        if self.zeo_status_contains('pid'):
+            raise Exception('Zeo is running already. Please stop zeo before running.')
+        self.maker.run_command([self.zeoctl_path, 'start'])
+        self.check_zeoctl_timeout('pid', 'starts')
+        self.logger.notify('Zeo started')
+
+    def stop_zeo(self):
+        if self.maker.simulate:
+            return
+        if self.zeo_status_contains('not running'):
+            raise Exception('Expected Zeo to be running but it is not.')
+        self.maker.run_command([self.zeoctl_path, 'stop'])
+        self.check_zeoctl_timeout('not running', 'stops')
+        self.logger.notify('Zeo stopped')
+
+    zeoctl_timeout = 30
+    
+    def check_zeoctl_timeout(self, check_for_status, action):
+        elapsed = 0
+        while elapsed < self.zeoctl_timeout and not self.zeo_status_contains(check_for_status):
+            self.logger.notify('Sleeping while zeo %s...' % action)
+            sleep(1)
+            elapsed += 1
+            if elapsed == self.zeoctl_timeout:
+                raise Exception("Could not start zeo after trying for %d seconds" % self.zeoctl_timeout)
+
+    def zeo_status_contains(self, substr):
+        return substr in subprocess.Popen([self.zeoctl_path, 'status'], stdout=subprocess.PIPE).communicate()[0]
 
 
 class PatchTwill(tasks.Task):
@@ -751,20 +817,21 @@ exec {{config.zeo_instance}}/bin/runzeo
                         '{{env.var}}/zeo'),
         # ZEO doesn't really have a uri
         tasks.InstallSupervisorConfig(script_name='opencore-zeo'),
-        StartZeo(),
-        RunZopectlScript('{{env.base_path}}/opencore/src/opencore/do_nothing.py',
-                         name='Run initial zopectl to bypass failure-on-first-start'),
-        RunZopectlScript('{{env.base_path}}/opencore/src/opencore/add_openplans.py',
-                         ## XXX add_openplans.py wasn't doing anything with this argument:
-                         #script_args='{{env.config.get("general", "etc_svn_subdir")}}', 
-                         name='Add OpenPlans site'),
-        tasks.ForEach('Run additional opencore-req.txt zopectl scripts',
-                      'script_name',
-                      '{{project.req_settings.get("zopectl_scripts")}}',
-                      RunZopectlScript('{{os.path.join(env.base_path, "opencore/", task.script_name)}}',
-                                       name="Additional zopectl script {{task.script_name}}")),
-        StopZeo(),
+        RunZopeScriptsWithZeo(
+            RunZopectlScript('{{env.base_path}}/opencore/src/opencore/do_nothing.py',
+                             name='Run initial zopectl to bypass failure-on-first-start'),
+            RunZopectlScript('{{env.base_path}}/opencore/src/opencore/add_openplans.py',
+                             name='Add OpenPlans site'),
+            tasks.ForEach('Run additional opencore-req.txt zopectl scripts',
+                          'script_name',
+                          '{{project.req_settings.get("zopectl_scripts")}}',
+                          RunZopectlScript('{{os.path.join(env.base_path, "opencore/", task.script_name)}}',
+                                           name="Additional zopectl script {{task.script_name}}"),
+                          ),
+            ),
+        
         ]
+
 
     depends_on_projects = ['fassembler:opencore']
 
@@ -832,15 +899,15 @@ execfile(config_location)
         tasks.EnsureDir('Create spool directory',
                         '{{env.var}}/maildrop-spool'),
         tasks.InstallSupervisorConfig(),
-        StartZeo(),
-        RunZopectlScript('{{env.base_path}}/opencore/src/opencore/add_maildrop.py',
-                         name='Add a MaildropHost object'),
-        StopZeo(),
+        RunZopeScriptsWithZeo(
+            RunZopectlScript('{{env.base_path}}/opencore/src/opencore/add_maildrop.py',
+                             name='Add a MaildropHost object'),
+        ),
         ]
 
 
     depends_on_projects = ['fassembler:zeo']
-
+        
 
 if __name__ == '__main__':
     if len(sys.argv) < 4:
