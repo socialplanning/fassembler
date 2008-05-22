@@ -73,7 +73,7 @@ class WordPressProject(Project):
                 default='localhost',
                 help='Interface/host to serve Apache/WordPress on'),
         Setting('wordpress_repo',
-                default='{{project.req_settings.get("wordpress_repo",
+                default='{{project.req_settings.get("wordpress_repo", \
                     "https://svn.openplans.org/svn/vendor/wordpress-mu/openplans/trunk")}}',
                 help='Location of WordPress MU repository'),
         Setting('wordpress_scripts_repo',
