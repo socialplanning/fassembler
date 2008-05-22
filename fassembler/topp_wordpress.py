@@ -105,11 +105,17 @@ class WordPressProject(Project):
         Setting('db_root_password',
                 default='{{env.db_root_password}}',
                 help='Database root password'),
+        Setting('topp_wordpress_theme',
+                default='{{project.req_settings.get("topp_wordpress_theme", "openplans")}}',
+                help='Theme for wordpress (template option)'),
         ]
 
     skel_dir = os.path.join(os.path.dirname(__file__), 'wordpress-files', 'skel')
 
     actions = [
+        tasks.SaveSetting('Save the wordpress theme (template)',
+                          {'topp_wordpress_theme': '{{config.topp_wordpress_theme}}'},
+                          section='applications'),
         CheckPHP('{{config.php_cgi_exec}}'),
         tasks.CopyDir('Create layout',
                       skel_dir, './'),
