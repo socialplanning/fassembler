@@ -173,7 +173,7 @@ class CabochonProject(Project):
         tasks.InstallSupervisorConfig(),
         tasks.CheckMySQLDatabase('Check database exists'),
         tasks.Script('Run setup-app',
-                     ['paster', 'setup-app', '{{env.base_path}}/etc/{{project.name}}/{{project.name}}.ini'],
+                     ['paster', 'setup-app', '{{env.base_path}}/etc/{{project.name}}/{{project.name}}.ini#cabochon'],
                      use_virtualenv=True,
                      cwd='{{env.base_path}}/{{project.name}}/src/{{project.name}}'),
         tasks.EnsureFile('Write cabochon_user_info.txt if necessary', '{{config.cabochon_user_info}}',
