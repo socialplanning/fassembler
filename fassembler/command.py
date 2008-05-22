@@ -283,7 +283,7 @@ def find_project_class(project_name, logger):
     if ':' in project_name:
         dist_name, ep_name = project_name.split(':', 1)
     else:
-        ep_name = 'main'
+        dist_name, ep_name = project_name, 'main'
     try:
         dist = pkg_resources.get_distribution(dist_name)
     except pkg_resources.DistributionNotFound, e:
@@ -299,7 +299,7 @@ def find_project_class(project_name, logger):
             logger.fatal('More than one entry point in [fassembler.project] found with name %s: %s'
                          % (project_name, ', '.join(map(repr, options))))
             return project_name, None
-        return ep_name(options[0]), options[0].load()
+        return ep_to_name(options[0]), options[0].load()
     else:
         ep = dist.get_entry_info('fassembler.project', ep_name)
         if not ep:
@@ -359,7 +359,7 @@ def list_projects(options):
         print desc
         print
 
-def ep_name(ep):
+def ep_to_name(ep):
     """
     Given a pkg_resources.EntryPoint object, return the name that can
     be used to load that entry point.
