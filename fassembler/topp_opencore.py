@@ -864,6 +864,15 @@ class MaildropProject(OpenCoreBase):
                 default='',
                 help='An email address (or comma-separated multiple addresses) '
                 'where all email will be sent, overriding normal delivery'),
+        Setting('zeo_port',
+                default='{{env.base_port+int(config.zeo_port_offset)}}',
+                help="Port to install ZEO on"),
+        Setting('zeo_port_offset',
+                default='2',
+                help='Offset from base_port for ZEO'),
+        Setting('zeo_host',
+                default='localhost',
+                help='Interface/host to serve ZEO on'),
         ]
 
     maildrop_start_script_template = """\
