@@ -1057,7 +1057,7 @@ class InstallSpec(Task):
         for command, arg in extra_commands:
             command(context, arg)
 
-    _setting_re = re.compile(r'^(\w+)\s*=\s*(.*)$')
+    _setting_re = re.compile(r'^(\w+)\s*=\s*([^=<>\s].*)$')
 
     def read_commands(self, filename=None):
         """
