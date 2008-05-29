@@ -160,7 +160,7 @@ class ToppProject(Project):
                 default='{{project.req_settings.get("projprefs", "Preferences")}}',
                 help='Displayed name for opencore project/group settings'),
         Setting('localbuild',
-                inherit_config=('general', 'streetfilms_uri'),
+                inherit_config=('general', 'localbuild'),
                 default='False',
                 help="Specifies whether this is a single developer's build"),
         ]
