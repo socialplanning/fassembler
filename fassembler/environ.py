@@ -74,14 +74,15 @@ class Environment(object):
     @property
     def config_filename(self):
         """
-        The global configuration file (etc/build.ini).
+        Returns the path to build.ini, the global configuration file.
         """
         return os.path.join(self.base_path, 'etc', 'build.ini')
 
     @property
     def default_config_filename(self):
         """
-        Configuration file containing supplemental options (requirements/default-build.ini).
+        Returns the path to default-build.ini, which allows the specification
+        of default settings which can then be overridden in etc/build.ini.
         """
         return os.path.join(self.base_path, 'requirements', 'default-build.ini')
 
