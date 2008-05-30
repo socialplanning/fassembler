@@ -108,7 +108,21 @@ class Environment(object):
         """
         Get rid of the configuration, so that it will be re-read later
         """
+        command_line_settings = []
+        if self._parser is not None:
+            for section in self._parser.sections():
+                for option in self._parser.options(section):
+                    filename = self._parser.setting_location(section, option)[0]
+                    if filename is None or filename == '<cmdline>':
+                        command_line_settings.append(
+                            (section, option, self._parser.get(section, option)))
         self._parser = None
+        if command_line_settings:
+            p = self.config
+            for section, option, value in command_line_settings:
+                if not p.has_section(section):
+                    p.add_section(section)
+                p.set(section, option, value)
         
     @property
     def base_port(self):

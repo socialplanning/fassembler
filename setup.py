@@ -21,7 +21,7 @@ setup(name='fassembler',
           'CmdUtils',
           #'ScriptTest',
           'Tempita==dev,>=0.1.1dev',
-          'INITools==dev,>=0.2.1dev-r3474',
+          'INITools==dev,>=0.2.1dev-r3488',
           'virtualenv',
           'pygments',
           'MySQL-python', # At least, some projects require MySQL access
