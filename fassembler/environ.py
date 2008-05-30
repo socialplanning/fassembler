@@ -2,6 +2,7 @@ import os
 import socket
 from fassembler.config import ConfigParser
 from fassembler.util import asbool
+from initools.configparser import CanonicalFilenameSet
 import string
 import random
 from datetime import datetime
@@ -73,9 +74,16 @@ class Environment(object):
     @property
     def config_filename(self):
         """
-        The global configuration file.
+        The global configuration file (etc/build.ini).
         """
         return os.path.join(self.base_path, 'etc', 'build.ini')
+
+    @property
+    def default_config_filename(self):
+        """
+        Configuration file containing supplemental options (requirements/default-build.ini).
+        """
+        return os.path.join(self.base_path, 'requirements', 'default-build.ini')
 
     @property
     def config(self):
@@ -85,8 +93,11 @@ class Environment(object):
         """
         if self._parser is None:
             self._parser = ConfigParser()
-            if os.path.exists(self.config_filename):
-                self._parser.read(self.config_filename)
+            configfiles = []
+            for i in self.default_config_filename, self.config_filename:
+                if os.path.exists(i):
+                    configfiles.append(i)
+            self._parser.read(configfiles)
         return self._parser
 
     @property
@@ -120,7 +131,7 @@ class Environment(object):
         ## (the self._parser is None check avoids this, but only incidentally)
         self.logger.info('Writing environment config file: %s' % self.config_filename)
         f = open(self.config_filename, 'wb')
-        self.config.write(f)
+        self.config.write_sources(f, CanonicalFilenameSet([self.config_filename, None, '<cmdline>']))
         f.close()
 
     random_string = staticmethod(random_string)
