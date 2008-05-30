@@ -332,7 +332,9 @@ def merge_config(source, dest, overwrite=False):
                 continue
             if not dest.has_section(section):
                 dest.add_section(section)
-            dest.set(section, option, source.get(section, option))
+            source_filename, source_lineno = source.setting_location(section, option)
+            dest.set(section, option, source.get(section, option),
+                     filename=source_filename, line_number=source_lineno)
 
 ############################################################
 ## Project listing
