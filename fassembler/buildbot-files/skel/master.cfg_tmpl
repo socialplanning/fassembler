@@ -297,7 +297,7 @@ oc_factory = make_factory(
         'fassembler:zeo',
         ],
     flunc_suite='all', ports=trunkports,
-    zopectl_suites=['opencore', 'Products.wicked'],
+    zopectl_suites=['opencore', 'Products.wicked', 'Products.listen'],
     )
 
 
