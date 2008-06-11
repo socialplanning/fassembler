@@ -286,7 +286,7 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                 haltOnFailure=False, flunkOnFailure=True)
 
     fac.addStep(ToppShellCommand,
-                command='%s/bin/supervisorctl shutdown && sleep 20' % OCBASEDIR,
+                command='%s/bin/supervisorctl shutdown && sleep 40' % OCBASEDIR,
                 description='shut down',
                 haltOnFailure=True)
 
