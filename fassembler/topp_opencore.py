@@ -257,6 +257,11 @@ class PlaceZopeConfig(ZopeConfigTask):
                             self.build_profile_path,
                             add_dest_to_svn=True)
 
+        pas_obj_file_path = '%s/default/PAS/.objects' % self.zope_profiles_dir
+        if os.path.exists(pas_obj_file_path):
+            self.maker.copy_file(pas_obj_file_path,
+                                 '%s/PAS/.objects' % self.build_profile_path,
+                                 svn_add=True)
 
         # fix values in properties.xml and propertiestool.xml
         # XXX these settings should eventually live in build.ini and
