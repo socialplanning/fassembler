@@ -184,16 +184,25 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                 )
 
     # Clean up after previous runs.
-    # For some reason, portkill seems to always exit 1, so ignore "failures".
-    # XXX We should instead use ToppShellScript so slaves don't have to
-    # be updated if the script changes.
     if ports:
-        fac.addStep(ToppShellCommand,
-                    command=['{{os.path.join("..", "..", "bin", "portkill")}}',
-                             '-v'] + [str(port) for port in ports],
-                    description=['kill any running', 'instances using', 'the ports'],
+        # For some reason, portkill seems to always exit 1, so ignore "failures".
+        # And for some reason, it sometimes doesn't really work, so
+        # let's just stupidly bludgeon those ports do death.
+        portstring = ' '.join([str(port) for port in ports])
+        killscript="""
+        KILLER=\"{{os.path.join('..', '..', 'bin', 'portkill')}} -v %s\"
+        $KILLER
+        sleep 2
+        $KILLER
+        sleep 2
+        $KILLER
+        sleep 2
+        """ % portstring
+        fac.addStep(ToppShellScript, sourcetext=killscript,
+                    description=['kill any running', 'instances using',
+                                 'the ports'],
                     haltOnFailure=False, flunkOnFailure=False)
-    
+
     fac.addStep(ToppShellCommand, command="time rm -rf %s *bz2 *gz *zip" % OCBASEDIR,
                 description='remove old files',
                 haltOnFailure=False, flunkOnFailure=False
