@@ -67,9 +67,7 @@ def after_install(options, home_dir):
     script_dest = join(script_dir, 'fassembler')
     logger.notify('Copying fassembler to %s' % script_dest)
     fs_ensure_dir(script_dir)
-    script_src = join(home_dir, 'bin', 'fassembler')
-    shutil.copyfile(script_src, script_dest)
-    shutil.copymode(script_src, script_dest)
+    os.symlink('../fassembler/bin/fassembler', script_dest)
     etc_dir = join(base_dir, 'etc')
     build_ini = join(etc_dir, 'build.ini')
     if not os.path.exists(build_ini):
