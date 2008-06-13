@@ -622,7 +622,7 @@ class OpenCoreProject(OpenCoreBase):
                 help='Relative path to ftests'),
         Setting('opencore_vacuum_whitelist',
                 inherit_config=('general', 'opencore_vacuum_whitelist'),
-                default='{{",".join((env.config.get("general", "streetsblog_uri"), env.config.get("general", "streetfilms_uri")))}}',
+                default='',
                 help='whitelist of safe sites for javascript authentication api'),
         Setting('opencore_embed_whitelist',
                 inherit_config=('general', 'opencore_embed_whitelist'),
