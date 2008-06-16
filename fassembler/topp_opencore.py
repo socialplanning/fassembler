@@ -600,7 +600,7 @@ class OpenCoreProject(OpenCoreBase):
         ## e.g., there's another bundle at:
         ##   https://svn.openplans.org/svn/deployment/products-plone25
         Setting('opencore_bundle_name',
-                default='opencore-plone25',
+                default='{{project.req_settings.get("opencore_bundle_name", "opencore-plone25")}}',
                 help='Name of the bundle to use'),
         Setting('opencore_bundle_tar_dir',
                 default='https://svn.openplans.org/eggs/',
