@@ -60,6 +60,24 @@ class BrainpowerProject(Project):
         Setting('port',
                 default='{{env.base_port+int(config.port_offset)}}',
                 help="Port to run the dev django server on"),
+
+        Setting('db_engine',
+                default='mysql',
+                help="Engine to use for django's database"),
+        Setting('db_username',
+                default='root',
+                help="Database user"),
+        Setting('db_password',
+                default='',
+                help="Database password"),
+        
+        Setting('db_name',
+                default='brainpower',
+                help="Database name"),
+        Setting('secret_key',
+                default='{{maker.ask_password()}}',
+                help="Django's secret key"),
+        
         Setting('spec',
                 default='requirements/brainpower-req.txt',
                 help='Specification of packages to install'),
@@ -92,7 +110,12 @@ class BrainpowerProject(Project):
                            'dev_port': '{{config.port}}',
                            'python': '{{config.python}}',
                            'flunc': '{{config.flunc}}',
+                           'db_engine': '{{config.db_engine}}',
+                           'db_username': '{{config.db_username}}',
+                           'db_password': '{{config.db_password}}',
 
+                           'db_name': '{{config.db_name}}',
+                           'secret_key': '{{config.secret_key}}',
                            },
                           section='brainpower'),
         ]
