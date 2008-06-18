@@ -54,5 +54,7 @@ setup(name='fassembler',
       errorlistener = fassembler.topp_erroreater:ErrorListenerProject
       erroreater = fassembler.topp_erroreater:ErrorEaterProject
       relateme = fassembler.topp_products:RelateMeProject
+      brainpower = fassembler.topp_brainpower:BrainpowerProject
+
       """,
       )
