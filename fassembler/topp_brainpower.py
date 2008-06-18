@@ -132,6 +132,9 @@ class BrainpowerProject(Project):
                            'secret_key': '{{config.secret_key}}',
                            },
                           section='brainpower'),
+        tasks.Script('Initialize brainpower database',
+                     ['brainpower/bin/manage.py', 'syncdb', '--noinput'])
+        
         ]
 
 
