@@ -12,6 +12,7 @@ Standard stack
 +8 = ErrorEater
 +9 = (unused; for RelateMe)
 +10 = Supervisor
++11 = brainpower
 +20 = buildbot private master http (force build allowed)
 +21 = buildbot public master http (force build not allowed)
 +22 = buildbot slave

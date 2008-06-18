@@ -54,19 +54,31 @@ class BrainpowerProject(Project):
         return self.req_settings.get(setting, '')
 
     settings = [
+        Setting('port_offset',
+                default='11',
+                help='Port offset from base_port to run the dev django server on'),
+        Setting('port',
+                default='{{env.base_port+int(config.port_offset)}}',
+                help="Port to run the dev django server on"),
         Setting('spec',
                 default='requirements/brainpower-req.txt',
                 help='Specification of packages to install'),
         Setting('django_tarball_url',
-                inherit_config=('general', 'django_tarball_url'),
                 default='{{project.get_req_setting("django_tarball_url")}}',
                 help='Where to download the django source',
                 ),
         Setting('django_tarball_version',
-                inherit_config=('general', 'django_tarball_version'),
                 default='{{project.get_req_setting("django_tarball_version")}}',
                 help='Version of Django to install',
                 ),
+        Setting('python',
+                default='{{project.build_properties.get("virtualenv_python")}}',
+                help='Where our Python gets installed',
+                ),
+        Setting('flunc',
+                default='{{project.build_properties.get("virtualenv_bin_path") + "/flunc"}}',
+                help="Where our Flunc executable is installed.",
+                )
         ]
 
     actions = [
@@ -76,8 +88,13 @@ class BrainpowerProject(Project):
         InstallDjango(),
         tasks.SaveSetting('Save brainpower settings',
                           {'django_tarball_version': '{{config.django_tarball_version}}',
-                           'django_tarball_url': '{{config.django_tarball_url}}'},
-                          section='general'),
+                           'django_tarball_url': '{{config.django_tarball_url}}',
+                           'dev_port': '{{config.port}}',
+                           'python': '{{config.python}}',
+                           'flunc': '{{config.flunc}}',
+
+                           },
+                          section='brainpower'),
         ]
 
 
