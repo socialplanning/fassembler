@@ -190,13 +190,10 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
         # let's just stupidly bludgeon those ports do death.
         portstring = ' '.join([str(port) for port in ports])
         killscript="""
-        KILLER=\"{{os.path.join('..', '..', 'bin', 'portkill')}} -v %s\"
+        KILLER=\"{{os.path.join('..', '..', 'bin', 'portkill')}} -v -s 5 %s\"
         $KILLER
         sleep 2
         $KILLER
-        sleep 2
-        $KILLER
-        sleep 2
         """ % portstring
         fac.addStep(ToppShellScript, sourcetext=killscript,
                     description=['kill any running', 'instances using',
