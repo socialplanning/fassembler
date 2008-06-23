@@ -26,7 +26,7 @@ def extend_parser(parser):
         metavar='DIR_OR_URL',
         dest='fassembler_svn',
         default=FASS_SVN_LOCATION,
-        help='Location of a svn directory or URL to use for the installation')
+        help='Location of a svn directory or URL to use for the installation of fassembler')
 
 def adjust_options(options, args):
     if not args:
@@ -49,7 +49,7 @@ def after_install(options, home_dir):
         fassembler_dir = join(src_dir, 'fassembler')
         logger.notify('Installing fassembler from %s to %s' % (fassembler_svn, fassembler_dir))
         fs_ensure_dir(src_dir)
-        call_subprocess(['svn', 'checkout', '--quiet', FASS_SVN_LOCATION, fassembler_dir],
+        call_subprocess(['svn', 'checkout', '--quiet', fassembler_svn, fassembler_dir],
                         show_stdout=True)
     logger.indent += 2
     try:
