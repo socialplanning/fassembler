@@ -347,7 +347,7 @@ def list_projects(options):
     import traceback
     from cStringIO import StringIO
     for ep in pkg_resources.iter_entry_points('fassembler.project'):
-        print '%s (from %s:%s)' % (ep_name(ep), ep.module_name, '.'.join(ep.attrs))
+        print '%s (from %s:%s)' % (ep_to_name(ep), ep.module_name, '.'.join(ep.attrs))
         try:
             obj = ep.load()
         except:
