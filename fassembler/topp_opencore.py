@@ -626,7 +626,7 @@ class OpenCoreProject(OpenCoreBase):
                 help='whitelist of safe sites for javascript authentication api'),
         Setting('opencore_embed_whitelist',
                 inherit_config=('general', 'opencore_embed_whitelist'),
-                default='www.youtube.com,video.google.com,www.streetsblog.org,streetsblog.org,p.streetsblog.org,www.streetfilms.org,streetfilms.org,p.streetfilms.org,www.vimeo.com,static.slideshare.net,widget-57.slide.com',
+                default='www.youtube.com,video.google.com,www.streetsblog.org,streetsblog.org,p.streetsblog.org,www.streetfilms.org,streetfilms.org,p.streetfilms.org,www.vimeo.com,static.slideshare.net,widget-57.slide.com,www.mindmeister.com,mindmeister.com',
                 help='whitelist of safe sites to embed objects, embed, param, iframe, and layer tags'),
         ]
 
