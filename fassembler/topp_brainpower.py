@@ -73,7 +73,7 @@ class BrainpowerProject(Project):
                 help="Engine to use for django's database"),
         Setting('db_host',
                 default='',
-                help="Engine to use for django's database"),
+                help="Database host"),
 
         Setting('db_username',
                 default='root',
@@ -140,6 +140,11 @@ class BrainpowerProject(Project):
                            },
                           section='brainpower'),
         tasks.Script('Initialize brainpower database',
-                     ['brainpower/bin/manage.py', 'syncdb', '--noinput'])
+                     ['brainpower/bin/manage.py', 'syncdb', '--noinput']),
+        # Order of arguments matters here! Watch out for
+        # django bug http://code.djangoproject.com/ticket/7595
+        tasks.Script('Initialize brainpower test database',
+                     ['brainpower/bin/manage.py', 'syncdb', '--settings=brainpower.test_settings', '--noinput'])
+ 
         
         ]
