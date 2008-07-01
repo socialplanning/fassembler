@@ -15,6 +15,11 @@ class InstallDjango(tasks.InstallTarball):
     _tarball_url = interpolated('_tarball_url')
     _tarball_version = interpolated('_tarball_version')
 
+    description = """
+    Install Django {{task._tarball_version}}.
+
+    This downloads {{task._tarball_url}}.
+    """
 
     def __init__(self, stacklevel=1):
         super(InstallDjango, self).__init__(stacklevel)
@@ -23,7 +28,7 @@ class InstallDjango(tasks.InstallTarball):
         self._tarball_version = '{{config.django_tarball_version}}'
 
     def is_up_to_date(self):
-        if not self._tarball_version and self._tarball_url:
+        if not (self._tarball_version and self._tarball_url):
             self.logger.notify("No django version specified, skipping")
             return True
         if os.path.exists(self.version_path):
@@ -121,7 +126,7 @@ class BrainpowerProject(Project):
         tasks.CheckMySQLDatabase('Check test brainpower database exists',
                                  db_name='{{config.test_db_name}}'),
         tasks.SaveSetting('Save brainpower settings',
-                          {'dqjango_tarball_version': '{{config.django_tarball_version}}',
+                          {'django_tarball_version': '{{config.django_tarball_version}}',
                            'django_tarball_url': '{{config.django_tarball_url}}',
                            'dev_port': '{{config.port}}',
                            'python': '{{config.python}}',
