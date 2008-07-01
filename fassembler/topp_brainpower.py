@@ -6,8 +6,6 @@ http://www.openplans.org/projects/brainpower
 from fassembler import tasks
 from fassembler.project import Project, Setting
 import os
-import subprocess
-import sys
 
 interpolated = tasks.interpolated
 
@@ -25,6 +23,9 @@ class InstallDjango(tasks.InstallTarball):
         self._tarball_version = '{{config.django_tarball_version}}'
 
     def is_up_to_date(self):
+        if not self._tarball_version and self._tarball_url:
+            self.logger.notify("No django version specified, skipping")
+            return True
         if os.path.exists(self.version_path):
             f = open(self.version_path)
             version = f.read().strip()
@@ -41,6 +42,7 @@ class InstallDjango(tasks.InstallTarball):
             '{{project.build_properties["virtualenv_bin_path"]}}/python',
             stacklevel=1)
         self.maker.run_command(py, 'setup.py', 'install', cwd=where)
+
 
 class BrainpowerProject(Project):
     """Brainpower base project class"""
@@ -86,7 +88,7 @@ class BrainpowerProject(Project):
                 help="Scratch database name for tests"),
         
         Setting('secret_key',
-                default='{{maker.ask_password()}}',
+                default='{{maker.ask_password("Enter secret key for Django or press enter for a random one")}}',
                 help="Django's secret key"),
         
         Setting('spec',
@@ -136,5 +138,3 @@ class BrainpowerProject(Project):
                      ['brainpower/bin/manage.py', 'syncdb', '--noinput'])
         
         ]
-
-
