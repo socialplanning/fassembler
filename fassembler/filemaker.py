@@ -1005,7 +1005,7 @@ Responses:
         except:
             return False
 
-    def ask_password(self):
+    def ask_password(self, prompt="Input a password or press enter to generate a random one: "):
         """
         Prompt user to input a password.
         """
@@ -1022,7 +1022,7 @@ Responses:
         if not self.interactive:
             return randpw()
         self.beep_if_necessary()
-        prompt, prompt2 = 'Input a password or press enter to generate a random one: ', 'Confirm: '
+        prompt2 = 'Confirm:'
         if self.logger.supports_color(sys.stdout):
             prompt, prompt2 = [self.logger.colorize(p, 'bold cyan') for p in prompt, prompt2]
         for i in range(3):
