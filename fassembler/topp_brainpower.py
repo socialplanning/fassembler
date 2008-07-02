@@ -106,7 +106,6 @@ class AdminMediaLink(tasks.Task):
                            color='green')
         self.logger.notify(apache_example, color="yellow")
         self.logger.notify(apache_conf_postscript, color='green')
-        
     
     
 class BrainpowerProject(Project):
@@ -206,6 +205,10 @@ class BrainpowerProject(Project):
         tasks.Script('Initialize brainpower test database',
                      ['brainpower/bin/manage.py', 'syncdb', '--settings=brainpower.test_settings', '--noinput']
                      ),
-
+        tasks.EnsureFile('Copy mod_python handler to bin directory',
+                         dest='{{project.build_properties["virtualenv_bin_path"]}}/brainpower_handler.py',
+                         content_path='{{project.build_properties["virtualenv_path"]}}/src/brainpower/brainpower_handler.py',
+                         executable=True,
+                         ),
         AdminMediaLink('Link topp admin media into {{task.htdocs}}.'),
         ]
