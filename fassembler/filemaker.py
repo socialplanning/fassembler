@@ -1159,6 +1159,22 @@ Responses:
         """
         self.run_command(['wget', '--no-check-certificate', url, '-O', filename])
 
+    def backup(self, filename):
+        """
+        Moves the filename (file or directory) to a new location,
+        adding a .bak, .bak2, etc to the name to move it aside.
+        """
+        n = 1
+        ext = '.bak'
+        while os.path.exists(filename + ext):
+            n += 1
+            ext = '.bak%s' % n
+        self.logger.notify('Backing up %s to %s' % (filename, filename + ext))
+        if not self.simulate:
+            if os.path.isdir(filename):
+                shutil.copytree(filename, filename+ext)
+            else:
+                shutil.copy2(filename, filename+ext)
 
 def popdefault(dict, name, default=None):
     """
