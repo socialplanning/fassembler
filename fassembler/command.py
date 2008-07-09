@@ -346,8 +346,10 @@ def list_projects(options):
     """
     import traceback
     from cStringIO import StringIO
-    for ep in pkg_resources.iter_entry_points('fassembler.project'):
-        print '%s (from %s:%s)' % (ep_to_name(ep), ep.module_name, '.'.join(ep.attrs))
+    entry_points = [(ep_to_name(ep), ep) for ep in
+                    pkg_resources.iter_entry_points('fassembler.project')]
+    for name, ep in sorted(entry_points):
+        print '%s (from %s:%s)' % (name, ep.module_name, '.'.join(ep.attrs))
         try:
             obj = ep.load()
         except:
@@ -369,7 +371,7 @@ def ep_to_name(ep):
     if ep.name == 'main':
         return str(ep.dist.project_name)
     else:
-        return '%s:%s' % (ep.dist.project_name, ep.name)
+        return ep.name # '%s:%s' % (ep.dist.project_name, ep.name)
 
 if __name__ == '__main__':
     main()
