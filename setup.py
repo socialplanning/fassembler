@@ -55,6 +55,6 @@ setup(name='fassembler',
       erroreater = fassembler.topp_erroreater:ErrorEaterProject
       relateme = fassembler.topp_products:RelateMeProject
       brainpower = fassembler.topp_brainpower:BrainpowerProject
-
+      windmill = fassembler.topp_windmill:WindmillProject
       """,
       )

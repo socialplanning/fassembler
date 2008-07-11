@@ -440,6 +440,7 @@ class VirtualEnv(Task):
     description = """
     Create a virtualenv environment in {{maker.path(task.path or project.name)}}
     {{if not task.path}} ({{project.name}} is the project name){{endif}}
+    {{if task.different_python}} run as a separate process using task.different_python as the binary{{endif}}
     {{if task.site_packages}}Global site-packages will be available{{else}}Global site-packages will NOT be available{{endif}}
 
     {{if os.path.exists(task.path_resolved):}}
@@ -452,10 +453,12 @@ class VirtualEnv(Task):
     {{endif}}
     """
 
-    def __init__(self, name='Create virtualenv', path=None, site_packages=False, stacklevel=1):
+    def __init__(self, name='Create virtualenv', path=None, site_packages=False,
+                 different_python=False, stacklevel=1):
         super(VirtualEnv, self).__init__(name, stacklevel=stacklevel+1)
         self.path = path
         self.site_packages = site_packages
+        self.different_python = different_python
 
     @property
     def path_resolved(self):
@@ -470,13 +473,28 @@ class VirtualEnv(Task):
             else:
                 self.logger.notify('Forcing virtualenv recreation')
         import virtualenv
-        ## FIXME: kind of a nasty hack, but maybe it's okay?
-        virtualenv.logger = self.logger
-        self.logger.level_adjust -= 2
-        try:
-            virtualenv.create_environment(path, site_packages=self.site_packages)
-        finally:
-            self.logger.level_adjust += 2
+        if not self.different_python:
+            ## FIXME: kind of a nasty hack, but maybe it's okay?
+            virtualenv.logger = self.logger
+            self.logger.level_adjust -= 2
+            try:
+                virtualenv.create_environment(path, site_packages=self.site_packages)
+            finally:
+                self.logger.level_adjust += 2
+        else:
+            venv_path = virtualenv.__file__
+            if not venv_path:
+                self.logger.fatal("Can't find 'virtualenv' binary")
+                return
+            if venv_path.endswith('.pyc') or venv_path.endswith('.pyo'):
+                venv_path = venv_path[:-1]
+            venv_args = [self.different_python, venv_path]
+            if not self.site_packages:
+                venv_args.append('--no-site-packages')
+            venv_args.append(path)
+            self.logger.notify('Subprocess virtualenv creation')
+            proc = subprocess.Popen(venv_args, stdout=subprocess.PIPE)
+            proc.communicate()
         self.logger.notify('virtualenv created in %s' % path)
 
     def iter_subtasks(self):
@@ -485,7 +503,6 @@ class VirtualEnv(Task):
             return [SetDistutilsValue('Add custom find_links locations',
                     'easy_install', 'find_links', find_links)]
         return []
-
 
     def setup_build_properties(self):
         path = self.path_resolved
@@ -496,7 +513,14 @@ class VirtualEnv(Task):
         props['virtualenv_bin_path'] = os.path.join(path, 'bin')
         props['virtualenv_python'] = os.path.join(path, 'bin', 'python')
         props['virtualenv_src_path'] = os.path.join(path, 'src')
-        props['virtualenv_lib_python'] = os.path.join(path, 'lib', 'python%s' % sys.version[:3])
+        if not self.different_python:
+            props['virtualenv_lib_python'] = os.path.join(path, 'lib', 'python%s' % sys.version[:3])
+        else:
+            proc = subprocess.Popen([self.different_python, '-V'],
+                                    stderr=subprocess.PIPE)
+            ver = proc.communicate()[1].strip()
+            ver = ver.split()[1][:3]
+            props['virtualenv_lib_python'] = os.path.join(path, 'lib', 'python%s' % ver[:3])
 
 
 class EasyInstall(Script):
