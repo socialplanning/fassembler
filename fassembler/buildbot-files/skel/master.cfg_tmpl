@@ -315,7 +315,7 @@ oc_25_factory = make_factory(
 
 full_op_factory = make_factory(
     'Openplans (full stack)',
-    requirements_repo='https://svn.openplans.org/svn/build/requirements/livablestreets/trunk/',
+    requirements_repo='https://svn.openplans.org/svn/build/requirements/openplans/trunk/',
     ports=opfull_ports,
     fassembler_targets=['all'],
     ftestsdir='opencore/src/opencore/ftests/',
@@ -352,7 +352,7 @@ oc_plone25_builders = [
     {'name': 'opencore-plone25',
      'slavename': name,
      'builddir': 'opencore-mini-plone25',
-     'factory': oc_factory}
+     'factory': oc_25_factory}
     for name in slavenames]
 
 full_op_builders = [
