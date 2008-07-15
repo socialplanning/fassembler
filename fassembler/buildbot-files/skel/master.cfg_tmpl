@@ -22,10 +22,10 @@ BASEPORT=int('{{config.child_baseport}}')  # Used for the fassembler builds
 OCBASEDIR='{{config.oc_basedir}}'
 
 # All the ports we care about... hacky
-trunkports =  range(BASEPORT, BASEPORT + 11)  # for the trunk build.
-lsmini_ports = range(BASEPORT + 100, BASEPORT + 111)  # for the LS build.
+octrunk_ports =  range(BASEPORT, BASEPORT + 11)  # for the opencore trunk build.
+oc25_ports = range(BASEPORT + 100, BASEPORT + 111)  # for the LS build.
 lsfull_ports = range(BASEPORT + 200, BASEPORT + 211)  # for the full LS build.
-allports = trunkports + lsfull_ports + lsmini_ports
+opfull_ports = range(BASEPORT + 300, BASEPORT + 311)  # for the OP full stack.
 
 
 slavenames = ['slave1']
@@ -58,6 +58,7 @@ svnurls = [
     'https://svn.openplans.org/svn/transcluder',
     'https://svn.openplans.org/svn/build/requirements/openplans',
     'https://svn.openplans.org/svn/build/requirements/livablestreets',
+    'https://svn.openplans.org/svn/build/requirements/opencore-minimal',
 ]
 
 def split_file(path):
@@ -185,6 +186,7 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
 
     # Clean up after previous runs.
     if ports:
+        baseport = ports[0]
         # For some reason, portkill seems to always exit 1, so ignore "failures".
         # And for some reason, it sometimes doesn't really work, so
         # let's just stupidly bludgeon those ports do death.
@@ -250,110 +252,118 @@ def make_factory(name, baseport=BASEPORT, requirements_repo=None,
                     description=['run', suite, 'unit tests'],
                     haltOnFailure=False, flunkOnFailure=True)
 
-    # Run the flunc tests. Wait a bit for services to come up,
-    # to avoid errors from deliverance.
-    # Assume that ports[1] is Zope and takes the longest time.
-    startscript = """
-    %s/bin/supervisord || exit 1
-    sleep 10
-    wget --retry-connrefused --tries=10 -T 100 --spider http://localhost:%d
-    """ % (OCBASEDIR, ports[1])
-    fac.addStep(ToppShellScript,
-                sourcetext=startscript,
-                description=['start services', 'for functional tests'],
-                haltOnFailure=True)
+    if flunc_suite:
+        # Run the flunc tests. Wait a bit for services to come up,
+        # to avoid errors from deliverance.
+        # Assume that ports[1] is Zope and takes the longest time.
+        startscript = """
+        %s/bin/supervisord || exit 1
+        sleep 10
+        wget --retry-connrefused --tries=10 -T 100 --spider http://localhost:%d
+        """ % (OCBASEDIR, ports[1])
+        fac.addStep(ToppShellScript,
+                    sourcetext=startscript,
+                    description=['start services', 'for functional tests'],
+                    haltOnFailure=True)
 
-    # Don't halt on failure for any of these! We need shutdown to run.
-    fac.addStep(ToppShellCommand, 
-                command=['%s/opencore/bin/flunc' % OCBASEDIR,
-                         '-p', '%s/%s' % (OCBASEDIR, ftestsdir),
-                         '-t', 'http://localhost:%d' % baseport,
-                         '--verbose',
-                         # Put err.html on stdout as a temporary hack for
-                         # http://trac.openplans.org/openplans/ticket/2561
-                         # A better solution would be to somehow serve
-                         # the file and provide a clickable link to
-                         # it, but that would take actual work.  If we
-                         # want to do that, start by getting the file
-                         # from the slave to the master, via
-                         # buildbot/steps/transfer.py.
-                         '--dump-html', '-',
-                         flunc_suite],
-                description='run flunc tests',
-                haltOnFailure=False, flunkOnFailure=True)
+        # Don't halt on failure for any of these! We need shutdown to run.
+        fac.addStep(ToppShellCommand, 
+                    command=['%s/opencore/bin/flunc' % OCBASEDIR,
+                             '-p', '%s/%s' % (OCBASEDIR, ftestsdir),
+                             '-t', 'http://localhost:%d' % baseport,
+                             '--verbose',
+                             # Put err.html on stdout as a temporary hack for
+                             # http://trac.openplans.org/openplans/ticket/2561
+                             # A better solution would be to somehow serve
+                             # the file and provide a clickable link to
+                             # it, but that would take actual work.  If we
+                             # want to do that, start by getting the file
+                             # from the slave to the master, via
+                             # buildbot/steps/transfer.py.
+                             '--dump-html', '-',
+                             flunc_suite],
+                    description='run flunc tests',
+                    haltOnFailure=False, flunkOnFailure=True)
 
-    fac.addStep(ToppShellCommand,
-                command='%s/bin/supervisorctl shutdown && sleep 40' % OCBASEDIR,
-                description='shut down',
-                haltOnFailure=True)
+        fac.addStep(ToppShellCommand,
+                    command='%s/bin/supervisorctl shutdown && sleep 40' % OCBASEDIR,
+                    description='shut down',
+                    haltOnFailure=True)
 
     return fac
 
 
 oc_factory = make_factory(
-    'Openplans (partial stack)', baseport=BASEPORT,
-    requirements_repo='https://svn.openplans.org/svn/build/requirements/openplans/trunk',
-    ftestsdir='opencore/src/opencore/ftests/',
-    fassembler_targets=[
-        'fassembler:supervisor',
-        'fassembler:opencore',
-        'fassembler:deliverance',
-        'fassembler:cabochon',
-        'fassembler:twirlip',
-        'fassembler:zeo',
-        ],
-    flunc_suite='all', ports=trunkports,
+    'Opencore (plone 3, no flunc)',
+    requirements_repo='https://svn.openplans.org/svn/build/requirements/opencore-minimal/branches/opencore-plone30',
+    fassembler_targets=['all'],
+    flunc_suite=None,
+    ports=octrunk_ports,
     zopectl_suites=['opencore', 'Products.listen'],
     )
 
 
-livable_factory = make_factory(
-    'Livable Streets (partial stack)',
+oc_25_factory = make_factory(
+    'Opencore (plone 2.5, no flunc)',
+    requirements_repo='https://svn.openplans.org/svn/build/requirements/opencore-minimal/trunk',
+    fassembler_targets=['all'],
+    flunc_suite=None,
+    ports=oc25_ports,
+    zopectl_suites=['opencore', 'Products.listen'],
+    )
+
+
+full_op_factory = make_factory(
+    'Openplans (full stack)',
     requirements_repo='https://svn.openplans.org/svn/build/requirements/livablestreets/trunk/',
-    baseport=BASEPORT + 100, #XXX hacky way to avoid port overlap.
-    ftestsdir='opencore/src/sputnik/ftests/',
-    fassembler_targets=[
-        'fassembler:supervisor',
-        'fassembler:opencore',
-        'fassembler:deliverance',
-        'fassembler:zeo',
-        ],
-    flunc_suite='minimal', ports=lsmini_ports,
+    ports=opfull_ports,
+    fassembler_targets=['all'],
+    ftestsdir='opencore/src/opencore/ftests/',
+    flunc_suite='all',
     zopectl_suites=['opencore'],
     )
 
 full_ls_factory = make_factory(
     'Livable Streets (full stack)',
     requirements_repo='https://svn.openplans.org/svn/build/requirements/livablestreets/trunk/',
-    baseport=BASEPORT + 200, #XXX hacky way to avoid port overlap.
+    ports=lsfull_ports,
     ftestsdir='opencore/src/sputnik/ftests/',
     fassembler_targets=[
         'all',
         ],
-    flunc_suite='all', ports=lsfull_ports,
+    flunc_suite='all',
     zopectl_suites=['opencore'],
     )
     
 ############################################################################
 # BUILDERS - each tells a slave which build factory to use.
+# Need one per slave per build config.
 ############################################################################
 
 opencore_builders = [
     {'name': 'opencore-minimal',
      'slavename': name,
-     'builddir': 'oc',
+     'builddir': 'opencore-minimal',
      'factory': oc_factory}
     for name in slavenames]
 
-livablestreets_builders = [
-    {'name': 'livablestreets-minimal',
+
+oc_plone25_builders = [
+    {'name': 'opencore-plone25',
      'slavename': name,
-     'builddir': 'livable-minimal',
-     'factory': livable_factory}
+     'builddir': 'opencore-mini-plone25',
+     'factory': oc_factory}
+    for name in slavenames]
+
+full_op_builders = [
+    {'name': 'openplans-full',
+     'slavename': name,
+     'builddir': 'openplans-full',
+     'factory': full_op_factory}
     for name in slavenames]
 
 full_livablestreets_builders = [
-    {'name': 'livablestreets-full',
+    {'name': 'livable-full',
      'slavename': name,
      'builddir': 'livable-full',
      'factory': full_ls_factory}
@@ -361,7 +371,8 @@ full_livablestreets_builders = [
 
 
 c['builders'] = opencore_builders + \
-                livablestreets_builders + \
+                oc_plone25_builders +\
+                full_op_builders + \
                 full_livablestreets_builders
 
 ###########################################################################
@@ -380,20 +391,26 @@ buildOpencoreNightly  = scheduler.Nightly(
     builderNames=[b['name'] for b in opencore_builders],
     hour=3, minute=0)
 
-buildLivablestreetsNightly  = scheduler.Nightly(
-    'Sputnik Nightly Build', 
-    builderNames=[b['name'] for b in livablestreets_builders],
+buildOpencorePlone25Nightly  = scheduler.Nightly(
+    'Opencore (Plone 2.5) Nightly Build', 
+    builderNames=[b['name'] for b in oc_plone25_builders],
+    hour=3, minute=15)
+
+buildOpenplansNightly  = scheduler.Nightly(
+    'Openplans (Full) Nightly Build', 
+    builderNames=[b['name'] for b in full_op_builders],
     hour=3, minute=30)
 
 buildFullLSNightly  = scheduler.Nightly(
-    'Sputnik (Full) Nightly Build', 
+    'LivableStreets (Full) Nightly Build',
     builderNames=[b['name'] for b in full_livablestreets_builders],
     hour=4, minute=0)
 
 
-
-c['schedulers'] = [buildOnChange, buildOpencoreNightly,
-                   buildLivablestreetsNightly,
+c['schedulers'] = [buildOnChange,
+                   buildOpencoreNightly,
+                   buildOpencorePlone25Nightly,
+                   buildOpenplansNightly,
                    buildFullLSNightly
                    ]
 
@@ -438,6 +455,7 @@ breakMailer = mail.MailNotifier(
 
 # An IRC status bot. Is there a way to get this to always announce
 # failures?
+# Apparently not, short of giving the bot the 'notify' command in channel.
 ircbot = words.IRC(host='irc.freenode.net',
                    nick='buildbot-topp',
                    channels=['#openplans'],
