@@ -3,7 +3,32 @@ Installation for ErrorEater, both the app and the Supervisor listener
 """
 from fassembler.project import Project, Setting
 from fassembler import tasks
+from crypt import crypt
+from environ import random_string
 from tempita import Template
+import os
+import string
+
+class EnsureHtpasswdFile(tasks.EnsureFile):
+
+    crypted_password = ''
+    def __init__(self, name):
+        super(EnsureHtpasswdFile, self).__init__(
+            name, '{{env.config.get("general", "var")}}/erroreater/developers.htpasswd',
+            content='admin:{{task.crypted_password}}\n', overwrite=False)
+
+    def run(self):
+        if os.path.exists(self.dest):
+            self.crypted_password = self.environ.parse_auth(self.dest).password
+        else:
+
+            salt = random_string(2, string.ascii_letters + string.digits + "_-!;")
+            
+            password = self.environ.parse_auth(self.interpolate('{{env.config.get("general", "admin_info_filename")}}')).password
+
+            self.crypted_password = crypt(password, salt)
+        super(EnsureHtpasswdFile, self).run()
+
 
 class ErrorEaterProject(Project):
     """
@@ -41,6 +66,7 @@ class ErrorEaterProject(Project):
                      ['paster', 'setup-app', '{{env.base_path}}/etc/{{project.name}}/{{project.name}}.ini#main-app'],
                      use_virtualenv=True,
                      cwd='{{env.base_path}}/{{project.name}}/src/{{project.name}}'),
+        EnsureHtpasswdFile('Write DevAuth htpasswd file with admin password if it does not exist'),
         ]
 
     ## FIXME: and the listener
