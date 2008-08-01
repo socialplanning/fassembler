@@ -120,6 +120,8 @@ class Maker(object):
             if not self.simulate:
                 self.ensure_file(self._orig_filename(dest), raw_contents, overwrite=True,
                                  svn_add=svn_add, quiet=True)
+                self.ensure_file(self._base_filename(dest), contents, overwrite=True,
+                                 svn_add=svn_add, quiet=True)
 
     def _orig_filename(self, filename):
         """
@@ -429,9 +431,6 @@ class Maker(object):
             f.close()
             if executable:
                 self.make_executable(filename)
-            f = open(self._base_filename(filename), 'wb')
-            f.write(content)
-            f.close()
 
     def make_executable(self, filename):
         """
