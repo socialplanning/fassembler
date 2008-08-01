@@ -1,11 +1,8 @@
-[DEFAULT]
-var = {{env.var}}
-
 [include]
 files = ../supervisor.d/*.ini
 
 [unix_http_server]
-file=%(var)s/supervisor/supervisor.sock   ; (the path to the socket file)
+file={{env.var}}/supervisor/supervisor.sock   ; (the path to the socket file)
 ;chmod=0700                 ; sockef file mode (default 0700)
 ;; FIXME: group toppstaff?
 ;chown=nobody:nogroup       ; socket file uid:gid owner
@@ -18,11 +15,11 @@ port=127.0.0.1:{{config.port}}        ; (ip_address:port specifier, *:port for a
 ;password=123               ; (default is no password (open server))
 
 [supervisord]
-logfile=%(var)s/logs/supervisor/supervisord.log ; (main log file;default $CWD/supervisord.log)
+logfile={{env.var}}/logs/supervisor/supervisord.log ; (main log file;default $CWD/supervisord.log)
 logfile_maxbytes=50MB       ; (max main logfile bytes b4 rotation;default 50MB)
 logfile_backups=10          ; (num of main logfile rotation backups;default 10)
 loglevel=info               ; (log level;default info; others: debug,warn,trace)
-pidfile=%(var)s/supervisor/supervisord.pid ; (supervisord pidfile;default supervisord.pid)
+pidfile={{env.var}}/supervisor/supervisord.pid ; (supervisord pidfile;default supervisord.pid)
 nodaemon=false              ; (start in foreground if true;default false)
 minfds=1024                 ; (min. avail startup file descriptors;default 1024)
 minprocs=200                ; (min. avail process descriptors;default 200)
@@ -45,7 +42,7 @@ minprocs=200                ; (min. avail process descriptors;default 200)
 supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
 
 [supervisorctl]
-serverurl=unix://%(var)s/supervisor/supervisor.sock ; use a unix:// URL  for a unix socket
+serverurl=unix://{{env.var}}/supervisor/supervisor.sock ; use a unix:// URL  for a unix socket
 ;serverurl=http://127.0.0.1:9001 ; use an http:// url to specify an inet socket
 ;username=chris              ; should be same as http_username if set
 ;password=123                ; should be same as http_password if set
