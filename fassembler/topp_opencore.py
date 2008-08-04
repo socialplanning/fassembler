@@ -823,8 +823,11 @@ exec {{config.zeo_instance}}/bin/runzeo
         # ZEO doesn't really have a uri
         tasks.InstallSupervisorConfig(script_name='opencore-zeo'),
         RunZopeScriptsWithZeo(
-            RunZopectlScript('{{env.base_path}}/opencore/src/opencore/do_nothing.py',
-                             name='Run initial zopectl to bypass failure-on-first-start'),
+            tasks.ConditionalTask('Run initial zope ctl to bypass failure-on-first-start',
+                                  ('{{os.path.exists(env.base_path + "/opencore/src/opencore/do_nothing.py")}}',
+                                   RunZopectlScript('{{env.base_path}}/opencore/src/opencore/do_nothing.py',
+                                                    name='Run initial zopectl'))),
+            
             RunZopectlScript('{{env.base_path}}/opencore/src/opencore/add_openplans.py',
                              name='Add OpenPlans site'),
             tasks.ForEach('Run additional opencore-req.txt zopectl scripts',
