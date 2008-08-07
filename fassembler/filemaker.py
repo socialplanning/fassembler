@@ -93,12 +93,8 @@ class Maker(object):
         overwrite = False
         if os.path.exists(dest):
             existing = self._get_raw_contents(dest)
-            base_content = self._get_base_contents(dest)
             if existing == contents:
                 self.logger.info('File %s exists with same content' % self.display_path(dest))
-            elif base_content and existing == base_content:
-                # logging happens in ensure_file
-                pass
             else:
                 message = 'File %s already exists (with different content)' % self.display_path(dest)
                 if os.path.exists(self._orig_filename(dest)):
@@ -120,8 +116,6 @@ class Maker(object):
             if not self.simulate:
                 self.ensure_file(self._orig_filename(dest), raw_contents, overwrite=True,
                                  svn_add=svn_add, quiet=True)
-                self.ensure_file(self._base_filename(dest), contents, overwrite=True,
-                                 svn_add=svn_add, quiet=True)
 
     def _orig_filename(self, filename):
         """
@@ -129,13 +123,6 @@ class Maker(object):
         """
         return os.path.join(os.path.dirname(filename),
                             '.'+os.path.basename(filename)+'.orig')
-
-    def _base_filename(self, filename):
-        """
-        Gives the filename used to save the text of a file (not the template, the filled in text).
-        """
-        return os.path.join(os.path.dirname(filename),
-                            '.'+os.path.basename(filename)+'.base')
 
     def _get_contents(self, filename, template_vars=None, interpolater=None):
         """
@@ -173,12 +160,6 @@ class Maker(object):
             return f.read()
         finally:
             f.close()
-
-    def _get_base_contents(self, filename):
-        new_filename = self._base_filename(filename)
-        if not os.path.exists(new_filename):
-            return None
-        return self._get_raw_contents(new_filename)
 
     def _writefile(self, filename, contents):
         """
@@ -398,7 +379,6 @@ class Maker(object):
         f = open(filename, 'rb')
         old_content = f.read()
         f.close()
-        base_content = self._get_base_contents(filename)
         if content == old_content:
             if not quiet:
                 self.logger.info('File %s matches expected content' % filename)
@@ -406,13 +386,7 @@ class Maker(object):
                 self.make_executable(filename)
             return
         show_overwrite_warning = True
-        if base_content and base_content == old_content:
-            if not quiet:
-                self.logger.notify('File %s was not edited and content has changed, overwriting'
-                                   % self.display_path(filename),
-                                   color='cyan')
-            show_overwrite_warning = False
-        elif not overwrite:
+        if not overwrite:
             if not quiet:
                 self.logger.notify('Warning: file %s does not match expected content' % filename)
             if self.interactive:
