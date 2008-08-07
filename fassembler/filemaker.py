@@ -432,7 +432,7 @@ class Maker(object):
             f.write(content)
             f.close()
             if executable:
-                self.make_executable('._cfg000_%s' % filename)
+                self.make_executable(filename)
 
     def make_executable(self, filename):
         """
