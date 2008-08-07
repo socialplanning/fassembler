@@ -426,11 +426,13 @@ class Maker(object):
             if not quiet:
                 self.logger.notify('Overwriting %s with new content' % filename)
         if not self.simulate:
+            # Add a special prefix to the filename so that it's recognized by etc-update
+            filename = os.path.join(os.path.dirname(filename), '._cfg0000_%s' % os.path.basename(filename))
             f = open(filename, 'wb')
             f.write(content)
             f.close()
             if executable:
-                self.make_executable(filename)
+                self.make_executable('._cfg000_%s' % filename)
 
     def make_executable(self, filename):
         """
