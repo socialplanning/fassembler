@@ -87,7 +87,9 @@ class AdminMediaLink(tasks.Task):
         super(AdminMediaLink, self).__init__(name, stacklevel=stacklevel+1)
         self.htdocs = '{{project.build_properties["virtualenv_path"]}}/htdocs'
         
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         self.maker.ensure_dir(self.htdocs, svn_add=False)
         linktarget = os.path.join(self.htdocs, 'adminmedia')
         py = self.interpolate(

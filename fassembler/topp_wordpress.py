@@ -18,7 +18,9 @@ class CheckPHP(tasks.Task):
         super(CheckPHP, self).__init__('Check PHP', stacklevel=stacklevel+1)
         self.php_cgi_exec = php_cgi_exec
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         compiled_in_modules = set(Popen([self.php_cgi_exec, '-m'], stdout=PIPE).communicate()[0].split('\n')[1:])
         missing_required = []
         for m in self.required_modules:
@@ -48,7 +50,9 @@ class DeleteExtraWPSiteRows(tasks.Task):
         self.user = user
         self.passwd = passwd
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         db = MySQLdb.connect(db=self.db, user=self.user, passwd=self.passwd)
         c = db.cursor()
         c.execute('delete from wp_site where id > 1')

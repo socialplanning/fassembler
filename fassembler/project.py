@@ -83,7 +83,7 @@ class Project(object):
                 errors.append(str(e))
         return errors
 
-    def run(self):
+    def run(self, phase):
         """
         Actually run the project.  Subclasses seldom override this;
         this runs all the tasks given in ``self.actions``
@@ -95,6 +95,8 @@ class Project(object):
         self.setup_config()
         tasks = self.bind_tasks()
         for task in tasks:
+            if not task.phase == phase:
+                continue
             self.logger.set_section(self.name+'.'+task.name)
             self.logger.notify('== %s ==' % task.name, color='bold green')
             self.logger.indent += 2
@@ -103,7 +105,7 @@ class Project(object):
                     try:
                         self.logger.debug('Task Plan:')
                         self.logger.debug(indent(str(task), '  '))
-                        task.run()
+                        task.run(phase)
                     finally:
                         self.logger.indent -= 2
                 except (KeyboardInterrupt, CommandError):

@@ -24,7 +24,9 @@ class CheckBasePorts(tasks.Task):
         super(CheckBasePorts, self).__init__(name, stacklevel=stacklevel+1)
         self.base_port = base_port
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         base_port = int(self.base_port)
         port_range = int(self.port_range)
         self.logger.info('Checking ports %s-%s' % (base_port, base_port+port_range))
@@ -57,7 +59,9 @@ class DeleteBuildIniIfNecessary(tasks.Task):
     def __init__(self, name='Delete fassembler-boot build.ini', stacklevel=1):
         super(DeleteBuildIniIfNecessary, self).__init__(name, stacklevel=stacklevel+1)
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         base_dir = self.maker.path('etc/')
         if os.path.exists(base_dir) and not os.path.exists(os.path.join(base_dir, '.svn')):
             build_ini = os.path.join(base_dir, 'build.ini')
@@ -83,7 +87,9 @@ class EnvironRefresh(tasks.Task):
     def __init__(self, name='Refresh environ', stacklevel=1):
         super(EnvironRefresh, self).__init__(name, stacklevel=stacklevel+1)
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         self.environ.refresh_config()
 
 
@@ -97,7 +103,9 @@ class EnsureAdminFile(tasks.EnsureFile):
             name, '{{env.config.get("general", "admin_info_filename")}}',
             content='admin:{{task.password}}\n', overwrite=False)
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         if os.path.exists(self.dest):
             self.password = self.environ.parse_auth(self.dest).password
         else:

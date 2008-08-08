@@ -17,7 +17,9 @@ class EnsureHtpasswdFile(tasks.EnsureFile):
             name, '{{env.config.get("general", "var")}}/erroreater/developers.htpasswd',
             content='admin:{{task.crypted_password}}\n', overwrite=False)
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         if os.path.exists(self.dest):
             self.crypted_password = self.environ.parse_auth(self.dest).password
         else:

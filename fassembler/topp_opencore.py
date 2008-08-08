@@ -130,7 +130,9 @@ class GetBundleTarball(tasks.Task):
         super(GetBundleTarball, self).__init__(name, stacklevel=1)
         self.dest = dest
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         url = self.interpolate('{{config.opencore_bundle_tar_info}}')
         self.logger.debug('Getting tarball info at %s' % url)
         f = urllib.urlopen(url)
@@ -214,7 +216,9 @@ class SymlinkProducts(tasks.Task):
     def exclude_count(self):
         return len(glob(self.exclude_glob))
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         for filename in self.source_files:
             dest = os.path.join(self.dest_dir, os.path.basename(filename))
             self.maker.ensure_symlink(filename, dest)
@@ -247,7 +251,9 @@ class PlaceZopeConfig(ZopeConfigTask):
     management, if this has not already been done.
     """
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         if not os.path.islink(self.zope_etc_path):
             self.maker.copy_dir(self.zope_etc_path,
                                 self.build_etc_path,
@@ -310,7 +316,9 @@ class SymlinkZopeConfig(ZopeConfigTask):
     """
     zope_profile_path = interpolated('zope_profile_path')
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         if not os.path.islink(self.zope_etc_path):
             self.maker.rmtree(self.zope_etc_path)
         self.maker.ensure_symlink(self.build_etc_path, self.zope_etc_path)
@@ -342,7 +350,9 @@ class RunZopectlScript(tasks.Task):
         self.script_path = script_path
         self.script_args = ' '.join(script_args.split())
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         if self.maker.simulate:
             self.logger.notify('Would run "zopectl run %s %s"' %
                                (self.script_path, self.script_args))
@@ -394,7 +404,9 @@ class RunZopeScriptsWithZeo(tasks.Task):
         for subtask in task.iter_subtasks():
             self._bind_tasks(subtask, *args, **kw)
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         self.start_zeo()
         try:
             for task in self.subtasks:
@@ -481,7 +493,9 @@ class PatchTwill(tasks.Task):
     patch twill so it doesn't print out those horrible AT LINE commands;
     this should be removed if upstream fix is committed
     """
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         
         # get around readline printing strange things 
         # see: http://www.openplans.org/projects/opencore/lists/openplans-svn/archive/2008/04/1207154035776
@@ -510,7 +524,9 @@ class PatchFive(tasks.Patch):
     The Zope version will already have been patched; we want this one
     to fail silently if there's no Five in the bundle.
     """
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         if not os.path.exists(self.dest):
             self.logger.notify('No Five in opencore bundle, skipping patch')
             return

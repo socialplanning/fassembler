@@ -184,34 +184,35 @@ def main(options, args):
         ## FIXME: maybe ask if they want to see effective configuration here?
         #config.write(sys.stdout)
         raise CommandError('Errors in configuration', show_usage=False)
-    for project in projects:
-        if options.project_help:
-            description = project.make_description()
-            print description
-        else:
-            if len(projects) > 1:
-                logger.notify(' Starting project %s' % project.project_name, color='black green_bg')
-                logger.indent += 2
-            try:
+    for phase in ['build','setup']:
+        for project in projects:
+            if options.project_help:
+                description = project.make_description()
+                print description
+            else:
+                if len(projects) > 1:
+                    logger.notify(' Starting phase %s for project %s' % (phase, project.project_name), color='black green_bg')
+                    logger.indent += 2
                 try:
-                    project.run()
-                    logger.notify('Done with project %s' % project.project_name)
-                    environ.save()
-                finally:
-                    if len(projects) > 1:
-                        logger.indent -= 2
-            except CommandError:
-                raise
-            except KeyboardInterrupt:
-                raise CommandError('^C', show_usage=False)
-            except Exception, e:
-                success = False
-                continue_projects = maker.handle_exception(sys.exc_info())
-                if continue_projects:
-                    continue
-                else:
-                    break
-                ## FIXME: should revert environ here
+                    try:
+                        project.run(phase)
+                        logger.notify('Done with phase %s for project %s' % (phase, project.project_name))
+                        environ.save()
+                    finally:
+                        if len(projects) > 1:
+                            logger.indent -= 2
+                except CommandError:
+                    raise
+                except KeyboardInterrupt:
+                    raise CommandError('^C', show_usage=False)
+                except Exception, e:
+                    success = False
+                    continue_projects = maker.handle_exception(sys.exc_info())
+                    if continue_projects:
+                        continue
+                    else:
+                        break
+                    ## FIXME: should revert environ here
     if not options.project_help:
         if success:
             logger.notify('Installation successful.')

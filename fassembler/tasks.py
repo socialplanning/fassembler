@@ -56,6 +56,7 @@ class Task(object):
 
     def __init__(self, name, stacklevel=1):
         self.name = name
+        self.phase = 'build'
         self.position = self._stacklevel_position(stacklevel+1)
 
     @property
@@ -91,7 +92,7 @@ class Task(object):
         tasks might need.
         """
 
-    def run(self):
+    def run(self, phase):
         """
         Subclasses should implement this.
         """
@@ -217,7 +218,9 @@ class Script(Task):
         self.stdin = stdin
         self.extra_args = extra_args
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         script = self.script
         kw = self.extra_args.copy()
         if self.use_virtualenv:
@@ -243,7 +246,9 @@ class CopyDir(Task):
         self.source = source
         self.dest = dest
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         self.logger.info(
             'Copying %s to %s' % (self.source, self.dest))
         self.copy_dir(self.source, self.dest)
@@ -298,7 +303,9 @@ class EnsureFile(Task):
         else:
             return self.content
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         if not self.overwrite and self.maker.exists(self.dest):
             self.logger.notify('File %s already exists; not overwriting' % self.dest)
             return
@@ -321,7 +328,9 @@ class EnsureDir(Task):
         self.dest = dest
         self.svn_add = svn_add
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         self.maker.ensure_dir(self.dest)
 
 class SvnCheckout(Task):
@@ -375,7 +384,9 @@ class SvnCheckout(Task):
         else:
             return self.repository
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         base = self.base_repository
         if base and self.create_if_necessary and base.startswith('file:'):
             self.confirm_repository(base)
@@ -464,7 +475,9 @@ class VirtualEnv(Task):
     def path_resolved(self):
         return self.maker.path(self.path or self.project.name)
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         path = self.path_resolved
         if os.path.exists(path) and os.path.exists(os.path.join(path, 'lib')):
             if not self.project.config.getdefault('DEFAULT', 'force_virtualenv'):
@@ -568,7 +581,9 @@ class SourceInstall(SvnCheckout):
             name, repository, dest, create_if_necessary=False,
             stacklevel=stacklevel+1)
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         super(SourceInstall, self).run()
         self.maker.run_command(
             self.interpolate('{{project.build_properties["virtualenv_bin_path"]}}/python', stacklevel=1),
@@ -592,7 +607,9 @@ class InstallPasteConfig(Task):
         self.path = path
         self.template = template
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         dest = os.path.join('etc', self.project.name, self.project.name+'.ini')
         if self.template:
             self.maker.ensure_file(
@@ -614,7 +631,9 @@ class InstallPasteStartup(Task):
         super(InstallPasteStartup, self).__init__(name, stacklevel=stacklevel+1)
         self.exe_dir = exe_dir
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         path = os.path.join('bin', 'start-'+self.project.name)
         self.maker.ensure_file(
             path,
@@ -649,7 +668,9 @@ class InstallSupervisorConfig(Task):
     def conf_path(self):
         return os.path.join('etc', 'supervisor.d', self.script_name + '.ini')
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         self.maker.ensure_file(
             self.conf_path,
             self.content,
@@ -718,7 +739,9 @@ class CheckMySQLDatabase(Task):
         else:
             return {}
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         try:
             import MySQLdb
         except ImportError:
@@ -872,7 +895,9 @@ class SaveSetting(Task):
         self.overwrite_if_empty = overwrite_if_empty
         self.overwrite = overwrite
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         config = self.environ.config
         if not config.has_section(self.section):
             config.add_section(self.section)
@@ -986,7 +1011,9 @@ class Patch(Task):
 
     _rejects_regex = re.compile('rejects to file (.*)')
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         files = self.expanded_files
         if files != self.files:
             self.logger.notify('Applying patches %s (from %s)' % (', '.join(files), ', '.join(self.files)))
@@ -1070,7 +1097,9 @@ class InstallSpec(Task):
         super(InstallSpec, self).__init__(name, stacklevel=stacklevel+1)
         self.spec_filename = spec_filename
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         context, commands = self.read_commands()
         context['virtualenv_python'] = self.project.build_properties['virtualenv_python']
         extra_commands = []
@@ -1330,7 +1359,9 @@ class ConditionalTask(Task):
         super(ConditionalTask, self).__init__(name, stacklevel=2)
         self.conditions = conditions
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         pass
 
     def bind(self, *args, **kw):
@@ -1391,7 +1422,9 @@ class ForEach(Task):
                 setattr(task_copy, self.variable, line)
                 yield task_copy
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         pass
 
 class SetDistutilsValue(Task):
@@ -1414,7 +1447,9 @@ class SetDistutilsValue(Task):
         self.use_virtualenv = use_virtualenv
         self._distutils_filename = None
 
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         filename = self.distutils_cfg
         self.logger.notify('Patching file %s' % filename)
         if not self.maker.simulate:
@@ -1443,7 +1478,9 @@ class TestLxml(Task):
         super(TestLxml, self).__init__('Test lxml build', stacklevel+1)
         self.path = path
     
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         if self.maker.simulate:
             self.logger.notify('Would test lxml build in %s' % self.path)
             return
@@ -1470,7 +1507,9 @@ class SaveCabochonSubscriber(Task):
         self.events = events
         self.use_base_port = use_base_port
         
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         if self.use_base_port:
             interp = lambda path : self.interpolate('http://{{config.host}}:{{general.base_port}}%s' % path)
         else:
@@ -1533,7 +1572,9 @@ class InstallTarball(Task):
         # subclasses can override if they want to do extra work or checks.
         pass
                          
-    def run(self):
+    def run(self, phase):
+        if not phase == self.phase:
+            return
         if self.is_up_to_date():
             return
         url = self._tarball_url
