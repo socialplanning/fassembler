@@ -584,7 +584,7 @@ class SourceInstall(SvnCheckout):
     def run(self, phase):
         if not phase == self.phase:
             return
-        super(SourceInstall, self).run()
+        super(SourceInstall, self).run(phase)
         self.maker.run_command(
             self.interpolate('{{project.build_properties["virtualenv_bin_path"]}}/python', stacklevel=1),
             'setup.py', 'develop',

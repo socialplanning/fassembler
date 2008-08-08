@@ -110,7 +110,7 @@ class EnsureAdminFile(tasks.EnsureFile):
             self.password = self.environ.parse_auth(self.dest).password
         else:
             self.password = self.environ.maker.ask_password()
-        super(EnsureAdminFile, self).run()
+        super(EnsureAdminFile, self).run(phase)
 
 
 class ToppProject(Project):

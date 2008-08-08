@@ -29,7 +29,7 @@ class EnsureHtpasswdFile(tasks.EnsureFile):
             password = self.environ.parse_auth(self.interpolate('{{env.config.get("general", "admin_info_filename")}}')).password
 
             self.crypted_password = crypt(password, salt)
-        super(EnsureHtpasswdFile, self).run()
+        super(EnsureHtpasswdFile, self).run(phase)
 
 
 class ErrorEaterProject(Project):
