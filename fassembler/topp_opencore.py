@@ -410,17 +410,17 @@ class RunZopeScriptsWithZeo(tasks.Task):
         self.start_zeo()
         try:
             for task in self.subtasks:
-                self._run_task(task)
+                self._run_task(task, phase)
         finally:
             self.stop_zeo()
 
-    def _run_task(self, task):
+    def _run_task(self, task, phase):
         self.logger.notify("running subtask: %s" % task.title)
         self.logger.indent += 2
         try:
-            task.run()
+            task.run(phase)
             for subtask in task.iter_subtasks():
-                self._run_task(subtask)
+                self._run_task(subtask, phase)
         finally:
             self.logger.indent -= 2
 
