@@ -93,7 +93,8 @@ scan() {
 					if [ ! -e "${rpath}/${rfile}" ] || [ ! -e "${rpath}/${rfile:10}" ]; then
 						MATCHES=0
 					else
-						diff -Bbua ${rpath}/${rfile} ${rpath}/${rfile:10} | egrep '^[+-]' | egrep -v '^[+-][\t ]*#|^--- |^\+\+\+ ' | egrep -qv '^[-+][\t ]*$'
+                        # The complex regex in the middle looks for diff lines that only differ by the build directory --------------------------------------------------- vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+						diff -Bbua ${rpath}/${rfile} ${rpath}/${rfile:10} | egrep '^[+-]' | egrep -v '^[+-][\t ]*#|^--- |^\+\+\+ ' | sed -e ':newlinehack;N;$!bnewlinehack;\@-\(\w\+\s*=\s*\)`echo ${BUILDS_ROOT}`[-0-9]\+\([^\n]*\)\n+\1${PORTAGE_CONFIGROOT}\2@d' | egrep -qv '^[-+][\t ]*$'
 						MATCHES=$?
 					fi
 				elif [[ -z $(diff -Nua ${rpath}/${rfile} ${rpath}/${rfile:10}|
@@ -505,6 +506,7 @@ export PORTAGE_TMPDIR=/tmp
 CONFIG_PROTECT=${SCRIPTCONFIG}
 CONFIG_PROTECT_MASK=
 PORTAGE_CONFIGROOT=`readlink -f ${SCRIPTDIR}/..`
+BUILDS_ROOT=`readlink -f ${PORTAGE_CONFIGROOT}/..`
 ROOT=/
 USERLAND='GNU'
 
