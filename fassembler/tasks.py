@@ -210,12 +210,13 @@ class Script(Task):
     stdin = interpolated('stdin')
 
     def __init__(self, name, script, cwd=None, stacklevel=1, use_virtualenv=False,
-                 stdin=None, **extra_args):
+                 stdin=None, phase='build', **extra_args):
         super(Script, self).__init__(name, stacklevel=stacklevel+1)
         self.script = script
         self.cwd = cwd
         self.use_virtualenv = use_virtualenv
         self.stdin = stdin
+        self.phase = phase
         self.extra_args = extra_args
 
     def run(self, phase):
@@ -719,6 +720,7 @@ class CheckMySQLDatabase(Task):
                  db_password='{{config.db_password}}', db_root_password='{{config.db_root_password}}',
                  stacklevel=1):
         super(CheckMySQLDatabase, self).__init__(name, stacklevel=stacklevel+1)
+        self.phase = 'setup'
         self.db_name = db_name
         self.db_host = db_host
         self.db_username = db_username

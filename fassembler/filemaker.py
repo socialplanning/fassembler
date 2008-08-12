@@ -103,11 +103,6 @@ class Maker(object):
                         message = (
                             'File %s already exists (with different substitutions, but same original template)'
                             % self.display_path(dest))
-                if self.interactive:
-                    response = self.ask_difference(dest, message, contents, existing)
-                    if not response:
-                        self.logger.notify('Aborting copy')
-                        return
                 overwrite = True
 
         self.ensure_file(dest, contents, overwrite=overwrite, 
@@ -386,15 +381,8 @@ class Maker(object):
                 self.make_executable(filename)
             return
         show_overwrite_warning = True
-        if not overwrite:
-            if not quiet:
-                self.logger.notify('Warning: file %s does not match expected content' % filename)
-            if self.interactive:
-                response = self.ask_difference(filename, None, content, old_content)
-                if not response:
-                    return
-            else:
-                return
+        if not overwrite and not quiet:
+            self.logger.notify('Warning: file %s does not match expected content' % filename)
 
         if show_overwrite_warning:
             if not quiet:

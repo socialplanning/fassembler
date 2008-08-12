@@ -184,7 +184,7 @@ def main(options, args):
         ## FIXME: maybe ask if they want to see effective configuration here?
         #config.write(sys.stdout)
         raise CommandError('Errors in configuration', show_usage=False)
-    for phase in ['build','setup']:
+    def runphase(phase);
         for project in projects:
             if options.project_help:
                 description = project.make_description()
@@ -213,6 +213,12 @@ def main(options, args):
                     else:
                         break
                     ## FIXME: should revert environ here
+    runphase('build')
+    import pdb; pdb.set_trace()
+    #etcupdate_path = self.interpolate('{{env.base_path}}/opencore/zope/bin/zopectl')
+    proc = subprocess.Popen([etcupdate_path)
+    proc.wait()
+    runphase('setup')
     if not options.project_help:
         if success:
             logger.notify('Installation successful.')

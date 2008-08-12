@@ -380,6 +380,7 @@ class RunZopeScriptsWithZeo(tasks.Task):
         stacklevel = kw.get('stacklevel', 1)
         super(RunZopeScriptsWithZeo, self).__init__(self.description,
                                                     stacklevel=stacklevel+1)
+        self.phase = 'setup'
         self.subtasks = subtasks
 
     def iter_subtasks(self):
