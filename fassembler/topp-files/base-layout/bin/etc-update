@@ -94,7 +94,7 @@ scan() {
 						MATCHES=0
 					else
                         # The complex regex in the middle looks for diff lines that only differ by the build directory --------------------------------------------------- vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-						diff -Bbua ${rpath}/${rfile} ${rpath}/${rfile:10} | egrep '^[+-]' | egrep -v '^[+-][\t ]*#|^--- |^\+\+\+ ' | sed -e ":newlinehack;N;\$!bnewlinehack;\\@-\\(\\w\\+\\s*=\\s*\)${PORTAGE_CONFIGROOT}\\([^\\n]*\\)\\n+\\1${BUILDS_ROOT}/[-0-9]\+\\2@d" | egrep -qv '^[-+][\t ]*$'
+						diff -Bbua ${rpath}/${rfile} ${rpath}/${rfile:10} | egrep '^[+-]' | egrep -v '^[+-][\t ]*#|^--- |^\+\+\+ ' | sed -e ":newlinehack;N;\$!bnewlinehack;\\@-\\([^\\n]*\\)${PORTAGE_CONFIGROOT}\\([^\\n]*\\)\\n+\\1${BUILDS_ROOT}/[-0-9]\+\\2@d" | egrep -qv '^[-+][\t ]*$'
 						MATCHES=$?
 					fi
 				elif [[ -z $(diff -Nua ${rpath}/${rfile} ${rpath}/${rfile:10}|
