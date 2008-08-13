@@ -215,9 +215,10 @@ def main(options, args):
                         break
                     ## FIXME: should revert environ here
     runphase('build')
-    proc = subprocess.Popen(['./bin/etc-update'])
-    proc.wait()
-    runphase('setup')
+    if not options.no_interactive:
+        proc = subprocess.Popen(['./bin/etc-update'])
+        proc.wait()
+        runphase('setup')
     if not options.project_help:
         if success:
             logger.notify('Installation successful.')
