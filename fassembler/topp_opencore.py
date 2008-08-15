@@ -248,11 +248,13 @@ class PlaceZopeConfig(ZopeConfigTask):
     """
 
     def run(self):
+        # put zope etc directory into place
         if not os.path.islink(self.zope_etc_path):
             self.maker.copy_dir(self.zope_etc_path,
                                 self.build_etc_path,
                                 add_dest_to_svn=True)
 
+        # put build-specific GS profile into place
         self.maker.copy_dir('%s/default' % self.zope_profiles_dir,
                             self.build_profile_path,
                             add_dest_to_svn=True)
@@ -323,6 +325,47 @@ class SymlinkZopeConfig(ZopeConfigTask):
         self.maker.ensure_symlink(self.build_profile_path,
                                   self.zope_profile_path)
 
+
+class ZeoConfigTask(tasks.Task):
+    """
+    Stores both Zope and ZEO config info.
+    """
+    zeo_etc_path = interpolated('zeo_etc_path')
+    build_zeo_etc_path = interpolated('build_zeo_etc_path')
+
+    def __init__(self, name, stacklevel=1):
+        super(ZeoConfigTask, self).__init__(name, stacklevel=stacklevel+1)
+        self.zeo_etc_path = '{{config.zeo_instance}}/etc'
+        self.build_zeo_etc_path = '{{env.base_path}}/etc/{{project.name}}'
+
+
+class PlaceZeoConfig(ZeoConfigTask):
+
+    description = """
+    Finds specific ZEO configuration files in their default locations
+    and copies these into the build's etc directory for svn
+    management, if this has not already been done.
+    """
+
+    def run(self):
+        if not os.path.islink(self.zeo_etc_path):
+            self.maker.copy_dir(self.zeo_etc_path,
+                                self.build_zeo_etc_path,
+                                add_dest_to_svn=True)
+
+
+class SymlinkZeoConfig(ZeoConfigTask):
+
+    description = """
+    Delete certain configuration files from the standard ZEO location
+    and symlink them back into place from the fassembler location.
+    Assumes files already exist in the fassembler locations, i.e. that
+    PlaceZeoConfig is run first.
+    """
+    def run(self):
+        if not os.path.islink(self.zeo_etc_path):
+            self.maker.rmtree(self.zeo_etc_path)
+        self.maker.ensure_symlink(self.build_zeo_etc_path, self.zeo_etc_path)
 
 
 class RunZopectlScript(tasks.Task):
@@ -542,9 +585,6 @@ class OpenCoreProject(OpenCoreBase):
         Setting('spec',
                 default='requirements/opencore-req.txt',
                 help='Specification of packages to install'),
-        Setting('zope_instance',
-                default='{{project.build_properties["virtualenv_path"]}}/zope',
-                help='Instance home for Zope'),
         Setting('zope_user',
                 default='{{env.parse_auth(env.config.get("general", "admin_info_filename")).username}}',
                 help='Default admin username'),
@@ -814,6 +854,8 @@ exec {{config.zeo_instance}}/bin/runzeo
                          '{{config.zeo_instance}}/etc/zeo.conf',
                          content_path='%s/etc/zeo.conf' % skel_dir,
                          force_overwrite=True),
+        PlaceZeoConfig('Copy ZEO etc into build etc'),
+        SymlinkZeoConfig('Symlink build etc back into ZEO etc'),
         tasks.EnsureFile('Write the ZEO start script',
                          '{{env.base_path}}/bin/start-opencore-{{project.name}}',
                          content=start_script_template,
