@@ -1,5 +1,6 @@
 """
 Installation for ErrorEater, both the app and the Supervisor listener
+Does not configure errorlistener to talk to erroreater, but rather to trac.
 """
 from fassembler.project import Project, Setting
 from fassembler import tasks
@@ -74,7 +75,7 @@ class ErrorEaterProject(Project):
 
 errorlistener_template = Template("""\
 [eventlistener:errorlistener]
-command = {{env.base_path}}/errorlistener/bin/supervisor-error-listener --queue-dir={{env.var}}/errorlistener/queue --http-config='{{env.base_path}}/etc/build.ini applications erroreater uri +/errors/add-error'
+command = {{env.base_path}}/errorlistener/bin/supervisor-error-listener --queue-dir={{env.var}}/errorlistener/queue http://trac.openplans.org/errors-openplans/errorlistener
 # We handle our own queuing and threading, so we don't need multiple
 # listeners:
 numprocs = 1
@@ -109,5 +110,5 @@ class ErrorListenerProject(Project):
                         '{{env.var}}/logs/errorlistener'),
         ]
 
-    depends_on_projects = ['fassembler:topp', 'fassembler:supervisor', 'fassembler:erroreater']
+    depends_on_projects = ['fassembler:topp', 'fassembler:supervisor']
     
