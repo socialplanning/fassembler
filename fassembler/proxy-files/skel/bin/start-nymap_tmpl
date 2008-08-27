@@ -1,0 +1,5 @@
+#!/bin/sh
+BASE_PATH="{{env.base_path}}"
+APACHE_EXEC="{{config.apache_exec}}"
+APACHE_FG_FLAG="{{project.apache_fg_flag()}}"
+exec $APACHE_EXEC -f $BASE_PATH/etc/proxy/httpd-proxy.conf $APACHE_FG_FLAG -c "ErrorLog /dev/stdout"

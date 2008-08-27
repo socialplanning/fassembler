@@ -1,0 +1,88 @@
+ServerRoot {{env.base_path}}/nymap
+LockFile {{env.var}}/nymap/accept.lock
+PidFile {{env.var}}/nymap/apache2.pid
+
+# Boilerplate, but potentially we could tweak:
+Timeout 300
+KeepAlive On
+MaxKeepAliveRequests 100
+KeepAliveTimeout 15
+
+## Process Management ##
+
+<IfModule prefork.c>
+StartServers         5
+MinSpareServers      5
+MaxSpareServers     10
+MaxClients          20
+MaxRequestsPerChild  0
+</IfModule>
+<IfModule worker.c>
+StartServers         2
+MaxClients         150 
+MinSpareThreads     25
+MaxSpareThreads     75
+ThreadsPerChild     25
+MaxRequestsPerChild  0
+</IfModule>
+<IfModule perchild.c>
+NumServers           5
+StartThreads         5
+MinSpareThreads      5
+MaxSpareThreads     10
+MaxThreadsPerChild  20
+MaxRequestsPerChild  0
+AcceptMutex fcntl
+</IfModule>
+
+## End process management
+
+Listen {{config.port}}
+
+{{project.extra_modules()}}
+
+# Boilerplate:
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+
+# Boilerplate:
+DirectoryIndex index.html index.cgi index.pl index.php index.xhtml index.phtml
+AccessFileName .htaccess
+<Files ~ "^\.ht">
+    Order allow,deny
+    Deny from all
+</Files>
+UseCanonicalName Off
+TypesConfig {{project.mimetypes_file()}}
+DefaultType application/octet-stream
+HostnameLookups Off
+
+# FIXME: Should we do this?
+AddDefaultCharset UTF8
+
+<VirtualHost *>
+    DocumentRoot {{env.base_path}}/nymap/src/nymap/cgi
+    ServerAdmin {{config.server_admin}}
+
+    AddHandler cgi-script .cgi
+
+    ErrorLog {{env.var}}/logs/nymap/error.log
+    LogLevel warn
+    CustomLog {{env.var}}/logs/nymap/access.log combined
+
+    <Directory />
+        Options FollowSymLinks Indexes
+        AllowOverride None
+    </Directory>
+    {{#FIXME: can this be a relative path?}}
+    <Directory {{env.base_path}}/nymap/src/nymap/cgi>
+        Options Indexes FollowSymlinks ExecCGI 
+        AllowOverride All
+        DirectoryIndex index.php index.html
+    </Directory>
+
+    RewriteEngine On
+    # Increase this number to see log messages:
+    RewriteLogLevel 0
+    RewriteLog {{env.var}}/logs/nymap/rewrite.log
+
+</VirtualHost>

@@ -4,6 +4,8 @@ builders for the nymap static files
 
 from fassembler.project import Project, Setting
 from fassembler import tasks
+from fassembler.apache import ApacheMixin
+import os
 
 class NYMapProject(Project):
     """
@@ -37,11 +39,52 @@ class NYMapProject(Project):
                       ## is not (see #2172):
                       theme=False,
                       ),
-#        tasks.SaveURI(path='/maps/ows',
-#                      project_name='{{project.name}}_geoserver',
-#                      uri='{{config.geoserver_url}}',
-#                      project_local=False,
-#                      theme=False),
         ]
 
     depends_on_projects = ['fassembler:topp']
+
+class ProxyProject(Project, ApacheMixin):
+    """
+    Install Proxy
+    """
+    
+    name = 'proxy'
+    title = 'Install Proxy'
+
+    settings = [
+        Setting('port',
+                default='{{env.base_port+int(config.port_offset)}}',
+                help="Port to install Apache (for proxy) on"),
+        Setting('port_offset',
+                default='11',
+                help='Offset from base_port for Apache (for proxy)'),
+        Setting('host',
+                default='localhost',
+                help='Interface/host to serve Apache/WordPress on'),
+        Setting('apache_exec',
+                default='{{project.apache_exec()}}',
+                help='Location of apache executable'),
+        Setting('apache_module_dir',
+                default='{{project.apache_module_dir()}}',
+                help='Location of apache modules'),
+        Setting('php_cgi_exec',
+                default='{{project.php_cgi_exec()}}',
+                help='Location of php cgi executable'),
+        Setting('server_admin',
+                default='{{env.environ["USER"]}}@{{env.fq_hostname}}',
+                help='Server admin for Apache'),
+        ]
+
+    skel_dir = os.path.join(os.path.dirname(__file__), 'proxy-files', 'skel')
+        
+    actions = [
+        #proxy stuff
+        tasks.CopyDir('Create layout',
+                      skel_dir, './'),
+
+        tasks.InstallSupervisorConfig(),
+        tasks.SaveURI(path='/proxy', project_local=False),
+    ]
+
+    depends_on_projects = ['fassembler:topp']
+    
