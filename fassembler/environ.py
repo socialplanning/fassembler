@@ -10,9 +10,11 @@ from datetime import datetime
 secret_chars = string.ascii_letters + string.digits + '!@#$%^&*()[]|_-+=;:.,<>'
 def random_string(length=20, chars=secret_chars):
     """
-    Return a random string of the given length, taken from the given characters.
+    Return a random string of the given length, taken from the given
+    characters.  String starts with a letter so that passing it on the
+    command line is less likely to confuse things.
     """
-    return ''.join([random.choice(chars) for i in range(length)])
+    return 'x' + ''.join([random.choice(chars) for i in range(length)])
     
 class bunch(object):
     """
