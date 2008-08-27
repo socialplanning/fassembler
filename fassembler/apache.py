@@ -79,7 +79,7 @@ class ApacheMixin(object):
 
     def find_exec(self, names):
         paths = os.environ['PATH'].split(os.path.pathsep)
-        for extra in ['/usr/sbin', '/sbin']:
+        for extra in ['/usr/sbin', '/sbin', '/usr/local/apache2/bin']:
             if extra not in paths:
                 paths.append(extra)
         for name in names:
