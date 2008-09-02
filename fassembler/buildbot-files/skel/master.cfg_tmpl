@@ -245,10 +245,10 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
                 haltOnFailure=True)
 
     # What got built? Useful for forensics.
-    ocbin = '%s/opencore/bin/' % OCBASEDIR
+    ocbin = '%s/opencore/bin' % OCBASEDIR
     poachscript = ("%s/easy_install "
                    "https://svn.openplans.org/svn/PoachEggs/trunk/"
-                   " && %s/poach-eggs --freeze=-" % (ocbin, ocbin))
+                   " && %s/poacheggs --freeze=-" % (ocbin, ocbin))
     fac.addStep(ToppShellScript, sourcetext=poachscript,
                 description=["What got built", "for opencore?"],
                 haltOnFailure=False, flunkOnFailure=False)
