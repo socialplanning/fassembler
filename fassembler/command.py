@@ -4,10 +4,12 @@ This file represents the entry point for the ``fassembler`` script.
 It implements the command-line API, and some of the outermost level of setup.
 """
 
+
 import sys
 import os
 import re
 from cmdutils import OptionParser, CommandError, main_func
+from datetime import datetime
 import pkg_resources
 from fassembler.filemaker import Maker
 from fassembler.config import ConfigParser
@@ -98,7 +100,15 @@ except AttributeError:
     # Your CmdUtils is too old to support the --log option.
     pass
 else:
-    parser.add_log()
+    parser.add_log(log_file='logs/fassembler.log')
+    parser.add_option(
+        '--no-log',
+        help='Do not log to a file; cancels any previous --log argument.',
+        action='store_const',
+        dest='log_file',
+        const=None,
+        )
+    
 
 #@main_func runs the parser before calling this function.
 @main_func(parser)
@@ -130,8 +140,20 @@ def main(options, args):
         else:
             raise CommandError(
                 "you must provide the --base value or run fassembler from a build base path")
+
     project_names, variables = parse_positional(args)
+    # Note that options.logger is created on demand, and this appears
+    # to be the first reference to it; so we have a chance to fix up
+    # the log_file option. If it's relative, we'll make it relative to
+    # our base_path.
+    if getattr(options, 'log_file', None):
+        if not options.log_file.startswith('/'):
+            options.log_file = os.path.normpath(os.path.join(
+                base_path, options.log_file))
+
     logger = options.logger
+    logger.debug('%s\nStarting new run of fassembler at %s' %
+                 ('-' * 72, datetime.now().strftime('%c')))
     if 'all' in project_names:
         project_names.remove('all')
         extra_projects = get_all_projects(base_path)
