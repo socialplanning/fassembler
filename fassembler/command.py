@@ -92,6 +92,14 @@ parser.add_option(
 
 parser.add_verbose()
 
+try:
+    parser.add_log
+except AttributeError:
+    # Your CmdUtils is too old to support the --log option.
+    pass
+else:
+    parser.add_log()
+
 #@main_func runs the parser before calling this function.
 @main_func(parser)
 def main(options, args):
