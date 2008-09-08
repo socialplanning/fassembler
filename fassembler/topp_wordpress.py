@@ -63,6 +63,8 @@ class WordPressProject(Project, ApacheMixin):
     name = 'wordpress'
     title = 'Install WordPress'
 
+    required_modules = ('mime', 'dir', 'rewrite')
+
     settings = [
         Setting('port',
                 default='{{env.base_port+int(config.port_offset)}}',

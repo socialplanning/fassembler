@@ -3,8 +3,11 @@ from subprocess import Popen, PIPE
 
 class ApacheMixin(object):
 
+
+    required_modules = ('mime', 'dir', 'rewrite','cgi')
+
     def extra_modules(self):
-        required_modules = ['mime', 'dir', 'rewrite','cgi']
+        required_modules = list(self.required_modules)
         major, minor = self.apache_version()
 
         # access_module changed to authz_host_module between Apache 2.1 and 2.2
