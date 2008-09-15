@@ -384,3 +384,65 @@ class RelateMeProject(Project):
 
     depends_on_projects = ['fassembler:topp']
     depends_on_executables = ['mysql_config']
+
+class BureauProject(Project):
+    """
+    Install Bureau
+    """
+
+    name = 'bureau'
+    title = 'Install Bureau'
+    settings = [
+        Setting('db_sqlobject',
+                default='mysql://{{config.db_username}}:{{config.db_password}}@{{config.db_host}}/{{config.db_name}}',
+                help='Full SQLObject connection string for database'),
+        Setting('db_username',
+                default='piwik',
+                help='Database connection username'),
+        Setting('db_password',
+                default='piwik',
+                help='Database connection password'),
+        Setting('db_host',
+                default='localhost',
+                help='Host where database is running'),
+        Setting('db_name',
+                default='piwik',
+                help='Name of database'),
+        Setting('db_root_password',
+                default='{{env.db_root_password}}',
+                help='Database root password'),
+        Setting('bureau_repo',
+                default='https://svn.openplans.org/svn/bureau/trunk',
+                help='svn location to install Bureau from'),
+        Setting('port',
+                default='{{env.base_port+int(config.port_offset)}}',
+                help='Port to install Bureau on'),
+        Setting('port_offset',
+                default='12',
+                help='Offset from base_port for Bureau'),
+        Setting('host',
+                default='localhost',
+                help='Host to serve on'),
+        Setting('spec',
+                default='requirements/bureau-req.txt',
+                help='Specification of packages to install'),
+        ]
+
+    actions = [
+        tasks.VirtualEnv(),
+        tasks.InstallSpec('Install Bureau',
+                          '{{config.spec}}'),
+        tasks.InstallPasteConfig(path='bureau/src/bureau/fassembler_config.ini_tmpl'),
+        tasks.InstallPasteStartup(),
+        tasks.InstallSupervisorConfig(),
+        tasks.CheckMySQLDatabase('Check database exists'),
+        tasks.Script('Run setup-app',
+                     ['paster', 'setup-app', '{{env.base_path}}/etc/{{project.name}}/{{project.name}}.ini'],
+                     use_virtualenv=True,
+                     cwd='{{env.base_path}}/{{project.name}}/src/{{project.name}}'),
+        tasks.SaveURI(path='/tasks'),
+
+        ]
+
+    depends_on_projects = ['fassembler:topp']
+    depends_on_executables = ['mysql_config']

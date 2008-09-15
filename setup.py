@@ -57,5 +57,6 @@ setup(name='fassembler',
       relateme = fassembler.topp_products:RelateMeProject
       brainpower = fassembler.topp_brainpower:BrainpowerProject
       windmill = fassembler.topp_windmill:WindmillProject
+      bureau = fassembler.topp_products:BureauProject
       """,
       )
