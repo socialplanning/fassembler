@@ -339,7 +339,7 @@ full_op_factory = make_factory(
 full_ls_factory = make_factory(
     'Livable Streets (full stack)',
     prefix="ls_full_p25",
-    requirements_repo='https://svn.openplans.org/svn/build/requirements/livablestreets/trunk/',
+    requirements_repo='https://svn.openplans.org/svn/build/requirements/livablestreets/branches/0.9.8/',
     ports=lsfull_ports,
     ftestsdir='opencore/src/sputnik/ftests/',
     fassembler_targets=[
