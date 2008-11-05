@@ -492,7 +492,7 @@ class Maker(object):
             return
         if os.path.islink(dest):
             msg = 'At %s there is a symlink from %s; it should be a symlink from %s' % (
-                dest, os.path.realpath(dest), dest)
+                dest, os.path.realpath(dest), source)
         else:
             if os.path.isdir(dest):
                 noun = 'directory'
