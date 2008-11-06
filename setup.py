@@ -25,7 +25,7 @@ setup(name='fassembler',
           'virtualenv',
           'Pygments',
           'MySQL-python', # At least, some projects require MySQL access
-          'pip==dev,>=0.2.1dev-r21281',
+          'pip==dev,>=0.2.1dev-r21283',
       ],
       ## FIXME: release all of these once fassembler stabilizes:
       dependency_links=[

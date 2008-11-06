@@ -1095,6 +1095,7 @@ class InstallSpec(Task):
         env = os.environ.copy()
         env['PIP_LOG_EXPLICIT_LEVELS'] = '1'
         env['PIP_DEFAULT_VCS'] = 'svn'
+        env['PIP_SKIP_REQUIREMENTS_REGEX'] = '^\w+\s*=[^=]'
         self.maker.run_command(
             'pip', '-E', self.venv_property('path'),
             'install', '-r', self.spec_filename,
