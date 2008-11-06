@@ -1071,6 +1071,13 @@ class InstallSpec(Task):
         self.spec_filename = spec_filename
 
     def run(self):
+        if self.config.has_option(self.project.name, 'use_pip'):
+            use_pip = asbool(self.config.get(self.project.name, 'use_pip'))
+        else:
+            use_pip = asbool(self.config.getdefault('general', 'use_pip'))
+        if use_pip:
+            self.run_pip()
+            return
         context, commands = self.read_commands()
         context['virtualenv_python'] = self.project.build_properties['virtualenv_python']
         extra_commands = []
@@ -1080,6 +1087,29 @@ class InstallSpec(Task):
                 extra_commands.append(result)
         for command, arg in extra_commands:
             command(context, arg)
+
+    def run_pip(self):
+        ## FIXME: it would save a tiny bit of effort to do the -E
+        ## stuff directly, instead of starting and then replacing the
+        ## subprocess like it'll do with this:
+        env = os.environ.copy()
+        env['PIP_LOG_EXPLICIT_LEVELS'] = '1'
+        env['PIP_DEFAULT_VCS'] = 'svn'
+        self.maker.run_command(
+            'pip', '-E', self.venv_property('path'),
+            'install', '-r', self.spec_filename,
+            '-vvvv',
+            log_filter=self.log_explicit_filter,
+            env=env)
+
+    _log_explicit_re = re.compile(r'^(\d+)\s+')
+    def log_explicit_filter(self, line):
+        match = self._log_explicit_re.match(line)
+        if not match:
+            return (line, self.logger.WARN)
+        level = int(match.group(1))
+        line = line[match.end():]
+        return (line, level)
 
     _setting_re = re.compile(r'^(\w+)\s*=\s*([^=<>\s].*)$')
 

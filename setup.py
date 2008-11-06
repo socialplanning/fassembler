@@ -25,12 +25,14 @@ setup(name='fassembler',
           'virtualenv',
           'Pygments',
           'MySQL-python', # At least, some projects require MySQL access
+          'pip==dev,>=0.2.1dev-r21281',
       ],
       ## FIXME: release all of these once fassembler stabilizes:
       dependency_links=[
           'http://svn.pythonpaste.org/CmdUtils/trunk#egg=CmdUtils-dev',
           'http://svn.colorstudy.com/INITools/trunk#egg=INITools-dev',
           'http://svn.pythonpaste.org/Tempita/trunk#egg=Tempita-dev',
+          'https://svn.openplans.org/svn/pip/trunk#egg=pip-dev',
       ],
       entry_points="""
       [console_scripts]
