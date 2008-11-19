@@ -305,6 +305,39 @@ class EnsureFile(Task):
         self.maker.ensure_file(self.dest, self.resolved_content, svn_add=self.svn_add,
                                overwrite=self.force_overwrite, executable=self.executable)
 
+
+class EnsureSymlink(Task):
+    """
+    Write a symlink
+    """
+
+    description = """
+    Write the symlink {{task.dest}} pointing to {{task.source}}
+    {{if not task.overwrite:}}
+    If {{task.dest}} already exists{{if maker.exists(task.dest)}} (and it does){{endif}}, do not overwrite it.
+    {{endif}}
+    """
+
+    dest = interpolated('dest')
+    source = interpolated('source')
+
+    def __init__(self, name, source, dest, overwrite=True, stacklevel=1,
+                 force_overwrite=False):
+        super(EnsureSymlink, self).__init__(name, stacklevel=stacklevel+1)
+        self.dest = dest
+        self.source = source
+        self.overwrite = overwrite
+        self.force_overwrite = force_overwrite
+
+    def run(self):
+        if not self.overwrite and self.maker.exists(self.dest):
+            self.logger.notify('File %s already exists; not overwriting'
+                               % self.dest)
+            return
+        self.maker.ensure_symlink(self.source, self.dest,
+                                  overwrite=self.force_overwrite)
+
+
 class EnsureDir(Task):
 
     description = """
@@ -1597,4 +1630,20 @@ class InstallTarball(Task):
 
     def tmp_filename(self):
         return os.tempnam() + '.tar.bz2'
+
+
+class Log(Task):
+
+    """Sometimes you might just want to tell the user something
+    without creating an ad-hoc Task subclass.
+    """
+
+    def __init__(self, description, message, level='notify', stacklevel=1):
+        self.message = message
+        self.level = level
+        super(Log, self).__init__(description, stacklevel=stacklevel+1)
+
+    def run(self):
+        text = self.interpolate(self.message)
+        self.logger.log(self.level, text)
 
