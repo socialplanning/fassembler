@@ -334,6 +334,9 @@ class EnsureSymlink(Task):
             self.logger.notify('File %s already exists; not overwriting'
                                % self.dest)
             return
+        if os.path.exists(self.dest) and not os.path.islink(self.dest):
+            self.logger.notify('Removing non-link at %s' % self.dest)
+            self.maker.rmtree(self.dest)
         self.maker.ensure_symlink(self.source, self.dest,
                                   overwrite=self.force_overwrite)
 
