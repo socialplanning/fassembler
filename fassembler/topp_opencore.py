@@ -563,10 +563,11 @@ class I18nDude(Project):
     """Installs i18ndude script for extracting text and managing
     message catalogs."""
     
-    # This needs to be in a separate virtualenv because it will
-    # install newer versions of various zope libraries including
-    # zope.tal, and zope will break (see this bug:
+    # This needs to be in a separate virtualenv, hence a separate project,
+    # because it will install newer versions of various zope libraries
+    # including zope.tal, and zope will break (see this bug:
     # http://plone.org/products/i18ndude/i18ndudetracker/17)
+    # We'll use symlinks to make it available more conveniently.
     
     name = 'i18ndude'
     title = 'Install i18ndude'
@@ -574,20 +575,23 @@ class I18nDude(Project):
     settings = [Setting('binpath',
                         default='{{project.build_properties["virtualenv_path"]}}/bin/i18ndude'),
                 Setting('linkpath',
-                        default='{{env.base_path}}/bin/{{project.name}}'),
+                        default='{{os.path.abspath(os.path.join(project.build_properties["virtualenv_path"], ".."))}}/bin/{{project.name}}'),
                 ]
 
     actions = [
-        tasks.VirtualEnv(),
+        tasks.VirtualEnv(path='opencore/i18ndude'),
         tasks.EasyInstall('Install i18ndude', 'i18ndude>=3.0'),
         tasks.EnsureSymlink('symlink i18ndude script',
                             '{{config.binpath}}', '{{config.linkpath}}'),
         tasks.Log('i18ndude usage instructions follow.',
                   ('Command is at: {{config.linkpath}}\n'
+                   'which should be on your path if you activate the virtualenv above it.\n'
                    'Run it with no arguments for more information.\n'
                    'See also: http://www.openplans.org/projects/opencore/i18n-usage-in-opencore')
                   ),
         ]
+
+    depends_on_projects = ['fassembler:topp', 'fassembler:opencore']
 
 
 class OpenCoreBase(Project):
