@@ -719,6 +719,7 @@ class CheckMySQLDatabase(Task):
     db_username = interpolated('db_username')
     db_password = interpolated('db_password')
     db_root_password = interpolated('db_root_password')
+    db_charset = interpolated('db_charset')
 
     description = """
     Check that the database {{task.db_name}}@{{task.db_host}} exists
@@ -732,6 +733,7 @@ class CheckMySQLDatabase(Task):
     def __init__(self, name, db_name='{{config.db_name}}',
                  db_host='{{config.db_host}}', db_username='{{config.db_username}}',
                  db_password='{{config.db_password}}', db_root_password='{{config.db_root_password}}',
+                 db_charset='{{config.get("db_charset", "utf8")}}',
                  stacklevel=1):
         super(CheckMySQLDatabase, self).__init__(name, stacklevel=stacklevel+1)
         self.db_name = db_name
@@ -739,6 +741,7 @@ class CheckMySQLDatabase(Task):
         self.db_username = db_username
         self.db_password = db_password
         self.db_root_password = db_root_password
+        self.db_charset = db_charset
 
     password_error = 1045
     access_denied_error = 1044
@@ -822,10 +825,13 @@ class CheckMySQLDatabase(Task):
             host=self.db_host,
             user='root',
             **self.passkw(self._root_password_override or self.db_root_password))
-        plan = 'CREATE DATABASE %s' % self.db_name
-        self.logger.info('Executing %s' % plan)
+        ## FIXME: ideally the character set would be checked even if the database existed,
+        ## and updated with ALTER DATABASE <dbname> CHARACTER SET <db_charset>
+        plan = 'CREATE DATABASE %s CHARACTER SET %%s' % self.db_name
+        charset = self.db_charset
+        self.logger.info('Executing %s' % (plan % repr(charset)))
         if not self.maker.simulate:
-            conn.cursor().execute(plan)
+            conn.cursor().execute(plan, (charset,))
         conn.close()
 
     def change_permissions(self):
