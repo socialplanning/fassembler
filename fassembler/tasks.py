@@ -1637,9 +1637,6 @@ class InstallTarball(Task):
             if delete_tmp_fn and os.path.exists(tmp_fn):
                 os.unlink(tmp_fn)
 
-    def tmp_filename(self):
-        return os.tempnam() + '.tar.bz2'
-
 
 class Log(Task):
 
