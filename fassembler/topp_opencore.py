@@ -176,7 +176,8 @@ class GetBundleTarball(tasks.Task):
         finally:
             if delete_tmp_fn and os.path.exists(tmp_fn):
                 self.logger.info('Deleting %s' % tmp_fn)
-        
+                os.unlink(tmp_fn) 
+
 
 class SymlinkProducts(tasks.Task):
 
