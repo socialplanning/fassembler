@@ -4,6 +4,7 @@ environment.
 """
 
 import os
+import re
 import socket
 from cmdutils import CommandError
 from fassembler.project import Project, Setting
@@ -105,6 +106,12 @@ class EnsureAdminFile(tasks.EnsureFile):
         super(EnsureAdminFile, self).run()
 
 
+def validate_db_prefix(prefix):
+    if re.search(r'\W+', prefix):
+        raise ValueError(
+            "db_prefix can only contain letters, numbers, underscores; got %r"
+            % prefix)
+    
 class ToppProject(Project):
     """
     Create the basic layout used at TOPP for a set of applications.
@@ -178,7 +185,10 @@ class ToppProject(Project):
                            'projprefs': '{{config.projprefs}}',
                            'etc_svn_subdir': '{{config.etc_svn_subdir}}',
                            'localbuild': '{{config.localbuild}}',
-                           }, overwrite=True),
+                           },
+                          overwrite=True,
+                          validators={'db_prefix': validate_db_prefix},
+                          ),
         tasks.SaveSetting(
             'Save google maps API key settings',
             {'openplans.org': 'ABQIAAAAPg0JzaavflEP5HFbvAW11BTB3-H4wTAao1hskyzZKyTqTR1AJRQIyIkPAwUg3Qm5pFsqk78fbsrjDQ',

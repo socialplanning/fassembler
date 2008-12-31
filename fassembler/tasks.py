@@ -886,7 +886,12 @@ class CheckMySQLDatabase(Task):
         
 class SaveSetting(Task):
     """
-    Save a setting in build.ini
+    Save a setting in build.ini.
+
+    Optional validation can be performed by passing a validators
+    dictionary, where keys correspond to the keys in variables, and
+    values are callables taking a single argument that raise
+    ValueError if something is wrong.
     """
     
     description = """
@@ -905,7 +910,9 @@ class SaveSetting(Task):
     section = interpolated('section')
 
     def __init__(self, name, variables, section='general',
-                 overwrite_if_empty=True, overwrite=True, stacklevel=1):
+                 overwrite_if_empty=True, overwrite=True,
+                 validators={},
+                 stacklevel=1):
         assert isinstance(variables, dict), (
             "The variables parameter should be a dictionary")
         super(SaveSetting, self).__init__(name, stacklevel=stacklevel+1)
@@ -913,6 +920,7 @@ class SaveSetting(Task):
         self.section = section
         self.overwrite_if_empty = overwrite_if_empty
         self.overwrite = overwrite
+        self.validators = validators
 
     def run(self):
         config = self.environ.config
@@ -923,6 +931,8 @@ class SaveSetting(Task):
                 section, key = key
             else:
                 section = self.section
+            if self.validators.has_key(key):
+                self.validators[key](value)
             should_write = self.should_write_setting(section, key, value)
             if should_write:
                 config.set(section, key, value)
