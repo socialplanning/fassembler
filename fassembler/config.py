@@ -15,6 +15,7 @@ class ConfigParser(configparser.RawConfigParser):
     default_extend_section_name = '__name__'
     ignore_missing_files = False
     safe_set = True
+    inline_comments = False
 
     def getdefault(self, section, option, default=None):
         try:
