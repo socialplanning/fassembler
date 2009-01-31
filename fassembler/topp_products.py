@@ -446,3 +446,71 @@ class BureauProject(Project):
 
     depends_on_projects = ['fassembler:topp']
     depends_on_executables = ['mysql_config']
+
+class HengeProject(Project):
+    """
+    Install Henge
+    """
+
+    name = 'henge'
+    title = 'Install Henge'
+    settings = [
+        Setting('db_sqlobject',
+                default='mysql://{{config.db_username}}:{{config.db_password}}@{{config.db_host}}/{{config.db_name}}',
+                help='Full SQLObject connection string for database'),
+        Setting('db_username',
+                default='henge',
+                help='Database connection username'),
+        Setting('db_password',
+                default='henge',
+                help='Database connection password'),
+        Setting('db_host',
+                default='localhost',
+                help='Host where database is running'),
+        Setting('db_name',
+                default='{{env.config.getdefault("general", "db_prefix", "")}}henge',
+                help='Name of database'),
+        Setting('db_test_sqlobject',
+                default='mysql://{{config.db_username}}:{{config.db_password}}@{{config.db_host}}/{{config.db_test_name}}',
+                help='Full SQLObject connection string for test database'),
+        Setting('db_test_name',
+                default='henge_test',
+                help='Name of the test database'),
+        Setting('db_root_password',
+                default='{{env.db_root_password}}',
+                help='Database root password'),
+        #Setting('henge_repo',
+        #        default='https://svn.openplans.org/svn/henge/trunk',
+        #        help='svn location to install henge from'),
+        Setting('port',
+                default='{{env.base_port+int(config.port_offset)}}',
+                help='Port to install Henge on'),
+        Setting('port_offset',
+                default='13',
+                help='Offset from base_port for Henge'),
+        Setting('host',
+                default='localhost',
+                help='Host to serve on'),
+        Setting('spec',
+                default='requirements/henge-req.txt',
+                help='Specification of packages to install'),
+        ]
+
+    actions = [
+        tasks.VirtualEnv(),
+        tasks.InstallSpec('Install Henge',
+                          '{{config.spec}}'),
+        tasks.InstallPasteConfig(path='henge/src/henge/fassembler_config.ini_tmpl'),
+        tasks.InstallPasteStartup(),
+        tasks.InstallSupervisorConfig(),
+        tasks.CheckMySQLDatabase('Check database exists'),
+        tasks.Script('Run setup-app',
+                     ['paster', 'setup-app', '{{env.base_path}}/etc/{{project.name}}/{{project.name}}.ini#henge'],
+                     use_virtualenv=True,
+                     cwd='{{env.base_path}}/{{project.name}}/src/{{project.name}}'),
+        tasks.SaveURI(path='/calendar',
+                      project_local=True),
+        ]
+
+    depends_on_projects = ['fassembler:topp']
+    depends_on_executables = ['mysql_config']
