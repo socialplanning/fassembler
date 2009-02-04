@@ -62,5 +62,6 @@ setup(name='fassembler',
       windmill = fassembler.topp_windmill:WindmillProject
       bureau = fassembler.topp_products:BureauProject
       henge = fassembler.topp_products:HengeProject
+      feedbacker = fassembler.topp_products:FeedBackerProject
       """,
       )

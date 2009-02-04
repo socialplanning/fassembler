@@ -447,6 +447,7 @@ class BureauProject(Project):
     depends_on_projects = ['fassembler:topp']
     depends_on_executables = ['mysql_config']
 
+
 class HengeProject(Project):
     """
     Install Henge
@@ -514,3 +515,73 @@ class HengeProject(Project):
 
     depends_on_projects = ['fassembler:topp']
     depends_on_executables = ['mysql_config']
+
+
+class FeedBackerProject(Project):
+    """
+    Install FeedBacker
+    """
+
+    name = 'feedbacker'
+    title = 'Install FeedBacker'
+
+    #XXX will depend on cabochon shortly
+    #depends_on_projects = ['fassembler:topp', 'fassembler:cabochon']
+    depends_on_projects = ['fassembler:topp']
+    depends_on_executables = ['mysql_config']
+
+    settings = [
+        Setting('db_sqlalchemy',
+                default='mysql://{{config.db_username}}:{{config.db_password}}@{{config.db_host}}/{{config.db_name}}?charset={{config.charset}}',
+                help='Full sqlalchemy connection string for database'),
+        Setting('charset',
+                default='utf8',
+                help='Database connection charset'),
+        Setting('db_username',
+                default='feedbacker',
+                help='Database connection username'),
+        Setting('db_password',
+                default='feedbacker',
+                help='Database connection password'),
+        Setting('db_host',
+                default='localhost',
+                help='Host where database is running'),
+        Setting('db_name',
+                default='{{env.config.getdefault("general", "db_prefix", "")}}feedbacker',
+                help='Name of database'),
+        Setting('db_test_sqlalchemy',
+                default='sqlite:///:memory:',
+                help='Full sqlalchemy connection string for test database'),
+        Setting('db_root_password',
+                default='{{env.db_root_password}}',
+                help='Database root password'),
+        Setting('port',
+                default='{{env.base_port+int(config.port_offset)}}',
+                help='Port to install TaskTracker on'),
+        Setting('port_offset',
+                default='8',
+                help='Offset from base_port for FeedBacker'),
+        Setting('host',
+                default='localhost',
+                help='Host to serve on'),
+        Setting('spec',
+                default='requirements/feedbacker-req.txt',
+                help='Specification of packages to install'),
+        ]
+
+    actions = [
+        tasks.VirtualEnv(),
+        tasks.InstallSpec('Install FeedBacker',
+                          '{{config.spec}}'),
+        tasks.InstallPasteConfig(path='feedbacker/src/feedbacker/fassembler_config.ini_tmpl'),
+        tasks.InstallPasteStartup(),
+        tasks.InstallSupervisorConfig(),
+        tasks.CheckMySQLDatabase('Check database exists'),
+        #tasks.Script('Run setup-app',
+        #             ['paster', 'setup-app', '{{env.base_path}}/etc/{{project.name}}/{{project.name}}.ini#feedbacker'],
+        #             use_virtualenv=True,
+        #             cwd='{{env.base_path}}/{{project.name}}/src/{{project.name}}'),
+        #XXX may need to fill this in for feedbacker
+        #tasks.SaveURI(path='/tasks'),
+        #tasks.SaveCabochonSubscriber({'delete_project' : '/projects/{id}/tasks/project/destroy'}, use_base_port=True),
+        ]
