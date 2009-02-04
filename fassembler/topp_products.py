@@ -577,11 +577,4 @@ class FeedBackerProject(Project):
         tasks.InstallPasteStartup(),
         tasks.InstallSupervisorConfig(),
         tasks.CheckMySQLDatabase('Check database exists'),
-        #tasks.Script('Run setup-app',
-        #             ['paster', 'setup-app', '{{env.base_path}}/etc/{{project.name}}/{{project.name}}.ini#feedbacker'],
-        #             use_virtualenv=True,
-        #             cwd='{{env.base_path}}/{{project.name}}/src/{{project.name}}'),
-        #XXX may need to fill this in for feedbacker
-        #tasks.SaveURI(path='/tasks'),
-        #tasks.SaveCabochonSubscriber({'delete_project' : '/projects/{id}/tasks/project/destroy'}, use_base_port=True),
         ]
