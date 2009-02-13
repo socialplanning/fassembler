@@ -574,7 +574,9 @@ class FeedBackerProject(Project):
         tasks.InstallSpec('Install FeedBacker',
                           '{{config.spec}}'),
         tasks.InstallPasteConfig(path='feedbacker/src/feedbacker/fassembler_config.ini_tmpl'),
+        tasks.InstallPasteConfig(path='feedbacker/src/feedbacker/fassembler_who.ini_tmpl', ininame='who'),
         tasks.InstallPasteStartup(),
         tasks.InstallSupervisorConfig(),
         tasks.CheckMySQLDatabase('Check database exists'),
+        tasks.SaveCabochonSubscriber({'edit_page': '/'})
         ]

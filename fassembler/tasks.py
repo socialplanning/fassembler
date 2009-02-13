@@ -617,19 +617,23 @@ class InstallPasteConfig(Task):
     path = interpolated('path')
 
     description = """
-    Install a Paste configuration file in etc/{{project.name}}/{{project.name}}.ini
+    Install a Paste configuration file in
+    {{if task.ininame}}etc/{{project.name}}/{{task.ininame}}.ini
+    {{else}}etc/{{project.name}}/{{project.name}}.ini{{endif}}
     from {{if task.template}}a static template{{else}}the file {{task.path}}{{endif}}
     """
 
     def __init__(self, template=None, path=None, name='Install Paste configuration',
-                 stacklevel=1):
+                 ininame=None, stacklevel=1):
         super(InstallPasteConfig, self).__init__(name, stacklevel=stacklevel+1)
         assert path or template, "You must give one of path or template"
         self.path = path
         self.template = template
+        self.ininame = ininame
 
     def run(self):
-        dest = os.path.join('etc', self.project.name, self.project.name+'.ini')
+        ininame = self.ininame or self.project.name
+        dest = os.path.join('etc', self.project.name, ininame+'.ini')
         if self.template:
             self.maker.ensure_file(
                 dest,
