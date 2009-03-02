@@ -14,7 +14,7 @@ from fassembler.distutilspatch import find_distutils_file, update_distutils_file
 from fassembler.util import asbool
 from glob import glob
 from tempita import Template
-
+from types import StringTypes
 
 class interpolated(object):
     """
@@ -1566,9 +1566,15 @@ class SaveCabochonSubscriber(Task):
         #new subscribers
         subscribers = dict()
         for event, subscriber in self.events.items():
+            critical = None
+            if type(subscriber) not in StringTypes:
+                # it might be a tuple or a list to support the 'critical'
+                # option
+                subscriber = subscriber[0]
+                critical = asbool(subscriber[1])
             if not event in subscribers:
                 subscribers[event] = set()
-            subscribers[event].add(interp(subscriber))
+            subscribers[event].add((interp(subscriber), critical))
 
         #existing subscribers
         cfg_filename = self.interpolate("{{env.var}}/cabochon_subscribers.cfg")
@@ -1577,10 +1583,14 @@ class SaveCabochonSubscriber(Task):
 
             for line in f:
                 line = line.strip()
-                event, subscriber = line.split()[:2]
+                splitline = line.split()
+                event, subscriber = splitline[:2]
+                critical = None
+                if len(splitline) == 3:
+                    critical = asbool(splitline[2])
                 if not event in subscribers:
                     subscribers[event] = set()
-                subscribers[event].add(subscriber)
+                subscribers[event].add((subscriber, critical))
         except IOError:
             pass
         else:
@@ -1588,10 +1598,13 @@ class SaveCabochonSubscriber(Task):
         
         f = open(cfg_filename, "w")
         for event_type in subscribers:
-            for subscriber in subscribers[event_type]:
-                f.write("%s %s\n" % (event_type, subscriber))
+            for subscriber, critical in subscribers[event_type]:
+                if critical is None:
+                    f.write("%s %s\n" % (event_type, subscriber))
+                else:
+                    f.write("%s %s %s" % (event_type, subscriber, str(critical)))
         f.close()
-        
+
 
 class InstallTarball(Task):
 

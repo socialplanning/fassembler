@@ -578,5 +578,5 @@ class FeedBackerProject(Project):
         tasks.InstallPasteStartup(),
         tasks.InstallSupervisorConfig(),
         tasks.CheckMySQLDatabase('Check database exists'),
-        tasks.SaveCabochonSubscriber({'edit_page': '/'})
+        tasks.SaveCabochonSubscriber({'edit_page': ('/', 'False')})
         ]
