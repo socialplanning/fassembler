@@ -1570,8 +1570,8 @@ class SaveCabochonSubscriber(Task):
             if type(subscriber) not in StringTypes:
                 # it might be a tuple or a list to support the 'critical'
                 # option
-                subscriber = subscriber[0]
                 critical = asbool(subscriber[1])
+                subscriber = subscriber[0]
             if not event in subscribers:
                 subscribers[event] = set()
             subscribers[event].add((interp(subscriber), critical))
