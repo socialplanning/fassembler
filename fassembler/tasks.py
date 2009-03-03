@@ -1602,7 +1602,7 @@ class SaveCabochonSubscriber(Task):
                 if critical is None:
                     f.write("%s %s\n" % (event_type, subscriber))
                 else:
-                    f.write("%s %s %s" % (event_type, subscriber, str(critical)))
+                    f.write("%s %s %s\n" % (event_type, subscriber, str(critical)))
         f.close()
 
 
