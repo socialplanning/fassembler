@@ -577,6 +577,7 @@ class FeedBackerProject(Project):
         tasks.InstallPasteConfig(path='feedbacker/src/feedbacker/fassembler_who.ini_tmpl', ininame='who'),
         tasks.InstallPasteStartup(),
         tasks.InstallSupervisorConfig(),
+        tasks.SaveURI(path='/', theme=False),
         tasks.CheckMySQLDatabase('Check database exists'),
         tasks.SaveCabochonSubscriber({'send_feed_item': ('/', 'False')})
         ]
