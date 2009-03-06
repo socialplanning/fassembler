@@ -1,0 +1,417 @@
+# -*- mode: python ;-*-
+from buildbot.changes.pb import PBChangeSource
+from buildbot.changes.svnpoller import SVNPoller
+from buildbot.process import factory
+from buildbot.steps.shell import ShellCommand
+from buildbot.steps.source import SVN
+from buildbot.status import html, mail, words
+from buildbot import scheduler
+from buildbot.buildslave import BuildSlave
+from twisted.python import log
+
+import os
+import subprocess
+
+"""Buildbot master configuration for opencore and related software.
+
+{{config.editwarning}}
+"""
+
+
+BASEPORT=int('{{config.child_baseport}}')  # Used for the fassembler builds
+OCBASEDIR='{{config.oc_basedir}}'
+
+# All the ports we care about... hacky
+octrunk_ports =  range(BASEPORT, BASEPORT + 11)  # for the opencore trunk build.
+lsfull_ports = range(BASEPORT + 100, BASEPORT + 211)  # for the full LS build.
+opfull_ports = range(BASEPORT + 200, BASEPORT + 311)  # for the OP full stack.
+
+
+slavenames = ['slave1']
+slaves = [BuildSlave(name, '{{config.buildbot_passwd}}') for name in slavenames]
+
+c = BuildmasterConfig = {}
+# "The BuildmasterConfig name is the only one which matters: all other
+# names defined during the execution of this file are discarded."
+# (from http://buildbot.net/repos/release/docs/buildbot.html#Configuration)
+				   
+c['projectName'] = 'Orton Almanac'
+c['projectURL']  = 'http://projects.opengeo.org/almanac/'
+c['buildbotURL'] = '{{config.buildbot_url}}'
+
+c['slavePortnum'] = int('{{config.buildslave_port}}')
+
+SVNURL = 'https://svn.opengeo.org/almanac/'
+
+c['change_source'] = [
+    SVNPoller(svnurl=SVNURL, pollinterval=180)
+]
+
+# Build slaves that are allowed to attach.
+c['slaves'] = slaves
+
+
+#########################################################################
+# FACTORIES - these configure how to build stuff.
+#########################################################################
+
+class ToppShellCommand(ShellCommand):
+
+    def __init__(self, *args, **kw):
+        # Force colorization off in fassembler child processes.
+        # Do that by forcing these env vars blank.
+        # (actually it's cmdutils, used by fassembler, that checks these).
+        # But on principle, we still allow the user to override this.
+        kw.setdefault('env', {})
+        kw['env'].setdefault('LSCOLORS', '')
+        kw['env'].setdefault('LS_COLORS', '')
+        kw['env'].setdefault('COLORTERM', '')
+        kw['env'].setdefault('CLICOLOR', '')
+        ShellCommand.__init__(self, *args, **kw)
+    
+    # Print something not so stupid as "shell_9" when there are
+    # problems.  It was pretty time-consuming to figure out where
+    # in buildbot this happens.
+    def getText2(self, cmd, results):
+        # XXX maybe report a failure count?
+        # see comments in buildbot/process/buildstep.py around line 1004.
+        return self.describe(done=True)
+
+    @property
+    def descriptionDone(self):
+        # Writing out two separate descriptions is too much work.
+        return self.description
+
+class ToppShellScript(ToppShellCommand):
+
+    """Given source text of a bash script, run it on the build
+    slave."""
+
+    def __init__(self, *args, **kw):
+        """
+        Needs a 'sourcetext' keyword arg, and optionally 'scriptargs'
+        (a single string of all arguments, which should already be
+        quoted as necessary).
+        """
+        commandvars = kw.copy()
+        commandvars.setdefault('scriptargs', '')
+        commandvars['delim'] = '__123_END_OF_SCRIPT_123__'
+        # This works as expected, and seems pretty safe against quote
+        # issues and the like.  Uses a somewhat obscure bash trick: a
+        # here document with disabled param substitution (by
+        # single-quoting the delimiter).
+        command = "cat <<'%(delim)s' | bash -s %(scriptargs)s\n%(sourcetext)s\n%(delim)s\n" % commandvars
+        kw['command'] = command
+        ToppShellCommand.__init__(self, *args, **kw)
+
+
+_db_prefixes = []
+
+def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
+                 zopectl_suites=['opencore'],
+                 ftestsdir=None, flunc_suite='all',
+                 fassembler_targets=[],
+                 ports=[]):
+    """
+    We have multiple very similar builds that just use different
+    requirements_svn_repo. Hence, this factory function.
+    """
+
+    # Make sure the db_prefix is unique or we'll have intermittend
+    # flunc failures due to mysql data collisions.
+    assert prefix not in _db_prefixes, "Prefix %s must be unique, was used for 2 factories! invalid config, check your make_factory arguments." % prefix
+    _db_prefixes.append(prefix)
+
+    fac = factory.BuildFactory()
+    fac.name = name
+    
+    # Accept certificates (for svn).
+    # XXX is there an easier way to find the right bin directory?
+    # XXX We should instead use ToppShellScript so slaves don't have to
+    # be updated if the script changes.
+    # Or, use buildbot's FileDownload to first send the file from
+    # master to slave.
+    fac.addStep(ToppShellCommand,
+                command='{{os.path.join("..", "..", "bin", "accept_certificates.sh")}}',
+                description=['accept svn certs',],
+                )
+
+    # Clean up after previous runs.
+    if ports:
+        baseport = ports[0]
+        # For some reason, portkill seems to always exit 1, so ignore "failures".
+        # And for some reason, it sometimes doesn't really work, so
+        # let's just stupidly bludgeon those ports do death.
+        portstring = ' '.join([str(port) for port in ports])
+        killscript="""
+        KILLER=\"{{os.path.join('..', '..', 'bin', 'portkill')}} -v -s 5 %s\"
+        $KILLER
+        sleep 2
+        $KILLER
+        """ % portstring
+        fac.addStep(ToppShellScript, sourcetext=killscript,
+                    description=['kill any running', 'instances using',
+                                 'the ports'],
+                    haltOnFailure=False, flunkOnFailure=False)
+
+    fac.addStep(ToppShellCommand, command="time rm -rf %s *bz2 *gz *zip" % OCBASEDIR,
+                description='remove old files',
+                haltOnFailure=False, flunkOnFailure=False
+                )
+
+    # Bootstrap the topp build tools (fassembler).
+    fac.addStep(ToppShellCommand,
+                # string instead of list causes it to be run via sh.
+                command='svn cat https://svn.openplans.org/svn/fassembler/trunk/fassembler-boot.py | python - oc',
+                description='bootstrap fassembler',
+                haltOnFailure=True)
+
+    # Run the build.
+    buildcmd = ['%s/bin/fassembler' % OCBASEDIR,
+                '--no-interactive',
+		'-vv',  # pretty verbose!
+                'var=%s/var' % OCBASEDIR,
+                'base_port=%d' % baseport,
+		'db_prefix=buildbot_%s' % prefix,
+    ]
+    if requirements_repo:
+        buildcmd.append('requirements_svn_repo=%s' % requirements_repo)
+    if ftestsdir:
+        buildcmd.append('ftests_path=%s' % ftestsdir)
+    # We have to run fassembler:topp separately iff we're doing an 'all' build.
+    fac.addStep(ToppShellCommand,
+                command=buildcmd + ['fassembler:topp'],
+                description=['build fassembler:topp'],
+                haltOnFailure=True)
+    fac.addStep(ToppShellCommand,
+                command=buildcmd + fassembler_targets,
+                description=['build', name, 'and dependencies'],
+                haltOnFailure=True)
+
+    # What got built? Useful for forensics.
+    ocbin = '%s/opencore/bin' % OCBASEDIR
+    poachscript = ("%s/easy_install "
+                   "https://svn.openplans.org/svn/PoachEggs/trunk/"
+                   " && %s/poacheggs --freeze=-" % (ocbin, ocbin))
+    fac.addStep(ToppShellScript, sourcetext=poachscript,
+                description=["What got built", "for opencore?"],
+                haltOnFailure=False, flunkOnFailure=False)
+
+    # Run the zopectl unit tests.
+    for suite in zopectl_suites:
+        fac.addStep(ToppShellCommand, 
+                    command=['%s/opencore/zope/bin/zopectl' % OCBASEDIR,
+                             'test', '-s',
+                             suite],
+                    description=['run', suite, 'unit tests'],
+                    haltOnFailure=False, flunkOnFailure=True)
+
+    if flunc_suite:
+        # Run the flunc tests. Wait a bit for services to come up,
+        # to avoid errors from deliverance.
+        # Assume that ports[1] is Zope and takes the longest time.
+        startscript = """
+        %s/bin/supervisord || exit 1
+        sleep 10
+        wget --retry-connrefused --tries=10 -T 100 --spider http://localhost:%d
+        """ % (OCBASEDIR, ports[1])
+        fac.addStep(ToppShellScript,
+                    sourcetext=startscript,
+                    description=['start services', 'for functional tests'],
+                    haltOnFailure=True)
+
+        # Don't halt on failure for any of these! We need shutdown to run.
+        fac.addStep(ToppShellCommand, 
+                    command=['%s/opencore/bin/flunc' % OCBASEDIR,
+                             '-p', '%s/%s' % (OCBASEDIR, ftestsdir),
+                             '-t', 'http://localhost:%d' % baseport,
+                             '--verbose',
+                             # Put err.html on stdout as a temporary hack for
+                             # http://trac.openplans.org/openplans/ticket/2561
+                             # A better solution would be to somehow serve
+                             # the file and provide a clickable link to
+                             # it, but that would take actual work.  If we
+                             # want to do that, start by getting the file
+                             # from the slave to the master, via
+                             # buildbot/steps/transfer.py.
+                             '--dump-html', '-',
+                             flunc_suite],
+                    description='run flunc tests',
+                    haltOnFailure=False, flunkOnFailure=True)
+
+        fac.addStep(ToppShellCommand,
+                    command='%s/bin/supervisorctl shutdown && sleep 40' % OCBASEDIR,
+                    description='shut down',
+                    haltOnFailure=True)
+
+    return fac
+
+
+oc_factory = make_factory(
+    'Opencore (plone 3, no flunc)',
+    prefix="oc_p3",
+    requirements_repo='https://svn.openplans.org/svn/build/requirements/opencore-minimal/trunk',
+    fassembler_targets=['all'],
+    flunc_suite=None,
+    ports=octrunk_ports,
+    zopectl_suites=['opencore', 'Products.listen'],
+    )
+
+
+full_op_factory = make_factory(
+    'Openplans (full stack)',
+    prefix="op_full_p3",
+    requirements_repo='https://svn.openplans.org/svn/build/requirements/openplans/trunk/',
+    ports=opfull_ports,
+    fassembler_targets=['all'],
+    ftestsdir='opencore/src/opencore/ftests/',
+    flunc_suite='all',
+    zopectl_suites=['opencore'],
+    )
+
+full_ls_factory = make_factory(
+    'Livable Streets (full stack)',
+    prefix="ls_full_p25",
+    requirements_repo='https://svn.openplans.org/svn/build/requirements/livablestreets/branches/0.9.8/',
+    ports=lsfull_ports,
+    ftestsdir='opencore/src/sputnik/ftests/',
+    fassembler_targets=[
+        'all',
+        ],
+    flunc_suite='all',
+    zopectl_suites=['opencore'],
+    )
+    
+############################################################################
+# BUILDERS - each tells a slave which build factory to use.
+# Need one per slave per build config.
+############################################################################
+
+opencore_builders = [
+    {'name': 'opencore-minimal',
+     'slavename': name,
+     'builddir': 'opencore-minimal',
+     'factory': oc_factory}
+    for name in slavenames]
+
+
+full_op_builders = [
+    {'name': 'openplans-full',
+     'slavename': name,
+     'builddir': 'openplans-full',
+     'factory': full_op_factory}
+    for name in slavenames]
+
+full_livablestreets_builders = [
+    {'name': 'livable-full',
+     'slavename': name,
+     'builddir': 'livable-full',
+     'factory': full_ls_factory}
+    for name in slavenames]
+
+
+c['builders'] = opencore_builders + \
+                full_op_builders + \
+                full_livablestreets_builders
+
+###########################################################################
+# SCHEDULERS - control when the master decides to fire off a build.
+###########################################################################
+
+buildOnChange = scheduler.Scheduler(
+    'Post Commit Build', 
+    branch='trunk',
+    treeStableTimer=5*60, 
+    builderNames=[b['name'] for b in c['builders']]
+    )
+
+buildOpencoreNightly  = scheduler.Nightly(
+    'Opencore Nightly Build', 
+    builderNames=[b['name'] for b in opencore_builders],
+    hour=3, minute=0)
+
+buildOpenplansNightly  = scheduler.Nightly(
+    'Openplans (Full) Nightly Build', 
+    builderNames=[b['name'] for b in full_op_builders],
+    hour=3, minute=30)
+
+buildFullLSNightly  = scheduler.Nightly(
+    'LivableStreets (Full) Nightly Build',
+    builderNames=[b['name'] for b in full_livablestreets_builders],
+    hour=4, minute=0)
+
+
+c['schedulers'] = [buildOnChange,
+                   buildOpencoreNightly,
+                   buildOpenplansNightly,
+                   buildFullLSNightly
+                   ]
+
+
+
+############################################################################
+# STATUS NOTIFICATION
+############################################################################
+
+
+# This is the status display that should be presented to the Universe, 
+# hence forcing builds to begin is disabled. 
+publicWebStatus = html.WebStatus(http_port='{{config.buildmaster_public_port}}', allowForce=False)
+
+# This is the status display that should be presented to developers 
+# only, allowing them to manually force builds, stop builds etc. 
+developerWebStatus = html.WebStatus(http_port='{{config.buildmaster_private_port}}', allowForce=True)
+
+
+# Mails only to the status list.
+listMailer = mail.MailNotifier(
+    fromaddr='buildbot@openplans.org',
+    mode='failing',  # People got annoyed by all the successes.
+    subject='%(builder)s FAILURE',
+    relayhost='mail.openplans.org',
+    lookup='openplans.org',
+    sendToInterestedUsers=False,
+    extraRecipients=['opencore-builds@lists.openplans.org'],
+    )
+
+
+# Notify by email anyone who has made changes to a build that
+# breaks.
+breakMailer = mail.MailNotifier(
+    fromaddr='buildbot@openplans.org', 
+    mode='failing',
+    subject='%(builder)s FAILURE, and sadly, you are on the blamelist',
+    relayhost='mail.openplans.org', 
+    lookup='openplans.org',
+    sendToInterestedUsers=True,
+    )
+
+# An IRC status bot. Is there a way to get this to always announce
+# failures?
+# Apparently not, short of giving the bot the 'notify' command in channel.
+ircbot = words.IRC(host='irc.freenode.net',
+                   nick='buildbot-topp',
+                   channels=['#openplans'],
+                   allowForce=False,
+                   )
+
+
+c['status'] = [developerWebStatus,
+               publicWebStatus,
+               breakMailer,
+               listMailer,
+               ircbot,
+               ]
+
+
+############################################################################
+# write the configuration to a file for debugging.
+# XXX first monkeypatch buildslave so it doesn't blow up on repr.
+def repr_buildslave(s):
+    return '<BuildSlave(%r)' % s.slavename
+BuildSlave.__repr__ = repr_buildslave
+
+import pprint
+outfile = file('config.out', 'w')
+outfile.write(pprint.pformat(c))
+outfile.close()
