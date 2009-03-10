@@ -75,7 +75,6 @@ class ToppShellCommand(ShellCommand):
         # see comments in buildbot/process/buildstep.py around line 1004.
         return self.describe(done=True)
 
-
     @property
     def descriptionDone(self):
         # Writing out two separate descriptions is too much work.

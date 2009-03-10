@@ -32,8 +32,8 @@ def get_host_info():
 editwarning = '''!!! WARNING !!! This is a generated file.  DO NOT EDIT!
 
 Instead you should edit (and commit) the tmpl file in the fassembler
-source, under {{project.skel_dir}}, then re-run fassembler to
-regenerate this file.
+source, at {{project.skel_dir}}/{{config.stack_to_build)}}_master.cfg_tmpl, then
+re-run fassembler to regenerate this file.
 '''
 
 class BuildBotProject(Project):
@@ -98,7 +98,7 @@ class BuildBotProject(Project):
                 help="Subdirectory to put the buildslave in. Must be relative"
                 ),
         Setting('basedir',
-                default='oc',
+                default='builds',
                 help='Subdirectory where slave will build stuff.',
                 ),
         Setting('editwarning',
