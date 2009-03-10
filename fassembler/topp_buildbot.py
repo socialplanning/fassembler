@@ -32,7 +32,7 @@ def get_host_info():
 editwarning = '''!!! WARNING !!! This is a generated file.  DO NOT EDIT!
 
 Instead you should edit (and commit) the tmpl file in the fassembler
-source, at {{project.skel_dir}}/{{config.stack_to_build)}}_master.cfg_tmpl, then
+source, at {{project.skel_dir}}/{{config.stack_to_build}}_master.cfg_tmpl, then
 re-run fassembler to regenerate this file.
 '''
 
