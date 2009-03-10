@@ -12,19 +12,17 @@ from twisted.python import log
 import os
 import subprocess
 
-"""Buildbot master configuration for opencore and related software.
+"""Buildbot master configuration for the Almanac.
 
 {{config.editwarning}}
 """
 
 
 BASEPORT=int('{{config.child_baseport}}')  # Used for the fassembler builds
-OCBASEDIR='{{config.oc_basedir}}'
+ALMANAC_BASEDIR='{{config.basedir}}'
 
 # All the ports we care about... hacky
-octrunk_ports =  range(BASEPORT, BASEPORT + 11)  # for the opencore trunk build.
-lsfull_ports = range(BASEPORT + 100, BASEPORT + 211)  # for the full LS build.
-opfull_ports = range(BASEPORT + 200, BASEPORT + 311)  # for the OP full stack.
+almanac_ports =  range(BASEPORT, BASEPORT + 11)  # for the opencore trunk build.
 
 
 slavenames = ['slave1']
@@ -77,6 +75,7 @@ class ToppShellCommand(ShellCommand):
         # see comments in buildbot/process/buildstep.py around line 1004.
         return self.describe(done=True)
 
+
     @property
     def descriptionDone(self):
         # Writing out two separate descriptions is too much work.
@@ -105,34 +104,15 @@ class ToppShellScript(ToppShellCommand):
         ToppShellCommand.__init__(self, *args, **kw)
 
 
-_db_prefixes = []
-
-def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
-                 zopectl_suites=['opencore'],
-                 ftestsdir=None, flunc_suite='all',
-                 fassembler_targets=[],
+def make_factory(name, repo, baseport=BASEPORT,
                  ports=[]):
-    """
-    We have multiple very similar builds that just use different
-    requirements_svn_repo. Hence, this factory function.
-    """
-
-    # Make sure the db_prefix is unique or we'll have intermittend
-    # flunc failures due to mysql data collisions.
-    assert prefix not in _db_prefixes, "Prefix %s must be unique, was used for 2 factories! invalid config, check your make_factory arguments." % prefix
-    _db_prefixes.append(prefix)
-
+    # XXX this function probably doesn't need to exist anymore.
+    basedir = ALMANAC_BASEDIR
     fac = factory.BuildFactory()
     fac.name = name
-    
     # Accept certificates (for svn).
-    # XXX is there an easier way to find the right bin directory?
-    # XXX We should instead use ToppShellScript so slaves don't have to
-    # be updated if the script changes.
-    # Or, use buildbot's FileDownload to first send the file from
-    # master to slave.
-    fac.addStep(ToppShellCommand,
-                command='{{os.path.join("..", "..", "bin", "accept_certificates.sh")}}',
+    fac.addStep(ToppShellScript,
+                sourcetext='yes p | svn ls %s' % repo,
                 description=['accept svn certs',],
                 )
 
@@ -154,165 +134,67 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
                                  'the ports'],
                     haltOnFailure=False, flunkOnFailure=False)
 
-    fac.addStep(ToppShellCommand, command="time rm -rf %s *bz2 *gz *zip" % OCBASEDIR,
+    fac.addStep(ToppShellCommand, command="time rm -rf %s *bz2 *gz *zip" % basedir,
                 description='remove old files',
                 haltOnFailure=False, flunkOnFailure=False
                 )
 
-    # Bootstrap the topp build tools (fassembler).
-    fac.addStep(ToppShellCommand,
-                # string instead of list causes it to be run via sh.
-                command='svn cat https://svn.openplans.org/svn/fassembler/trunk/fassembler-boot.py | python - oc',
-                description='bootstrap fassembler',
+    # XXX Bootstrap a virtualenv, and bootstrap the buildout within it.
+    venv_script = """
+    uname -m | grep 64
+    if [ $? -eq 0 ]; then PY=python2.4; else PY=python; fi
+    virtualenv --python=$PY %(basedir)s
+    cd %(basedir)s
+    source bin/activate
+    svn co %(repo)s AlmanacStack
+    cd AlmanacStack
+    python bootstrap.py
+    """ % locals()
+    fac.addStep(ToppShellScript, sourcetext=venv_script,
+                description = ['Bootstrap', 'build', 'environment'],
                 haltOnFailure=True)
 
-    # Run the build.
-    buildcmd = ['%s/bin/fassembler' % OCBASEDIR,
-                '--no-interactive',
-		'-vv',  # pretty verbose!
-                'var=%s/var' % OCBASEDIR,
-                'base_port=%d' % baseport,
-		'db_prefix=buildbot_%s' % prefix,
-    ]
-    if requirements_repo:
-        buildcmd.append('requirements_svn_repo=%s' % requirements_repo)
-    if ftestsdir:
-        buildcmd.append('ftests_path=%s' % ftestsdir)
-    # We have to run fassembler:topp separately iff we're doing an 'all' build.
-    fac.addStep(ToppShellCommand,
-                command=buildcmd + ['fassembler:topp'],
-                description=['build fassembler:topp'],
-                haltOnFailure=True)
-    fac.addStep(ToppShellCommand,
-                command=buildcmd + fassembler_targets,
-                description=['build', name, 'and dependencies'],
+    buildout_script = """
+    cd %(basedir)s
+    source bin/activate
+    cd AlmanacStack
+    ./bin/buildout -vvv
+    """ % locals()
+    fac.addStep(ToppShellScript, sourcetext=buildout_script,
+                descripton = ['Run buildout'],
                 haltOnFailure=True)
 
     # What got built? Useful for forensics.
-    ocbin = '%s/opencore/bin' % OCBASEDIR
-    poachscript = ("%s/easy_install "
-                   "https://svn.openplans.org/svn/PoachEggs/trunk/"
-                   " && %s/poacheggs --freeze=-" % (ocbin, ocbin))
-    fac.addStep(ToppShellScript, sourcetext=poachscript,
-                description=["What got built", "for opencore?"],
+    pipscript = "easy_install pip && pip freeze"
+    fac.addStep(ToppShellScript, sourcetext=pipscript,
+                description=["What got built", "for almanac?"],
                 haltOnFailure=False, flunkOnFailure=False)
-
-    # Run the zopectl unit tests.
-    for suite in zopectl_suites:
-        fac.addStep(ToppShellCommand, 
-                    command=['%s/opencore/zope/bin/zopectl' % OCBASEDIR,
-                             'test', '-s',
-                             suite],
-                    description=['run', suite, 'unit tests'],
-                    haltOnFailure=False, flunkOnFailure=True)
-
-    if flunc_suite:
-        # Run the flunc tests. Wait a bit for services to come up,
-        # to avoid errors from deliverance.
-        # Assume that ports[1] is Zope and takes the longest time.
-        startscript = """
-        %s/bin/supervisord || exit 1
-        sleep 10
-        wget --retry-connrefused --tries=10 -T 100 --spider http://localhost:%d
-        """ % (OCBASEDIR, ports[1])
-        fac.addStep(ToppShellScript,
-                    sourcetext=startscript,
-                    description=['start services', 'for functional tests'],
-                    haltOnFailure=True)
-
-        # Don't halt on failure for any of these! We need shutdown to run.
-        fac.addStep(ToppShellCommand, 
-                    command=['%s/opencore/bin/flunc' % OCBASEDIR,
-                             '-p', '%s/%s' % (OCBASEDIR, ftestsdir),
-                             '-t', 'http://localhost:%d' % baseport,
-                             '--verbose',
-                             # Put err.html on stdout as a temporary hack for
-                             # http://trac.openplans.org/openplans/ticket/2561
-                             # A better solution would be to somehow serve
-                             # the file and provide a clickable link to
-                             # it, but that would take actual work.  If we
-                             # want to do that, start by getting the file
-                             # from the slave to the master, via
-                             # buildbot/steps/transfer.py.
-                             '--dump-html', '-',
-                             flunc_suite],
-                    description='run flunc tests',
-                    haltOnFailure=False, flunkOnFailure=True)
-
-        fac.addStep(ToppShellCommand,
-                    command='%s/bin/supervisorctl shutdown && sleep 40' % OCBASEDIR,
-                    description='shut down',
-                    haltOnFailure=True)
-
     return fac
 
 
-oc_factory = make_factory(
-    'Opencore (plone 3, no flunc)',
-    prefix="oc_p3",
-    requirements_repo='https://svn.openplans.org/svn/build/requirements/opencore-minimal/trunk',
-    fassembler_targets=['all'],
-    flunc_suite=None,
-    ports=octrunk_ports,
-    zopectl_suites=['opencore', 'Products.listen'],
+# XXX make_factory has too much irrelevant crap
+almanac_factory = make_factory(
+    'Almanac trunk',
+    # XXX buildout, not fassembler reqs
+    repo='%s/build/trunk' % SVNURL,
+    ports=almanac_ports,
     )
 
 
-full_op_factory = make_factory(
-    'Openplans (full stack)',
-    prefix="op_full_p3",
-    requirements_repo='https://svn.openplans.org/svn/build/requirements/openplans/trunk/',
-    ports=opfull_ports,
-    fassembler_targets=['all'],
-    ftestsdir='opencore/src/opencore/ftests/',
-    flunc_suite='all',
-    zopectl_suites=['opencore'],
-    )
-
-full_ls_factory = make_factory(
-    'Livable Streets (full stack)',
-    prefix="ls_full_p25",
-    requirements_repo='https://svn.openplans.org/svn/build/requirements/livablestreets/branches/0.9.8/',
-    ports=lsfull_ports,
-    ftestsdir='opencore/src/sputnik/ftests/',
-    fassembler_targets=[
-        'all',
-        ],
-    flunc_suite='all',
-    zopectl_suites=['opencore'],
-    )
-    
 ############################################################################
 # BUILDERS - each tells a slave which build factory to use.
 # Need one per slave per build config.
 ############################################################################
 
-opencore_builders = [
-    {'name': 'opencore-minimal',
+almanac_builders = [
+    {'name': 'almanac',
      'slavename': name,
-     'builddir': 'opencore-minimal',
-     'factory': oc_factory}
+     'builddir': 'almanac',
+     'factory': almanac_factory}
     for name in slavenames]
 
 
-full_op_builders = [
-    {'name': 'openplans-full',
-     'slavename': name,
-     'builddir': 'openplans-full',
-     'factory': full_op_factory}
-    for name in slavenames]
-
-full_livablestreets_builders = [
-    {'name': 'livable-full',
-     'slavename': name,
-     'builddir': 'livable-full',
-     'factory': full_ls_factory}
-    for name in slavenames]
-
-
-c['builders'] = opencore_builders + \
-                full_op_builders + \
-                full_livablestreets_builders
+c['builders'] = almanac_builders
 
 ###########################################################################
 # SCHEDULERS - control when the master decides to fire off a build.
@@ -325,26 +207,13 @@ buildOnChange = scheduler.Scheduler(
     builderNames=[b['name'] for b in c['builders']]
     )
 
-buildOpencoreNightly  = scheduler.Nightly(
-    'Opencore Nightly Build', 
-    builderNames=[b['name'] for b in opencore_builders],
-    hour=3, minute=0)
-
-buildOpenplansNightly  = scheduler.Nightly(
-    'Openplans (Full) Nightly Build', 
-    builderNames=[b['name'] for b in full_op_builders],
-    hour=3, minute=30)
-
-buildFullLSNightly  = scheduler.Nightly(
-    'LivableStreets (Full) Nightly Build',
-    builderNames=[b['name'] for b in full_livablestreets_builders],
-    hour=4, minute=0)
-
+buildAlmanacNightly = scheduler.Nightly(
+    'Almanac Nightly Build', 
+    builderNames=[b['name'] for b in c['builders']],
+    hour=4, minute=15)
 
 c['schedulers'] = [buildOnChange,
-                   buildOpencoreNightly,
-                   buildOpenplansNightly,
-                   buildFullLSNightly
+                   buildAlmanacNightly,
                    ]
 
 
@@ -371,7 +240,7 @@ listMailer = mail.MailNotifier(
     relayhost='mail.openplans.org',
     lookup='openplans.org',
     sendToInterestedUsers=False,
-    extraRecipients=['opencore-builds@lists.openplans.org'],
+    extraRecipients=['almanac-builds@lists.openplans.org'], #XXX addr
     )
 
 
@@ -390,11 +259,10 @@ breakMailer = mail.MailNotifier(
 # failures?
 # Apparently not, short of giving the bot the 'notify' command in channel.
 ircbot = words.IRC(host='irc.freenode.net',
-                   nick='buildbot-topp',
-                   channels=['#openplans'],
+                   nick='buildbot-almanac',
+                   channels=['#almanac'],
                    allowForce=False,
                    )
-
 
 c['status'] = [developerWebStatus,
                publicWebStatus,

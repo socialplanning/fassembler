@@ -19,7 +19,7 @@ import subprocess
 
 
 BASEPORT=int('{{config.child_baseport}}')  # Used for the fassembler builds
-OCBASEDIR='{{config.oc_basedir}}'
+OCBASEDIR='{{config.basedir}}'
 
 # All the ports we care about... hacky
 octrunk_ports =  range(BASEPORT, BASEPORT + 11)  # for the opencore trunk build.

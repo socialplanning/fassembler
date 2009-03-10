@@ -97,7 +97,7 @@ class BuildBotProject(Project):
                 default='{{project.buildslave_dirname}}',
                 help="Subdirectory to put the buildslave in. Must be relative"
                 ),
-        Setting('oc_basedir',
+        Setting('basedir',
                 default='oc',
                 help='Subdirectory where slave will build stuff.',
                 ),
@@ -125,11 +125,18 @@ class BuildMasterProject(BuildBotProject):
     name = 'buildmaster'
     title = 'Installs a buildbot master'
 
+    config_template = 'master.cfg_tmpl'
+
     settings = BuildBotProject.settings  + [
         Setting('master_dir',
                 default='{{os.path.join(env.base_path, project.name)}}',
                 help="Directory to put the build master in."
                 ),
+        Setting('stack_to_build',
+                default='openplans',
+                help="Which stack to build (choose one of: openplans, almanac)"
+                ),
+
         ]
 
     actions = BuildBotProject.actions + [
@@ -141,10 +148,10 @@ class BuildMasterProject(BuildBotProject):
         tasks.EnsureFile(
              'Overwrite the buildbot master.cfg file',
              '{{os.path.join(config.master_dir, "master.cfg")}}',
-             content_path='{{os.path.join(project.skel_dir, "master.cfg_tmpl")}}',
+             content_path='{{os.path.join(project.skel_dir, config.stack_to_build)}}_master.cfg_tmpl',
              force_overwrite=True, svn_add=False),
         ]
-        
+
 
 class BuildSlaveProject(BuildBotProject):
 
