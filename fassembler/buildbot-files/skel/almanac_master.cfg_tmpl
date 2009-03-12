@@ -153,11 +153,16 @@ def make_factory(name, repo, baseport=BASEPORT,
                 description = ['Bootstrap', 'build', 'environment'],
                 haltOnFailure=True)
 
+    # We have to pass in a name for the zdaemon socket file because we
+    # may be in a deeply nested directory and, as of the year 2009,
+    # unix socket path names still have a 104-character limit! WTF is
+    # up with that?
     buildout_script = """
+    ZEOSOCKET=`tempfile -d /tmp -s .sock`
     cd %(basedir)s
     source bin/activate
     cd AlmanacStack
-    ./bin/buildout -vvv
+    ./bin/buildout -vvv zeoctl:socket-name=$ZEOSOCKET
     """ % locals()
     fac.addStep(ToppShellScript, sourcetext=buildout_script,
                 description = ['Run buildout'],
@@ -171,10 +176,8 @@ def make_factory(name, repo, baseport=BASEPORT,
     return fac
 
 
-# XXX make_factory has too much irrelevant crap
 almanac_factory = make_factory(
     'Almanac trunk',
-    # XXX buildout, not fassembler reqs
     repo='%s/build/trunk' % SVNURL,
     ports=almanac_ports,
     )
