@@ -160,7 +160,7 @@ def make_factory(name, repo, baseport=BASEPORT,
     ./bin/buildout -vvv
     """ % locals()
     fac.addStep(ToppShellScript, sourcetext=buildout_script,
-                descripton = ['Run buildout'],
+                description = ['Run buildout'],
                 haltOnFailure=True)
 
     # What got built? Useful for forensics.
