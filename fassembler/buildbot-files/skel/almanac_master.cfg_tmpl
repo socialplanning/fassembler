@@ -104,7 +104,7 @@ class ToppShellScript(ToppShellCommand):
 
 
 def make_factory(name, repo, baseport=BASEPORT,
-                 ports=[]):
+                 ports=[], clean_slate=True):
     # XXX this function probably doesn't need to exist anymore.
     basedir = ALMANAC_BASEDIR
     fac = factory.BuildFactory()
@@ -133,20 +133,22 @@ def make_factory(name, repo, baseport=BASEPORT,
                                  'the ports'],
                     haltOnFailure=False, flunkOnFailure=False)
 
-    fac.addStep(ToppShellCommand, command="time rm -rf %s *bz2 *gz *zip" % basedir,
-                description='remove old files',
-                haltOnFailure=False, flunkOnFailure=False
-                )
+    if clean_slate:
+        fac.addStep(ToppShellCommand, command="time rm -rf %s *bz2 *gz *zip" % basedir,
+                    description='remove old files',
+                    haltOnFailure=False, flunkOnFailure=False
+                    )
 
-    # XXX Bootstrap a virtualenv, and bootstrap the buildout within it.
+    buildout_dir = 'AlmanacStack'
+    # Bootstrap a virtualenv, and bootstrap the buildout within it.
     venv_script = """
     uname -m | grep 64
     if [ $? -eq 0 ]; then PY=python2.4; else PY=python; fi
-    virtualenv --python=$PY %(basedir)s
-    cd %(basedir)s
-    source bin/activate
-    svn co %(repo)s AlmanacStack
-    cd AlmanacStack
+    virtualenv --python=$PY %(basedir)s || exit 1
+    cd %(basedir)s || exit 1
+    source bin/activate || exit 1
+    svn co %(repo)s %(buildout_dir)s || exit 1
+    cd %(buildout_dir)s || exit 1
     python bootstrap.py
     """ % locals()
     fac.addStep(ToppShellScript, sourcetext=venv_script,
@@ -161,7 +163,7 @@ def make_factory(name, repo, baseport=BASEPORT,
     ZEOSOCKET=`tempfile -d /tmp -s .sock`
     cd %(basedir)s
     source bin/activate
-    cd AlmanacStack
+    cd %(buildout_dir)s
     ./bin/buildout -vvv zeoctl:socket-name=$ZEOSOCKET
     """ % locals()
     fac.addStep(ToppShellScript, sourcetext=buildout_script,
@@ -169,10 +171,28 @@ def make_factory(name, repo, baseport=BASEPORT,
                 haltOnFailure=True)
 
     # What got built? Useful for forensics.
-    pipscript = "easy_install pip && pip freeze"
-    fac.addStep(ToppShellScript, sourcetext=pipscript,
-                description=["What got built", "for almanac?"],
-                haltOnFailure=False, flunkOnFailure=False)
+    # XXX except, we're using buildout, so i can't just drop this in here.
+    # this gets installed in the parent *virtualenv* which is not useful...
+    # it doesn't find anythign installed by the buildout.
+#     pipscript = """
+#     cd %(basedir)s
+#     source bin/activate
+#     easy_install pip && pip freeze
+#     """  % locals()
+#     fac.addStep(ToppShellScript, sourcetext=pipscript,
+#                 description=["What got built", "for almanac?"],
+#                 haltOnFailure=False, flunkOnFailure=False)
+
+    # Tests.
+    testscript = """
+    cd %(basedir)s
+    source bin/activate
+    cd %(buildout_dir)s
+    source setenv  # ugh, not portable
+    ./bin/test
+    """ % locals()
+    fac.addStep(ToppShellScript, sourcetext=testscript,
+                description=['Run unit tests'])
     return fac
 
 
@@ -180,6 +200,7 @@ almanac_factory = make_factory(
     'Almanac trunk',
     repo='%s/build/trunk' % SVNURL,
     ports=almanac_ports,
+    clean_slate=False #XXX need one builder that runs w/ a clean slate, another that rebuilds in place.
     )
 
 
