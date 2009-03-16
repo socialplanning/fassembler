@@ -220,7 +220,7 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
     # Bootstrap the topp build tools (fassembler).
     fac.addStep(ToppShellCommand,
                 # string instead of list causes it to be run via sh.
-                command='svn cat https://svn.openplans.org/svn/fassembler/trunk/fassembler-boot.py | python - oc',
+                command='svn cat https://svn.openplans.org/svn/fassembler/trunk/fassembler-boot.py | python - %s' % OCBASEDIR,
                 description='bootstrap fassembler',
                 haltOnFailure=True)
 

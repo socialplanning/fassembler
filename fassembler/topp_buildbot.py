@@ -98,7 +98,7 @@ class BuildBotProject(Project):
                 help="Subdirectory to put the buildslave in. Must be relative"
                 ),
         Setting('basedir',
-                default='builds',
+                default='build',
                 help='Subdirectory where slave will build stuff.',
                 ),
         Setting('editwarning',
