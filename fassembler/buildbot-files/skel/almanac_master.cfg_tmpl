@@ -22,7 +22,7 @@ BASEPORT=int('{{config.child_baseport}}')  # Used for the fassembler builds
 ALMANAC_BASEDIR='{{config.basedir}}'
 
 # All the ports we care about... hacky
-almanac_ports =  range(BASEPORT, BASEPORT + 11)  # for the opencore trunk build.
+almanac_ports =  range(BASEPORT, BASEPORT + 11)  # for the trunk build.
 
 
 slavenames = ['slave1']
@@ -103,10 +103,10 @@ class ToppShellScript(ToppShellCommand):
         ToppShellCommand.__init__(self, *args, **kw)
 
 
-def make_factory(name, repo, baseport=BASEPORT,
+def make_factory(name, repo,
+                 basedir=ALMANAC_BASEDIR,
                  ports=[], clean_slate=True):
     # XXX this function probably doesn't need to exist anymore.
-    basedir = ALMANAC_BASEDIR
     fac = factory.BuildFactory()
     fac.name = name
     # Accept certificates (for svn).
@@ -196,11 +196,18 @@ def make_factory(name, repo, baseport=BASEPORT,
     return fac
 
 
-almanac_factory = make_factory(
-    'Almanac trunk',
+quick_almanac_factory = make_factory(
+    'Almanac trunk (quick)',
     repo='%s/build/trunk' % SVNURL,
     ports=almanac_ports,
-    clean_slate=False #XXX need one builder that runs w/ a clean slate, another that rebuilds in place.
+    clean_slate=False,
+    )
+
+full_almanac_factory = make_factory(
+    'Almanac trunk (full)',
+    repo='%s/build/trunk' % SVNURL,
+    ports=[p + 100 for p in almanac_ports],  # XXX yay more port hacks.
+    clean_slate=True,
     )
 
 
@@ -209,36 +216,61 @@ almanac_factory = make_factory(
 # Need one per slave per build config.
 ############################################################################
 
-almanac_builders = [
-    {'name': 'almanac',
+quick_builders = [
+    {'name': 'almanac-quick',
      'slavename': name,
-     'builddir': 'almanac',
-     'factory': almanac_factory}
+     'builddir': 'almanac-quick',
+     'factory': quick_almanac_factory}
     for name in slavenames]
 
+full_builders = [
+    {'name': 'almanac-full',
+     'slavename': name,
+     'builddir': 'almanac-full',
+     'factory': full_almanac_factory}
+    for name in slavenames]
 
-c['builders'] = almanac_builders
+full_on_top_of_quick = [
+    {'name': 'almanac-full-over-quick',
+     'slavename': name,
+     'builddir': 'almanac-quick',
+     'factory': full_almanac_factory}
+    for name in slavenames]
+
+c['builders'] = quick_builders + full_builders + full_on_top_of_quick
 
 ###########################################################################
 # SCHEDULERS - control when the master decides to fire off a build.
 ###########################################################################
 
+# This might seem a bit odd; what I'm doing is
+# 1. Commits trigger a quick rebuild and (eventually) a full build
+# 2. Nightly builder triggers a full rebuild *on top of the quick build*,
+#    to ensure that it's never more than a day old.
+
 buildOnChange = scheduler.Scheduler(
-    'Post Commit Build', 
+    'Post Commit Build (quick)', 
     branch='trunk',
     treeStableTimer=5*60, 
-    builderNames=[b['name'] for b in c['builders']]
+    builderNames=[b['name'] for b in quick_builders]
+    )
+
+buildFullOnChange = scheduler.Scheduler(
+    'Post Commit Build (Full)', 
+    branch='trunk',
+    treeStableTimer=10*60, 
+    builderNames=[b['name'] for b in full_builders]
     )
 
 buildAlmanacNightly = scheduler.Nightly(
     'Almanac Nightly Build', 
-    builderNames=[b['name'] for b in c['builders']],
+    builderNames=[b['name'] for b in full_builders + full_on_top_of_quick],
     hour=4, minute=15)
 
 c['schedulers'] = [buildOnChange,
+                   buildFullOnChange,
                    buildAlmanacNightly,
                    ]
-
 
 
 ############################################################################
@@ -299,7 +331,7 @@ c['status'] = [developerWebStatus,
 # write the configuration to a file for debugging.
 # XXX first monkeypatch buildslave so it doesn't blow up on repr.
 def repr_buildslave(s):
-    return '<BuildSlave(%r)' % s.slavename
+    return '<BuildSlave(%r)>' % s.slavename
 BuildSlave.__repr__ = repr_buildslave
 
 import pprint
