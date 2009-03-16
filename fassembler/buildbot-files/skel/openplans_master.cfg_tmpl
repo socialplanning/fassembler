@@ -209,7 +209,10 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
                                  'the ports'],
                     haltOnFailure=False, flunkOnFailure=False)
 
-    fac.addStep(ToppShellCommand, command="time rm -rf %s *bz2 *gz *zip" % OCBASEDIR,
+    fac.addStep(ToppShellCommand,
+                command="time rm -rf *", # looks scary, but we rely on
+                                         # buildbot to put us in the
+                                         # right working dir...
                 description='remove old files',
                 haltOnFailure=False, flunkOnFailure=False
                 )
