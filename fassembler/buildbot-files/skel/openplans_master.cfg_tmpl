@@ -267,8 +267,8 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
         # Assume that ports[1] is Zope and takes the longest time.
         startscript = """
         %s/bin/supervisord || exit 1
-        sleep 10
-        wget --retry-connrefused --tries=10 -T 100 --spider http://localhost:%d
+        sleep 20
+        wget --retry-connrefused --tries=10 -T 100 --spider http://localhost:%d -O -
         """ % (OCBASEDIR, ports[1])
         fac.addStep(ToppShellScript,
                     sourcetext=startscript,
