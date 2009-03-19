@@ -267,12 +267,14 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
     if flunc_suite:
         # Run the flunc tests. Wait a bit for services to come up,
         # to avoid errors from deliverance.
-        # Assume that ports[1] is Zope and takes the longest time.
+        # First ping the stack to make sure it's all started up before
+        # the flunc tests run -- try pinging the same base URL that the
+        # flunc tests hit
         startscript = """
         %s/bin/supervisord || exit 1
         sleep 20
         wget --retry-connrefused --tries=10 -T 100 http://localhost:%d -O -
-        """ % (OCBASEDIR, ports[1])
+        """ % (OCBASEDIR, ports[0])
         fac.addStep(ToppShellScript,
                     sourcetext=startscript,
                     description=['start services', 'for functional tests'],
