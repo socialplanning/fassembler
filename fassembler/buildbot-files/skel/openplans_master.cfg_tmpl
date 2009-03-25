@@ -273,7 +273,7 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
         startscript = """
         %s/bin/supervisord || exit 1
         sleep 20
-        wget --retry-connrefused --tries=10 -T 100 http://localhost:%d -O -
+        wget --retry-connrefused --inet4-only --tries=10 -T 100 http://localhost:%d -O -
         """ % (OCBASEDIR, ports[0])
         fac.addStep(ToppShellScript,
                     sourcetext=startscript,
