@@ -265,16 +265,18 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
                     haltOnFailure=False, flunkOnFailure=True)
 
     if flunc_suite:
-        # Run the flunc tests. Wait a bit for services to come up,
+        # Before we run the flunc tests, wait a bit for services to come up,
         # to avoid errors from deliverance.
-        # First ping the stack to make sure it's all started up before
-        # the flunc tests run -- try pinging the same base URL that the
-        # flunc tests hit
+        # After we've waited for a little while, ping the stack to check if
+        # it's all started up before the flunc tests run -- we'll try pinging
+        # the same base URL that the flunc tests hit.
+        # If and only if the ping fails, print the status of all supervisor-controlled
+        # processes as a diagnostic clue before exiting with an error code.
         startscript = """
         %s/bin/supervisord || exit 1
         sleep 20
-        wget --retry-connrefused --inet4-only --tries=10 -T 100 http://localhost:%d -O -
-        """ % (OCBASEDIR, ports[0])
+        wget --retry-connrefused --inet4-only --tries=10 -T 100 http://localhost:%d -O - || %/bin/supervisorctl status && exit 1
+        """ % (OCBASEDIR, ports[0], OCBASEDIR)
         fac.addStep(ToppShellScript,
                     sourcetext=startscript,
                     description=['start services', 'for functional tests'],
