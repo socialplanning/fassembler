@@ -146,16 +146,8 @@ class ToppProject(Project):
                 inherit_config=('general', 'db_prefix'),
                 help='The prefix to use for all database names'),
         Setting('find_links',
-                default='{{project.req_settings.get("find_links", None)}}',
-                # This gets baked into distutils.cfg, which affects
-                # easy_install commands run *not* under fassembler.
-                inherit_config=('general', 'find_links'),
+                default='https://svn.openplans.org/eggs',
                 help='Custom locations for distutils and easy_install to look in'),
-        Setting('pypi_index_url',
-                default='{{project.req_settings.get("pypi_index_url", "http://pypi.python.org/simple")}}',
-                # Requirements files can and should override this.
-                #inherit_config=('general', 'pypi_index_url'),
-                help='Custom URL for package index instead of PyPi'),
         Setting('projtxt',
                 default='{{project.req_settings.get("projtxt", "project")}}',
                 help='Displayed name for opencore project/group'),
@@ -187,8 +179,6 @@ class ToppProject(Project):
                            'topp_secret_filename': '{{env.var}}/secret.txt',
                            'admin_info_filename': '{{env.var}}/admin.txt',
                            'find_links': '{{config.find_links}}',
-                           #'pypi_index_url': '{{config.pypi_index_url}}',
-
                            'db_prefix': '{{config.db_prefix}}',
                            'requirements_svn_repo': '{{config.requirements_svn_repo}}',
                            'projtxt': '{{config.projtxt}}',
