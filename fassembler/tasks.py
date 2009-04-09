@@ -184,6 +184,11 @@ class Task(object):
     def iter_subtasks(self):
         return []
 
+    @property
+    def pypi_index_url(self):
+        return self.interpolate('{{project.pypi_index_url}}')
+
+
 class Script(Task):
     """
     Run a process/script
@@ -540,11 +545,11 @@ class VirtualEnv(Task):
             tasks.append(SetDistutilsValue('Add custom find_links locations',
                                            'easy_install', 'find_links', 
                                            find_links))
-        if self.environ.config.has_option('general', 'pypi_index_url'):
-            index_url = self.environ.config.get('general', 'pypi_index_url')
+
+        if self.pypi_index_url != self.project._default_pypi_index_url:
             tasks.append(SetDistutilsValue('Add custom index_url location',
                                            'easy_install', 'index_url', 
-                                           index_url))
+                                           self.pypi_index_url))
         return tasks
 
     def setup_build_properties(self):
@@ -581,7 +586,7 @@ class EasyInstall(Script):
         assert reqs, 'No requirements given (just a name %r)' % name
         self.reqs = list(reqs)
         kw.setdefault('cwd', '{{project.build_properties.get("virtualenv_path", "/")}}')
-        self.reqs[:0] = ['-i', '{{project.config.get("general", "pypi_index_url") or "http://pypi.python.org/simple"}}']
+        self.reqs[:0] = ['-i', '{{task.pypi_index_url}}']
         if 'find_links' in kw:
             find_links = kw.pop('find_links')
             if isinstance(find_links, basestring):
@@ -617,7 +622,7 @@ class SourceInstall(SvnCheckout):
         self.maker.run_command(
             self.interpolate('{{project.build_properties["virtualenv_bin_path"]}}/python', stacklevel=1),
             'setup.py', 'develop', '-i', 
-            self.interpolate('{{project.config.get("general", "pypi_index_url")}}'),
+            self.pypi_index_url,
             cwd=self.dest)
 
 class InstallPasteConfig(Task):
@@ -1197,8 +1202,6 @@ class InstallSpec(Task):
         f = open(self.maker.path(filename))
         context = dict(find_links=[],
                        src_base=os.path.join(self.project.build_properties['virtualenv_path'], 'src'),
-                       pypi_index_url=self.project.config.get('general', 
-                                                              'pypi_index_url'),
                        always_unzip=False)
         commands = []
         uneditable_eggs = []
@@ -1302,8 +1305,7 @@ class InstallSpec(Task):
             cmd.extend(['-f', ' '.join(context['find_links'])])
         if context['always_unzip']:
             cmd.append('--always-unzip')
-        if context['pypi_index_url']:
-            cmd.extend(['-i', context['pypi_index_url']])
+        cmd.extend(['-i', self.pypi_index_url])
         self.logger.notify('Installing %s (and its dependencies)' % os.path.basename(src_dir))
         self.logger.indent += 2
         try:
@@ -1320,7 +1322,7 @@ class InstallSpec(Task):
         Installs a set of eggs.
         """
         cmd = ['easy_install']
-        cmd.extend(['-i', context.get('pypi_index_url', "http://pypi.python.org/simple")])
+        cmd.extend(['-i', self.pypi_index_url])
         if context['find_links']:
             cmd.extend(['-f', ' '.join(context['find_links'])])
         if context['always_unzip']:

@@ -12,6 +12,7 @@ from fassembler.text import indent, underline, dedent
 from cmdutils import CommandError
 from tempita import Template
 
+
 class Project(object):
     """
     This represents an abstract project.
@@ -313,6 +314,24 @@ class Project(object):
                 in_setting = None
         f.close()
         return settings        
+
+    _default_pypi_index_url = 'http://pypi.python.org/simple'
+
+    @property
+    def pypi_index_url(self):
+        # Project doesn't feel like the right place for this to live
+        # in terms of responsibility (not all Projects might care
+        # about installing python packages) ... but it feels right in
+        # terms of scope, in that it should be variable per project,
+        # not per build.
+        url = self.config.getdefault(self.config_section,
+                                     'pypi_index_url',
+                                     default=None)
+        url = url or self.config.getdefault('general', 'pypi_index_url',
+                                            self._default_pypi_index_url)
+        return url
+
+
 
 class Setting(object):
     """
