@@ -1227,7 +1227,10 @@ class InstallSpec(Task):
                     line = line[2:]
                 else:
                     line = line[len('--editable'):].lstrip('=')
-                commands.append((self.install_editable, line.strip()))
+                line = line.strip()
+                if line.startswith('svn+') and not line.startswith('svn+ssh'):
+                    line = line[4:]
+                commands.append((self.install_editable, line))
                 continue
             uneditable_eggs.append(line.strip())
         if uneditable_eggs:
