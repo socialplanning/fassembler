@@ -1008,18 +1008,25 @@ Responses:
         """
         Prompt user to input a password.
         """
+        def validate(pw):
+            if pw[-1] == '$':
+                # Don't end with $; this confuses zopectl
+                raise ValueError('Password should not end with "$"')
+            if pw[0] not in string.ascii_letters + string.digits:
+                # Don't start with special characters; if the
+                # generated password starts with "__", it breaks
+                # Twill.parse.  (odds of this happening were 1/4356)
+                raise ValueError(
+                    'Password should not start with special chars')
+
         def randpw():
             while True:
                 pw = random_string(12, string.ascii_letters + string.digits + "_-!;")
-                # Don't end with $; this confuses zopectl
-                if pw[-1] == '$':
+                try:
+                    validate(pw)
+                except ValueError:
                     continue
-                # Don't start with special characters; if the
-                # generated password starts with "__", it breaks Twill.parse.
-                # (odds of this happening were 1/4356)
-                if pw[0] in string.ascii_letters + string.digits:
-                    break
-            return pw
+                return pw
             
         if not self.interactive:
             return randpw()
@@ -1032,6 +1039,10 @@ Responses:
             if not inputpw:
                 self.logger.info('Using randomly generated password')
                 return randpw()
+            if inputpw:
+                # would be nicer UI if this wasn't a hard error, but
+                # this is probably good enough.
+                validate(inputpw)
             inputpw2 = getpass(prompt2).strip()
             if inputpw == inputpw2:
                 return inputpw
