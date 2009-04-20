@@ -74,7 +74,7 @@ class ApacheMixin(object):
             return '-DFOREGROUND'
 
     def php_cgi_exec(self):
-        return self.find_exec(['php-cgi', 'php', 'php5-cgi', 'php5', 'php4-cgi', 'php4'])
+        return self.find_exec(['php', 'php5', 'php4', 'php-cgi', 'php5-cgi',  'php4-cgi'])
 
     def php_version(self):
         "Returns major as a string"
