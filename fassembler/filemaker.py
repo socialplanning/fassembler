@@ -1011,6 +1011,9 @@ Responses:
         def randpw():
             while True:
                 pw = random_string(12, string.ascii_letters + string.digits + "_-!;")
+                # Don't end with $; this confuses zopectl
+                if pw[-1] == '$':
+                    continue
                 # Don't start with special characters; if the
                 # generated password starts with "__", it breaks Twill.parse.
                 # (odds of this happening were 1/4356)
