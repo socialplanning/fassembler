@@ -52,7 +52,7 @@ class TaskTrackerProject(Project):
     title = 'Install TaskTracker'
     settings = [
         Setting('db_sqlobject',
-                default='mysql://{{config.db_username}}:{{config.db_password}}@{{config.db_host}}/{{config.db_name}}',
+                default='mysql://{{config.db_username}}:{{config.db_password}}@{{config.db_host}}/{{config.db_name}}?charset=utf8',
                 help='Full SQLObject connection string for database'),
         Setting('db_username',
                 default='tasktracker',
