@@ -21,7 +21,7 @@ setup(name='fassembler',
           'CmdUtils',
           #'ScriptTest',
           'Tempita==dev,>=0.1.1dev',
-          'INITools==dev,>=0.2.1dev-r3488',
+          'INITools>=0.3',
           'virtualenv',
           'Pygments',
           'MySQL-python', # At least, some projects require MySQL access
@@ -30,7 +30,6 @@ setup(name='fassembler',
       ## FIXME: release all of these once fassembler stabilizes:
       dependency_links=[
           'http://svn.pythonpaste.org/CmdUtils/trunk#egg=CmdUtils-dev',
-          'http://svn.colorstudy.com/INITools/trunk#egg=INITools-dev',
           'http://svn.pythonpaste.org/Tempita/trunk#egg=Tempita-dev',
           'https://svn.openplans.org/svn/pip/trunk#egg=pip-dev',
       ],
