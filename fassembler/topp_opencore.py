@@ -60,6 +60,27 @@ class InstallZope(tasks.InstallTarball):
         self.maker.ensure_file(self.version_path, self._tarball_version,
                                svn_add=False)
 
+
+class InstallZopeFakeEggs(tasks.Task):
+
+    description = """
+    Install egg-info slugs for zope.* source packages into site-packages.
+    (Helps easy_install or pip know that those packages exist.)
+    """
+
+    zope_src = interpolated('zope_src')
+
+    def __init__(self, name, stacklevel=1):
+        super(InstallZopeFakeEggs, self).__init__(stacklevel)
+        self.name = name
+        self.zope_src = '{{config.zope_source}}'
+
+    def run(self):
+        from fake_eggs import FakeEggsInstaller
+        venv = self.project.build_properties["virtualenv_path"]
+        installer = FakeEggsInstaller(self.zope_src, venv)
+        installer.fakeEggs()
+
     
 def make_tarball(tarball_version, tarball_url_dir, orig_zope_source):
     tarball_url = '%s/OpenplansZope-%s.tar.bz2' % (tarball_url_dir,
@@ -115,6 +136,7 @@ def make_tarball(tarball_version, tarball_url_dir, orig_zope_source):
     # upload?
     print 'You may want to run this now:'
     print '  scp %s svn.openplans.org:/www/svn.openplans.org/eggs/' % os.path.join(dir, filename)
+
 
 class GetBundleTarball(tasks.Task):
 
@@ -736,6 +758,7 @@ setglobal projprefs    '{{env.config.get("general", "projprefs")}}'
         tasks.EnsureDir('Create OpenCore var/ directory',
                         '{{env.var}}/opencore'),
         InstallZope(),
+        InstallZopeFakeEggs('Install fake egg stubs for Zope packages'),
         tasks.InstallSpec('Install OpenCore',
                           '{{config.spec}}'),
         tasks.TestLxml('{{env.base_path}}/opencore'),
