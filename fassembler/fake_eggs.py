@@ -6,6 +6,11 @@ LIMITATIONS:
 
  - This is rather Zope-specific at the moment.
 
+ - Assumes all Zope 2.N versions are equivalent - eg. 2.10.1 == 2.10.8
+
+ - Not even usable for Products (they would wrongly be assumed to have
+   the same version as zope.* packages)
+
  - These fake eggs do not support entry points.
 
  - Doesn't detect correct versions of some things, eg. mechanize.
@@ -173,7 +178,10 @@ class FakeEggsInstaller(object):
         z2_version = self.zope2version
         if name == 'Zope2':
             return '.'.join([str(i) for i in z2_version])
-        default_version = self.zope2_versions_map[z2_version]['_z3']
+        if name.startswith('zope.'):
+            default_version = self.zope2_versions_map[z2_version]['_z3']
+        else:
+            default_version = '0.0'
         version = self.zope2_versions_map[z2_version].get(name)
         if version is None and fallback:
             return default_version
