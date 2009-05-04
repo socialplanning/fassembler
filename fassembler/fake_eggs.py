@@ -8,9 +8,6 @@ LIMITATIONS:
 
  - Assumes all Zope 2.N versions are equivalent - eg. 2.10.1 == 2.10.8
 
- - Not even usable for Products (they would wrongly be assumed to have
-   the same version as zope.* packages)
-
  - These fake eggs do not support entry points.
 
  - Doesn't detect correct versions of some things, eg. mechanize.
@@ -99,7 +96,13 @@ class FakeEggsInstaller(object):
     def _getInstalledLibs(self, location, prefix):
         installedLibs = []
         for lib in os.listdir(location):
-            name = '%s.%s' % (prefix, lib)
+            if lib.startswith('.'):
+                # Skip hidden dirs, eg. '.svn'
+                continue
+            if prefix:
+                name = '%s.%s' % (prefix, lib)
+            else:
+                name = lib
             if (os.path.isdir(os.path.join(location, lib)) and
                 name not in [libInfo.name for libInfo in self.libsToFake]):
                 # Only add the package if it's not yet in the list
@@ -107,8 +110,15 @@ class FakeEggsInstaller(object):
                 installedLibs.append(FakeLibInfo(name, version))
         return installedLibs
 
+    def fakeEggs(self, location=None, prefix=None):
+        if location is None:
+            self._getZopeLibs()
+        else:
+            assert prefix is not None
+            self.libsToFake = self._getInstalledLibs(location, prefix)
+        self._doFakeEggs()
 
-    def fakeEggs(self):
+    def _getZopeLibs(self):
         zope2Location = self.options['zopelocation']
         zopeLibZopeLocation = os.path.join(zope2Location, 'lib', 'python',
                                            'zope')
@@ -142,6 +152,8 @@ class FakeEggsInstaller(object):
         self.libsToFake += self._getInstalledLibs(zopeLibZopeAppLocation,
                                                   'zope.app')
 
+    def _doFakeEggs(self):
+        fakeEggsFolderLocation = self.fake_eggs_folder
         for libInfo in self.libsToFake:
 #             fakeLibDirLocation = os.path.join(fakeEggsFolderLocation,
 #                                               libInfo.name)

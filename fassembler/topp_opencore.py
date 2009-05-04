@@ -80,6 +80,8 @@ class InstallZopeFakeEggs(tasks.Task):
         venv = self.project.build_properties["virtualenv_path"]
         installer = FakeEggsInstaller(self.zope_src, venv)
         installer.fakeEggs()
+        installer.fakeEggs(location=self.interpolate('{{env.base_path}}/opencore/zope/Products'),
+                           prefix='Products')
 
     
 def make_tarball(tarball_version, tarball_url_dir, orig_zope_source):
@@ -758,9 +760,6 @@ setglobal projprefs    '{{env.config.get("general", "projprefs")}}'
         tasks.EnsureDir('Create OpenCore var/ directory',
                         '{{env.var}}/opencore'),
         InstallZope(),
-        InstallZopeFakeEggs('Install fake egg stubs for Zope packages'),
-        tasks.InstallSpec('Install OpenCore',
-                          '{{config.spec}}'),
         tasks.TestLxml('{{env.base_path}}/opencore'),
         tasks.CopyDir('Create custom skel',
                       skel_dir, '{{project.name}}/src/Zope/custom_skel'),
@@ -792,6 +791,9 @@ setglobal projprefs    '{{env.config.get("general", "projprefs")}}'
                         '{{config.zope_instance}}/Products',
                         exclude_glob='{{env.base_path}}/opencore/src/opencore-bundle/ClockServer'),
         
+        InstallZopeFakeEggs('Install fake egg stubs for Zope packages'),
+        tasks.InstallSpec('Install OpenCore',
+                          '{{config.spec}}'),
         ## FIXME: linkzope and linkzopebinaries?
         PlaceZopeConfig('Copy Zope etc into build etc'),
         PatchFive(name='Patch Five viewlet security acquisition (see http://trac.openplans.org/openplans/ticket/2026)',
