@@ -114,7 +114,7 @@ def make_tarball(tarball_version, tarball_url_dir, orig_zope_source):
     # use compileall?
     # upload?
     print 'You may want to run this now:'
-    print '  scp %s flow.openplans.org:/www/svn.openplans.org/eggs/' % os.path.join(dir, filename)
+    print '  scp %s svn.openplans.org:/www/svn.openplans.org/eggs/' % os.path.join(dir, filename)
 
 class GetBundleTarball(tasks.Task):
 
