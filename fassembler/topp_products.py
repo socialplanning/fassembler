@@ -121,7 +121,7 @@ class CabochonProject(Project):
     title = 'Install Cabochon'
     settings = [
         Setting('db_sqlobject',
-                default='mysql://{{config.db_username}}:{{config.db_password}}@{{config.db_host}}/{{config.db_name}}',
+                default='mysql://{{config.db_username}}:{{config.db_password}}@{{config.db_host}}/{{config.db_name}}?charset=utf8',
                 help='Full SQLObject connection string for database'),
         Setting('db_username',
                 default='cabochon',
@@ -199,7 +199,7 @@ class TwirlipProject(Project):
     title = 'Install Twirlip'
     settings = [
         Setting('db_sqlobject',
-                default='mysql://{{config.db_username}}:{{config.db_password}}@{{config.db_host}}/{{config.db_name}}',
+                default='mysql://{{config.db_username}}:{{config.db_password}}@{{config.db_host}}/{{config.db_name}}?charset=utf8',
                 help='Full SQLObject connection string for database'),
         Setting('db_username',
                 default='twirlip',
@@ -394,7 +394,7 @@ class BureauProject(Project):
     title = 'Install Bureau'
     settings = [
         Setting('db_sqlobject',
-                default='mysql://{{config.db_username}}:{{config.db_password}}@{{config.db_host}}/{{config.db_name}}',
+                default='mysql://{{config.db_username}}:{{config.db_password}}@{{config.db_host}}/{{config.db_name}}?charset=utf8',
                 help='Full SQLObject connection string for database'),
         Setting('db_username',
                 default='piwik',
@@ -457,7 +457,7 @@ class HengeProject(Project):
     title = 'Install Henge'
     settings = [
         Setting('db_sqlobject',
-                default='mysql://{{config.db_username}}:{{config.db_password}}@{{config.db_host}}/{{config.db_name}}',
+                default='mysql://{{config.db_username}}:{{config.db_password}}@{{config.db_host}}/{{config.db_name}}?charset=utf8',
                 help='Full SQLObject connection string for database'),
         Setting('db_username',
                 default='henge',
