@@ -1,0 +1,20 @@
+--- lib/python/Zope2/App/startup.py.orig	2008-10-22 07:54:38.000000000 -0400
++++ lib/python/Zope2/App/startup.py	2009-05-05 10:42:48.000000000 -0400
+@@ -37,6 +37,8 @@
+ import Zope2
+ import ZPublisher
+ 
++from zope.event import notify
++from zope.app import appsetup
+ 
+ def startup():
+     global app
+@@ -71,6 +73,8 @@
+         else:
+             DB = ZODB.DB(m.Storage, databases=databases)
+ 
++    notify(appsetup.interfaces.DatabaseOpened(DB))
++
+     Globals.BobobaseName = DB.getName()
+ 
+     if DB.getActivityMonitor() is None:
