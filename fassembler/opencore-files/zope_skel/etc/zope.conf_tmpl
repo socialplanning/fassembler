@@ -106,6 +106,17 @@ default-zpublisher-encoding utf-8
   host {{config.host}}
 </clock-server>
 
+<clock-server>
+  method /openplans/manage_project_export_queue
+  # This one needs to run frequently, since the user may be waiting 
+  # around (and checking via ajax) to see if their job's done yet.
+  # But 30 is the minimum period that clockserver allows.
+  period 31
+  user {{config.zope_user}}
+  password {{config.zope_password}}
+  host {{config.host}}
+</clock-server>
+
 
 {{#FIXME: needs to be more dynamic}}
 {{if env.config.has_option('uris', 'tasktracker_uri'):}}
