@@ -98,6 +98,8 @@ default-zpublisher-encoding utf-8
   host {{config.host}}
 </clock-server>
 
+# This only works in opencore later than 0.18dev, but I have
+# no idea how to detect that in fassembler.
 <clock-server>
   method /openplans/member-postdelete-cleanup
   period 311
@@ -106,6 +108,8 @@ default-zpublisher-encoding utf-8
   host {{config.host}}
 </clock-server>
 
+# This only works in opencore later than 0.18dev, but I have
+# no idea how to detect that in fassembler.
 <clock-server>
   method /openplans/manage_project_export_queue
   # This one needs to run frequently, since the user may be waiting 
