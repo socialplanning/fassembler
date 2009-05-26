@@ -75,7 +75,7 @@ class ErrorEaterProject(Project):
 
 errorlistener_template = Template("""\
 [eventlistener:errorlistener]
-command = {{env.base_path}}/errorlistener/bin/supervisor-error-listener --queue-dir={{env.var}}/errorlistener/queue http://trac.openplans.org/errors-openplans/errorlistener
+command = {{env.base_path}}/errorlistener/bin/supervisor-error-listener --queue-dir={{env.var}}/errorlistener/queue http://sites.openplans.org/errors-openplans/errorlistener
 # We handle our own queuing and threading, so we don't need multiple
 # listeners:
 numprocs = 1
