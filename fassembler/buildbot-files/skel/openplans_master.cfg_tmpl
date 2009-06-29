@@ -23,9 +23,14 @@ OCBASEDIR='{{config.basedir}}'
 
 # All the ports we care about... hacky
 octrunk_ports =  range(BASEPORT, BASEPORT + 11)  # for the opencore trunk build.
-lsfull_ports = range(BASEPORT + 100, BASEPORT + 211)  # for the full LS build.
-opfull_ports = range(BASEPORT + 200, BASEPORT + 311)  # for the OP full stack.
+lsfull_ports = range(BASEPORT + 100, BASEPORT + 111)  # for the full LS build.
+opfull_ports = range(BASEPORT + 200, BASEPORT + 211)  # for the OP full stack.
 
+# Port ranges should not overlap!!  verify that, in case i have
+# another brain-fart like r21674.
+assert not set(octrunk_ports).intersection(lsfull_ports)
+assert not set(octrunk_ports).intersection(opfull_ports)
+assert not set(lsfull_ports).intersection(opfull_ports)
 
 slavenames = ['slave1']
 slaves = [BuildSlave(name, '{{config.buildbot_passwd}}') for name in slavenames]
@@ -122,6 +127,8 @@ class ToppShellCommand(ShellCommand):
         kw['env'].setdefault('LS_COLORS', '')
         kw['env'].setdefault('COLORTERM', '')
         kw['env'].setdefault('CLICOLOR', '')
+        if 'sourcetext' in kw:
+            del kw['sourcetext']
         ShellCommand.__init__(self, *args, **kw)
     
     # Print something not so stupid as "shell_9" when there are
@@ -317,7 +324,7 @@ oc_factory = make_factory(
     fassembler_targets=['all'],
     flunc_suite=None,
     ports=octrunk_ports,
-    zopectl_suites=['opencore', 'Products.listen'],
+    zopectl_suites=['opencore', ], #'Products.listen'],
     )
 
 
