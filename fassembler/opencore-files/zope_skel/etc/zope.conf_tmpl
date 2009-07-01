@@ -98,6 +98,18 @@ default-zpublisher-encoding utf-8
   host {{config.host}}
 </clock-server>
 
+<clock-server>
+  {{# FIXME: should /openplans/ be a variable?  It used to be in topp.build.opencore}}
+  method /openplans/membrane_tool/refreshCatalog
+  # Reindex every twelve hours. See above re: prime numbers. 
+  # If your site has very frequent activity (particularly around joining/leaving projects)
+  # you will probably want a more frequent reindex.
+  period 43201
+  user {{config.zope_user}}
+  password {{config.zope_password}}
+  host {{config.host}}
+</clock-server>
+
 # This only works in opencore later than 0.18dev, but I have
 # no idea how to detect that in fassembler.
 <clock-server>
