@@ -16,22 +16,39 @@ this in your apache config:
 """
 
 apache_conf_example = """
-    <VirtualHost ...>
-      ServerName ...
-      SetEnv DJANGO_SETTINGS_MODULE brainpower.settings
-      SetEnv PYTHON_EGG_CACHE /tmp/egg-cache
-      DocumentRoot  {{task.htdocs}}
-      <Location "/">
-         SetHandler python-program
-         PythonPath "['{{project.build_properties.get("virtualenv_bin_path") or "argh"}}'] + sys.path"
-         PythonHandler brainpower_handler
-         PythonDebug Off
-      </Location>
-      <Location "/adminmedia/">
-        SetHandler None
-      </Location>
-    </VirtualHost>
-        """
+<VirtualHost ...>
+  ServerName ...
+  SetEnv DJANGO_SETTINGS_MODULE brainpower.settings
+  SetEnv PYTHON_EGG_CACHE /tmp/egg-cache
+  DocumentRoot  {{task.htdocs}}
+
+  RewriteEngine  on
+  # By default, go to the filmclip admin page.
+  RewriteRule ^/$ /admin/filmy/filmclip/ [R]
+  RewriteRule ^/admin/filmy/$ /admin/filmy/filmclip/ [R]
+
+  # Django uses a lot of links that break if the current URL doesn't have a
+  # trailing slash. But we don't want trailing slashes on images, css, etc.
+  # Hackaround: Don't rewrite urls in /*media directories.
+  RewriteCond %{REQUEST_URI} !^/.*media/.*
+  RewriteRule ^/(.*)([^/]+)$  /$1$2/   [R]
+
+  <Location "/">
+     SetHandler python-program
+     PythonPath "['{{project.build_properties.get("virtualenv_bin_path") or "argh"}}'] + sys.path"
+     PythonHandler brainpower_handler
+     PythonDebug Off
+  </Location>
+  <Location "/adminmedia/">
+    # Use the files under $DocumentRoot/htdocs/adminmedia
+    SetHandler None
+  </Location>
+   <Location "/brainpower_media/">
+    SetHandler None
+   </Location>
+
+</VirtualHost>
+"""
 
 apache_conf_postscript = """
 To avoid editing apache's config on every build, use a 'current'
@@ -79,17 +96,16 @@ class InstallDjango(tasks.InstallTarball):
         self.maker.run_command(py, 'setup.py', 'install', cwd=where)
 
 
-class AdminMediaLink(tasks.Task):
+class MediaLinks(tasks.Task):
 
     htdocs = interpolated('htdocs')
 
     def __init__(self, name, stacklevel=1):
-        super(AdminMediaLink, self).__init__(name, stacklevel=stacklevel+1)
+        super(MediaLinks, self).__init__(name, stacklevel=stacklevel+1)
         self.htdocs = '{{project.build_properties["virtualenv_path"]}}/htdocs'
         
     def run(self):
         self.maker.ensure_dir(self.htdocs, svn_add=False)
-        linktarget = os.path.join(self.htdocs, 'adminmedia')
         py = self.interpolate(
             '{{project.build_properties["virtualenv_bin_path"]}}/python',
             stacklevel=1)
@@ -99,8 +115,16 @@ class AdminMediaLink(tasks.Task):
             stdout=subprocess.PIPE)
         stdout, stderr = script.communicate()
         djangopath = stdout.strip()
-        linksource = os.path.join(djangopath, 'contrib', 'admin', 'media')
-        self.maker.ensure_symlink(linksource, linktarget, overwrite=True)
+
+        adminsource = os.path.join(djangopath, 'contrib', 'admin', 'media')
+        bpsource = self.interpolate(
+            '{{project.build_properties["virtualenv_path"]}}'
+            '/src/brainpower/brainpower/media')
+        for linktarget, linksource in (('adminmedia', adminsource),
+                                       ('brainpower_media', bpsource)):
+            linktarget = os.path.join(self.htdocs, linktarget)
+            self.maker.ensure_symlink(linksource, linktarget, overwrite=True)
+
         apache_example = self.interpolate(apache_conf_example)
         self.logger.notify(apache_conf_prelude,
                            color='green')
@@ -210,5 +234,5 @@ class BrainpowerProject(Project):
                          content_path='{{project.build_properties["virtualenv_path"]}}/src/brainpower/brainpower_handler.py',
                          executable=True,
                          ),
-        AdminMediaLink('Link topp admin media into {{task.htdocs}}.'),
+        MediaLinks('Link media directories into {{task.htdocs}}.'),
         ]
