@@ -60,7 +60,7 @@ svnurls = [
     'https://svn.openplans.org/svn/topp.featurelets',
     'https://svn.openplans.org/svn/topp.utils',
     'https://svn.openplans.org/svn/transcluder',
-    'https://svn.openplans.org/svn/build/requirements/openplans',
+    'https://svn.openplans.org/svn/build/requirements/opencore-maximal',
     'https://svn.openplans.org/svn/build/requirements/livablestreets',
     'https://svn.openplans.org/svn/build/requirements/opencore-minimal',
 ]
@@ -329,9 +329,9 @@ oc_factory = make_factory(
 
 
 full_op_factory = make_factory(
-    'Openplans (full stack)',
+    'Opencore Maximal (full stack)',
     prefix="op_full_p3",
-    requirements_repo='https://svn.openplans.org/svn/build/requirements/openplans/trunk/',
+    requirements_repo='https://svn.openplans.org/svn/build/requirements/opencore-maximal/trunk/',
     ports=opfull_ports,
     fassembler_targets=['all'],
     ftestsdir='opencore/src/opencore/ftests/',
