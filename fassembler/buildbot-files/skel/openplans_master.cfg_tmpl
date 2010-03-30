@@ -461,7 +461,7 @@ breakMailer = mail.MailNotifier(
 # Apparently not, short of giving the bot the 'notify' command in channel.
 ircbot = words.IRC(host='irc.freenode.net',
                    nick='buildbot-topp',
-                   channels=['#openplans'],
+                   channels=['#socialplanning'],
                    allowForce=False,
                    )
 
