@@ -61,7 +61,7 @@ svnurls = [
     'https://svn.openplans.org/svn/topp.utils',
     'https://svn.openplans.org/svn/transcluder',
     'https://svn.openplans.org/svn/build/requirements/opencore-maximal',
-    'https://svn.openplans.org/svn/build/requirements/livablestreets',
+#    'https://svn.openplans.org/svn/build/requirements/livablestreets',
     'https://svn.openplans.org/svn/build/requirements/opencore-minimal',
 ]
 
@@ -381,8 +381,8 @@ full_livablestreets_builders = [
 
 
 c['builders'] = opencore_builders + \
-                full_op_builders + \
-                full_livablestreets_builders
+                full_op_builders #+ \
+                #full_livablestreets_builders
 
 ###########################################################################
 # SCHEDULERS - control when the master decides to fire off a build.
@@ -406,7 +406,7 @@ buildOpenplansNightly  = scheduler.Nightly(
     hour=3, minute=30)
 
 buildFullLSNightly  = scheduler.Nightly(
-    'LivableStreets (Full) Nightly Build',
+   'LivableStreets (Full) Nightly Build',
     builderNames=[b['name'] for b in full_livablestreets_builders],
     hour=4, minute=0)
 
@@ -414,7 +414,7 @@ buildFullLSNightly  = scheduler.Nightly(
 c['schedulers'] = [buildOnChange,
                    buildOpencoreNightly,
                    buildOpenplansNightly,
-                   buildFullLSNightly
+#                   buildFullLSNightly
                    ]
 
 
