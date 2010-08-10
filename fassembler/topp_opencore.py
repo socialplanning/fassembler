@@ -774,11 +774,13 @@ setglobal projprefs    '{{env.config.get("general", "projprefs")}}'
         tasks.Script('Delete zope instance binaries',
                      ['rm', '-fr', '{{config.zope_instance}}/bin'],
                      cwd='{{config.zope_install}}'),
+
         tasks.Script('Make Zope Instance', [
         'python', '{{config.zope_install}}/bin/mkzopeinstance.py', '--dir', '{{config.zope_instance}}',
         '--user', '{{config.zope_user}}:{{config.zope_password}}',
         '--skelsrc', '{{config.zope_source}}/custom_skel'],
                      use_virtualenv=True),
+
         tasks.ConditionalTask('Create bundle',
                               ('{{config.opencore_bundle_use_svn}}',
                                tasks.SvnCheckout('Check out bundle',
@@ -786,6 +788,7 @@ setglobal projprefs    '{{env.config.get("general", "projprefs")}}'
                                                  '{{env.base_path}}/opencore/src/opencore-bundle')),
                               (True,
                                GetBundleTarball())),
+
         SymlinkProducts('Symlink Products',
                         '{{env.base_path}}/opencore/src/opencore-bundle/*',
                         '{{config.zope_instance}}/Products',
@@ -1034,3 +1037,54 @@ if __name__ == '__main__':
         print 'Usage: %s TARBALL_VERSION TARBALL_URL_DIR ZOPE_SOURCE_URL' % sys.argv[0]
         sys.exit()
     make_tarball(sys.argv[1], sys.argv[2], sys.argv[3])
+
+class ExtraZopeProject(OpenCoreProject):
+    """
+    Install an additional Zope instance
+    """
+
+    name = "opencore-zope"
+    title = "Install Zope client"
+
+    settings = [
+        Setting('virtualenv_path',
+                default='{{env.base_path}}/opencore',
+                help='Location of (existing) opencore virtualenv'),
+        Setting('zope_install',
+                default='{{config.virtualenv_path}}/lib/zope',
+                help='Location of Zope installation'),
+        Setting('zope_instance_name',
+                default='zope',
+                help='Location of Zope instance home'),
+        Setting('zope_instance',
+                default='{{config.virtualenv_path}}/{{config.zope_instance_name}}',
+                help='Location of Zope instance home'),
+
+        Setting('zope_source',
+                default='{{config.virtualenv_path}}/src/Zope',
+                help='Location of Zope source'),
+        Setting('zope_user',
+                default='{{env.parse_auth(env.config.get("general", "admin_info_filename")).username}}',
+                help='Default admin username'),
+        Setting('zope_password',
+                default='{{env.parse_auth(env.config.get("general", "admin_info_filename")).password}}',
+                help='Admin password'),
+
+        ]
+
+    actions = [
+        tasks.Script('Make Zope Instance', [
+                '{{config.virtualenv_path}}/bin/python', '{{config.zope_install}}/bin/mkzopeinstance.py',
+                '--dir', '{{config.zope_instance}}',
+                '--user', '{{config.zope_user}}:{{config.zope_password}}',
+                '--skelsrc', '{{config.zope_source}}/custom_skel'],
+                     ),
+
+        SymlinkProducts('Symlink Products',
+                        '{{env.base_path}}/opencore/src/opencore-bundle/*',
+                        '{{config.zope_instance}}/Products',
+                        exclude_glob='{{env.base_path}}/opencore/src/opencore-bundle/ClockServer'),
+
+        SymlinkZopeConfig('Symlink Zope configuration'),
+        
+        ]
