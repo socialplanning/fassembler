@@ -1038,6 +1038,49 @@ if __name__ == '__main__':
         sys.exit()
     make_tarball(sys.argv[1], sys.argv[2], sys.argv[3])
 
+class CopyExtraZopeConfig(ZopeConfigTask):
+
+    description = """
+    Delete certain configuration files from the standard Zope location
+    and symlink them back into place from the fassembler location.
+    Assumes files already exist in the fassembler locations, i.e. that
+    PlaceZopeConfig is run first.
+    """
+
+    source = interpolated('source')
+    dest = interpolated('dest')
+
+    def __init__(self, name, source, dest):
+        super(CopyExtraZopeConfig, self).__init__(name, stacklevel=1)
+        self.source = source
+        self.dest = dest
+
+    def run(self):
+        self.maker.copy_dir(self.source, self.dest,
+                            add_dest_to_svn=True)
+
+
+class SymlinkExtraZopeConfig(ZopeConfigTask):
+
+    description = """
+    Delete certain configuration files from the standard Zope location
+    and symlink them back into place from the fassembler location.
+    Assumes files already exist in the fassembler locations, i.e. that
+    PlaceZopeConfig is run first.
+    """
+
+    source = interpolated('source')
+
+    def __init__(self, name, source):
+        super(SymlinkExtraZopeConfig, self).__init__(name, stacklevel=1)
+        self.source = source
+    
+    def run(self):
+        if not os.path.islink(self.zope_etc_path):
+            self.maker.rmtree(self.zope_etc_path)
+        self.maker.ensure_symlink(self.source, self.zope_etc_path)
+
+
 class ExtraZopeProject(OpenCoreProject):
     """
     Install an additional Zope instance
@@ -1070,6 +1113,37 @@ class ExtraZopeProject(OpenCoreProject):
                 default='{{env.parse_auth(env.config.get("general", "admin_info_filename")).password}}',
                 help='Admin password'),
 
+        Setting('port',
+                default='{{env.base_port+int(config.port_offset)}}',
+                help="Port to install Zope on"),
+        Setting('port_offset',
+                default='11',
+                help='Offset from base_port for Zope'),
+
+        Setting('host',
+                default='localhost',
+                help='Interface/host to serve Zope on'),
+        Setting('zeo_port',
+                default='{{env.base_port+int(config.zeo_port_offset)}}',
+                help="Port to install ZEO on"),
+        Setting('zeo_port_offset',
+                default='2',
+                help='Offset from base_port for ZEO'),
+        Setting('zeo_host',
+                default='localhost',
+                help='Interface/host to serve ZEO on'),
+
+        Setting('debug',
+                default='0',
+                help='Whether to start Zope in debug mode'),
+
+        Setting('email_confirmation',
+                default='1',  # opencore ftests expect it turned on!
+                help='Whether to send email configuration'),
+        Setting('zope_tarball_version',
+                default='2.9.9openplans.1',
+                help='Version suffix for the Zope source tarball'),
+
         ]
 
     actions = [
@@ -1085,6 +1159,16 @@ class ExtraZopeProject(OpenCoreProject):
                         '{{config.zope_instance}}/Products',
                         exclude_glob='{{env.base_path}}/opencore/src/opencore-bundle/ClockServer'),
 
-        SymlinkZopeConfig('Symlink Zope configuration'),
+        tasks.CopyDir('Create new Zope configuration from template',
+                      source='{{env.base_path}}/fassembler/src/fassembler/fassembler/opencore-files/extra_zope_skel_etc',
+                      dest='{{env.base_path}}/etc/opencore/{{config.zope_instance_name}}_etc',
+                      add_dest_to_svn=True),
+
+        #tasks.EnsureDir('Make sure new Zope configuration exists and is checked in to SVN',
+        #                dest='{{env.base_path}}/etc/opencore/{{config.zope_instance_name}}_etc',
+        #                svn_add=True),
+
+        SymlinkExtraZopeConfig('Install Zope configuration symlink',
+                               source='{{env.base_path}}/etc/opencore/{{config.zope_instance_name}}_etc'),
         
         ]
