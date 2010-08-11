@@ -491,11 +491,15 @@ class VirtualEnv(Task):
     """
 
     def __init__(self, name='Create virtualenv', path=None, site_packages=False,
-                 different_python=False, stacklevel=1):
+                 different_python=False, stacklevel=1,
+                 
+never_create_virtualenv=False):
         super(VirtualEnv, self).__init__(name, stacklevel=stacklevel+1)
         self.path = path
         self.site_packages = site_packages
         self.different_python = different_python
+        self.never_create_virtualenv = never_create_virtualenv
+
 
     @property
     def path_resolved(self):
@@ -504,11 +508,17 @@ class VirtualEnv(Task):
     def run(self):
         path = self.path_resolved
         if os.path.exists(path) and os.path.exists(os.path.join(path, 'lib')):
+            if self.never_create_virtualenv:
+                self.logger.notify('Skipping virtualenv creation as directory %s exists' % path)
+                return
             if not self.project.config.getdefault('DEFAULT', 'force_virtualenv'):
                 self.logger.notify('Skipping virtualenv creation as directory %s exists' % path)
                 return
             else:
                 self.logger.notify('Forcing virtualenv recreation')
+        if self.never_create_virtualenv:
+            self.logger.fatal("Virtualenv at %s does not exist, but should already exist!" % path)
+            raise Exception
         import virtualenv
         if not self.different_python:
             ## FIXME: kind of a nasty hack, but maybe it's okay?

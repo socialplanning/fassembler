@@ -1089,6 +1089,9 @@ class ExtraZopeProject(OpenCoreProject):
     name = "opencore-zope"
     title = "Install Zope client"
 
+    files_dir = os.path.join(os.path.dirname(__file__), 'opencore-files')
+    skel_dir = os.path.join(files_dir, 'zope_skel')
+
     settings = [
         Setting('virtualenv_path',
                 default='{{env.base_path}}/opencore',
@@ -1147,17 +1150,21 @@ class ExtraZopeProject(OpenCoreProject):
         ]
 
     actions = [
+        tasks.VirtualEnv(path='opencore', never_create_virtualenv=True),
+        tasks.CopyDir('Create custom skel',
+                      skel_dir,
+                      'opencore/src/Zope/custom_skel_{{config.zope_instance_name}}'),
+
         tasks.Script('Make Zope Instance', [
                 '{{config.virtualenv_path}}/bin/python', '{{config.zope_install}}/bin/mkzopeinstance.py',
                 '--dir', '{{config.zope_instance}}',
                 '--user', '{{config.zope_user}}:{{config.zope_password}}',
-                '--skelsrc', '{{config.zope_source}}/custom_skel'],
+                '--skelsrc', '{{config.zope_source}}/custom_skel_{{config.zope_instance_name}}'],
                      ),
 
         SymlinkProducts('Symlink Products',
                         '{{env.base_path}}/opencore/src/opencore-bundle/*',
-                        '{{config.zope_instance}}/Products',
-                        exclude_glob='{{env.base_path}}/opencore/src/opencore-bundle/ClockServer'),
+                        '{{config.zope_instance}}/Products'),
 
         tasks.CopyDir('Create new Zope configuration from template',
                       source='{{env.base_path}}/fassembler/src/fassembler/fassembler/opencore-files/extra_zope_skel_etc',
