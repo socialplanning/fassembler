@@ -737,7 +737,7 @@ class OpenCoreProject(OpenCoreBase):
 #!/bin/sh
 cd {{env.base_path}}
 source ./opencore/bin/activate
-exec {{config.zope_instance}}/bin/runzope -X debug-mode=off
+exec {{config.zope_instance}}/bin/runzope -X debug-mode={{if config.debug!='0'}}on{{else}}off{{endif}}
 """
 
     flunc_globals_template = """\
@@ -774,11 +774,13 @@ setglobal projprefs    '{{env.config.get("general", "projprefs")}}'
         tasks.Script('Delete zope instance binaries',
                      ['rm', '-fr', '{{config.zope_instance}}/bin'],
                      cwd='{{config.zope_install}}'),
+
         tasks.Script('Make Zope Instance', [
         'python', '{{config.zope_install}}/bin/mkzopeinstance.py', '--dir', '{{config.zope_instance}}',
         '--user', '{{config.zope_user}}:{{config.zope_password}}',
         '--skelsrc', '{{config.zope_source}}/custom_skel'],
                      use_virtualenv=True),
+
         tasks.ConditionalTask('Create bundle',
                               ('{{config.opencore_bundle_use_svn}}',
                                tasks.SvnCheckout('Check out bundle',
@@ -786,6 +788,7 @@ setglobal projprefs    '{{env.config.get("general", "projprefs")}}'
                                                  '{{env.base_path}}/opencore/src/opencore-bundle')),
                               (True,
                                GetBundleTarball())),
+
         SymlinkProducts('Symlink Products',
                         '{{env.base_path}}/opencore/src/opencore-bundle/*',
                         '{{config.zope_instance}}/Products',
@@ -1034,3 +1037,159 @@ if __name__ == '__main__':
         print 'Usage: %s TARBALL_VERSION TARBALL_URL_DIR ZOPE_SOURCE_URL' % sys.argv[0]
         sys.exit()
     make_tarball(sys.argv[1], sys.argv[2], sys.argv[3])
+
+class CopyExtraZopeConfig(ZopeConfigTask):
+
+    description = """
+    Delete certain configuration files from the standard Zope location
+    and symlink them back into place from the fassembler location.
+    Assumes files already exist in the fassembler locations, i.e. that
+    PlaceZopeConfig is run first.
+    """
+
+    source = interpolated('source')
+    dest = interpolated('dest')
+
+    def __init__(self, name, source, dest):
+        super(CopyExtraZopeConfig, self).__init__(name, stacklevel=1)
+        self.source = source
+        self.dest = dest
+
+    def run(self):
+        self.maker.copy_dir(self.source, self.dest,
+                            add_dest_to_svn=True)
+
+
+class SymlinkExtraZopeConfig(ZopeConfigTask):
+
+    description = """
+    Delete certain configuration files from the standard Zope location
+    and symlink them back into place from the fassembler location.
+    Assumes files already exist in the fassembler locations, i.e. that
+    PlaceZopeConfig is run first.
+    """
+
+    source = interpolated('source')
+
+    def __init__(self, name, source):
+        super(SymlinkExtraZopeConfig, self).__init__(name, stacklevel=1)
+        self.source = source
+    
+    def run(self):
+        if not os.path.islink(self.zope_etc_path):
+            self.maker.rmtree(self.zope_etc_path)
+        self.maker.ensure_symlink(self.source, self.zope_etc_path)
+
+
+class ExtraZopeProject(OpenCoreProject):
+    """
+    Install an additional Zope instance
+    """
+
+    name = "opencore-zope"
+    title = "Install Zope client"
+
+    files_dir = os.path.join(os.path.dirname(__file__), 'opencore-files')
+    skel_dir = os.path.join(files_dir, 'zope_skel')
+
+    start_script_template = """\
+#!/bin/sh
+cd {{env.base_path}}
+source ./opencore/bin/activate
+exec {{config.zope_instance}}/bin/runzope -X debug-mode={{if config.debug!='0'}}on{{else}}off{{endif}}
+"""
+
+    settings = [
+        Setting('virtualenv_path',
+                default='{{env.base_path}}/opencore',
+                help='Location of (existing) opencore virtualenv'),
+        Setting('zope_install',
+                default='{{config.virtualenv_path}}/lib/zope',
+                help='Location of Zope installation'),
+        Setting('zope_instance_name',
+                default='zope',
+                help='Location of Zope instance home'),
+        Setting('zope_instance',
+                default='{{config.virtualenv_path}}/{{config.zope_instance_name}}',
+                help='Location of Zope instance home'),
+
+        Setting('zope_source',
+                default='{{config.virtualenv_path}}/src/Zope',
+                help='Location of Zope source'),
+        Setting('zope_user',
+                default='{{env.parse_auth(env.config.get("general", "admin_info_filename")).username}}',
+                help='Default admin username'),
+        Setting('zope_password',
+                default='{{env.parse_auth(env.config.get("general", "admin_info_filename")).password}}',
+                help='Admin password'),
+
+        Setting('port',
+                default='{{env.base_port+int(config.port_offset)}}',
+                help="Port to install Zope on"),
+        Setting('port_offset',
+                default='11',
+                help='Offset from base_port for Zope'),
+
+        Setting('host',
+                default='localhost',
+                help='Interface/host to serve Zope on'),
+        Setting('zeo_port',
+                default='{{env.base_port+int(config.zeo_port_offset)}}',
+                help="Port to install ZEO on"),
+        Setting('zeo_port_offset',
+                default='2',
+                help='Offset from base_port for ZEO'),
+        Setting('zeo_host',
+                default='localhost',
+                help='Interface/host to serve ZEO on'),
+
+        Setting('debug',
+                default='0',
+                help='Whether to start Zope in debug mode'),
+
+        Setting('email_confirmation',
+                default='1',  # opencore ftests expect it turned on!
+                help='Whether to send email configuration'),
+        Setting('zope_tarball_version',
+                default='2.9.9openplans.1',
+                help='Version suffix for the Zope source tarball'),
+
+        ]
+
+    actions = [
+        tasks.VirtualEnv(path='opencore', never_create_virtualenv=True),
+        tasks.CopyDir('Create custom skel',
+                      skel_dir,
+                      'opencore/src/Zope/custom_skel_{{config.zope_instance_name}}'),
+
+        tasks.Script('Make Zope Instance', [
+                '{{config.virtualenv_path}}/bin/python', '{{config.zope_install}}/bin/mkzopeinstance.py',
+                '--dir', '{{config.zope_instance}}',
+                '--user', '{{config.zope_user}}:{{config.zope_password}}',
+                '--skelsrc', '{{config.zope_source}}/custom_skel_{{config.zope_instance_name}}'],
+                     ),
+
+        SymlinkProducts('Symlink Products',
+                        '{{env.base_path}}/opencore/src/opencore-bundle/*',
+                        '{{config.zope_instance}}/Products'),
+
+        tasks.CopyDir('Create new Zope configuration from template',
+                      source='{{env.base_path}}/fassembler/src/fassembler/fassembler/opencore-files/extra_zope_skel_etc',
+                      dest='{{env.base_path}}/etc/opencore/{{config.zope_instance_name}}_etc',
+                      add_dest_to_svn=True),
+
+        #tasks.EnsureDir('Make sure new Zope configuration exists and is checked in to SVN',
+        #                dest='{{env.base_path}}/etc/opencore/{{config.zope_instance_name}}_etc',
+        #                svn_add=True),
+
+        SymlinkExtraZopeConfig('Install Zope configuration symlink',
+                               source='{{env.base_path}}/etc/opencore/{{config.zope_instance_name}}_etc'),
+
+        tasks.EnsureFile('Write the start script',
+                         '{{env.base_path}}/bin/start-opencore-{{config.zope_instance_name}}',
+                         content=start_script_template,
+                         svn_add=True, executable=True, overwrite=True),
+
+        tasks.InstallSupervisorConfig(script_name="opencore-{{config.zope_instance_name}}"),
+        
+        ]

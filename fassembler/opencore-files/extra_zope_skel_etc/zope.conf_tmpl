@@ -85,54 +85,6 @@ default-zpublisher-encoding utf-8
   topp_secret_filename  {{env.config.get('general', 'topp_secret_filename')}}
 </product-config>
 
-{{if config.zope_tarball_version.startswith('2.9')}}%import Products.ClockServer{{endif}}
-
-<clock-server>
-  {{# FIXME: should /openplans/ be a variable?  It used to be in topp.build.opencore}}
-  method /openplans/portal_catalog_queue/manage_process
-  # We use prime numbers for periods to reduce the odds that
-  # potentially expensive clockserver jobs will run at the same time.
-  period 307
-  user {{config.zope_user}}
-  password {{config.zope_password}}
-  host {{config.host}}
-</clock-server>
-
-<clock-server>
-  {{# FIXME: should /openplans/ be a variable?  It used to be in topp.build.opencore}}
-  method /openplans/membrane_tool/refreshCatalog
-  # Reindex every twelve hours. See above re: prime numbers. 
-  # If your site has very frequent activity (particularly around joining/leaving projects)
-  # you will probably want a more frequent reindex.
-  period 43201
-  user {{config.zope_user}}
-  password {{config.zope_password}}
-  host {{config.host}}
-</clock-server>
-
-# This only works in opencore later than 0.18dev, but I have
-# no idea how to detect that in fassembler.
-<clock-server>
-  method /openplans/member-postdelete-cleanup
-  period 311
-  user {{config.zope_user}}
-  password {{config.zope_password}}
-  host {{config.host}}
-</clock-server>
-
-# This only works in opencore later than 0.18dev, but I have
-# no idea how to detect that in fassembler.
-<clock-server>
-  method /openplans/manage_project_export_queue
-  # This one needs to run frequently, since the user may be waiting 
-  # around (and checking via ajax) to see if their job's done yet.
-  # But 30 is the minimum period that clockserver allows.
-  period 31
-  user {{config.zope_user}}
-  password {{config.zope_password}}
-  host {{config.host}}
-</clock-server>
-
 
 {{#FIXME: needs to be more dynamic}}
 {{if env.config.has_option('uris', 'tasktracker_uri'):}}

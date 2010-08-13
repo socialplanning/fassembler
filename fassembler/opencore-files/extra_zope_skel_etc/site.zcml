@@ -1,0 +1,18 @@
+<configure xmlns="http://namespaces.zope.org/zope"
+           xmlns:meta="http://namespaces.zope.org/meta"
+           xmlns:five="http://namespaces.zope.org/five">
+
+  <include package="Products.Five" />
+  <meta:redefinePermission from="zope2.Public" to="zope.Public" />
+
+  <!-- we need this ordering for meta zcml include -->
+  <five:loadProducts file="meta.zcml"/>
+  <include files="package-includes/*-meta.zcml" />
+  <five:loadProducts />
+  <include files="package-includes/*-configure.zcml" />
+  <five:loadProductsOverrides />
+  <includeOverrides files="package-includes/*-overrides.zcml" />
+
+  <include files="opencore_custom.zcml" />
+
+</configure>

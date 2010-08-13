@@ -238,15 +238,16 @@ class CopyDir(Task):
     source = interpolated('source')
     dest = interpolated('dest')
 
-    def __init__(self, name, source, dest, stacklevel=1):
+    def __init__(self, name, source, dest, stacklevel=1, add_dest_to_svn=False):
         super(CopyDir, self).__init__(name, stacklevel=stacklevel+1)
         self.source = source
         self.dest = dest
+        self.add_dest_to_svn = add_dest_to_svn
 
     def run(self):
         self.logger.info(
             'Copying %s to %s' % (self.source, self.dest))
-        self.copy_dir(self.source, self.dest)
+        self.copy_dir(self.source, self.dest, add_dest_to_svn=self.add_dest_to_svn)
 
 class EnsureFile(Task):
     """
@@ -358,7 +359,7 @@ class EnsureDir(Task):
         self.svn_add = svn_add
 
     def run(self):
-        self.maker.ensure_dir(self.dest)
+        self.maker.ensure_dir(self.dest, svn_add=self.svn_add)
 
 class SvnCheckout(Task):
     """
@@ -490,11 +491,15 @@ class VirtualEnv(Task):
     """
 
     def __init__(self, name='Create virtualenv', path=None, site_packages=False,
-                 different_python=False, stacklevel=1):
+                 different_python=False, stacklevel=1,
+                 
+never_create_virtualenv=False):
         super(VirtualEnv, self).__init__(name, stacklevel=stacklevel+1)
         self.path = path
         self.site_packages = site_packages
         self.different_python = different_python
+        self.never_create_virtualenv = never_create_virtualenv
+
 
     @property
     def path_resolved(self):
@@ -503,11 +508,17 @@ class VirtualEnv(Task):
     def run(self):
         path = self.path_resolved
         if os.path.exists(path) and os.path.exists(os.path.join(path, 'lib')):
+            if self.never_create_virtualenv:
+                self.logger.notify('Skipping virtualenv creation as directory %s exists' % path)
+                return
             if not self.project.config.getdefault('DEFAULT', 'force_virtualenv'):
                 self.logger.notify('Skipping virtualenv creation as directory %s exists' % path)
                 return
             else:
                 self.logger.notify('Forcing virtualenv recreation')
+        if self.never_create_virtualenv:
+            self.logger.fatal("Virtualenv at %s does not exist, but should already exist!" % path)
+            raise Exception
         import virtualenv
         if not self.different_python:
             ## FIXME: kind of a nasty hack, but maybe it's okay?
