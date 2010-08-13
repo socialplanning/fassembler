@@ -737,7 +737,7 @@ class OpenCoreProject(OpenCoreBase):
 #!/bin/sh
 cd {{env.base_path}}
 source ./opencore/bin/activate
-exec {{config.zope_instance}}/bin/runzope -X debug-mode=off
+exec {{config.zope_instance}}/bin/runzope -X debug-mode={{if config.debug!='0'}}on{{else}}off{{endif}}
 """
 
     flunc_globals_template = """\
@@ -1096,7 +1096,7 @@ class ExtraZopeProject(OpenCoreProject):
 #!/bin/sh
 cd {{env.base_path}}
 source ./opencore/bin/activate
-exec {{config.zope_instance}}/bin/runzope -X debug-mode=off
+exec {{config.zope_instance}}/bin/runzope -X debug-mode={{if config.debug!='0'}}on{{else}}off{{endif}}
 """
 
     settings = [
