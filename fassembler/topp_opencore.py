@@ -1100,6 +1100,10 @@ exec {{config.zope_instance}}/bin/runzope -X debug-mode={{if config.debug!='0'}}
 """
 
     settings = [
+        Setting('zope_num',
+                default='1',
+                help='Numerical index for this zope (i.e. len(number_of_zopes) -- used by default in calculating other settings, like the directory to install this zope into and what port it should run on'),
+
         Setting('virtualenv_path',
                 default='{{env.base_path}}/opencore',
                 help='Location of (existing) opencore virtualenv'),
@@ -1107,7 +1111,7 @@ exec {{config.zope_instance}}/bin/runzope -X debug-mode={{if config.debug!='0'}}
                 default='{{config.virtualenv_path}}/lib/zope',
                 help='Location of Zope installation'),
         Setting('zope_instance_name',
-                default='zope',
+                default='zope-{{config.zope_num}}',
                 help='Location of Zope instance home'),
         Setting('zope_instance',
                 default='{{config.virtualenv_path}}/{{config.zope_instance_name}}',
@@ -1124,11 +1128,8 @@ exec {{config.zope_instance}}/bin/runzope -X debug-mode={{if config.debug!='0'}}
                 help='Admin password'),
 
         Setting('port',
-                default='{{env.base_port+int(config.port_offset)}}',
+                default='{{env.base_port+1+int(config.zope_num)*10}}',
                 help="Port to install Zope on"),
-        Setting('port_offset',
-                default='11',
-                help='Offset from base_port for Zope'),
 
         Setting('host',
                 default='localhost',
