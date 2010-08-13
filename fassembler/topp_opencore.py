@@ -1092,6 +1092,13 @@ class ExtraZopeProject(OpenCoreProject):
     files_dir = os.path.join(os.path.dirname(__file__), 'opencore-files')
     skel_dir = os.path.join(files_dir, 'zope_skel')
 
+    start_script_template = """\
+#!/bin/sh
+cd {{env.base_path}}
+source ./opencore/bin/activate
+exec {{config.zope_instance}}/bin/runzope -X debug-mode=off
+"""
+
     settings = [
         Setting('virtualenv_path',
                 default='{{env.base_path}}/opencore',
@@ -1177,5 +1184,12 @@ class ExtraZopeProject(OpenCoreProject):
 
         SymlinkExtraZopeConfig('Install Zope configuration symlink',
                                source='{{env.base_path}}/etc/opencore/{{config.zope_instance_name}}_etc'),
+
+        tasks.EnsureFile('Write the start script',
+                         '{{env.base_path}}/bin/start-opencore-{{config.zope_instance_name}}',
+                         content=start_script_template,
+                         svn_add=True, executable=True, overwrite=True),
+
+        tasks.InstallSupervisorConfig(script_name="opencore-{{config.zope_instance_name}}"),
         
         ]
