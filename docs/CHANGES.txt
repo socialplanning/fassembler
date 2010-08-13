@@ -1,0 +1,12 @@
+0.4
+===
+
+This is the first tag made for fassembler.  A lot happened before now but releases were never cut.
+
+In this release:
+
+* Added fassembler:extrazope project, which will build an additional Zope instance connected to the same ZEO server.
+
+* In fassembler:opencore, made the ``debug`` setting actually work, to control whether zope starts in debug mode when running ``./opencore/bin/zopectl fg`` (where it previously always ran with ``debug-mode=on``) or ``./bin/start-opencore`` (where it previously always ran with ``debug-mode=off`)
+
+* Added a setting ``never_create_virtualenv`` for fassembler.tasks.VirtualEnv, which, if set, makes that task act as an assertion of the given virtualenv's existence, so that a build can fail if the virtualenv hasn't already been created.

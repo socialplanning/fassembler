@@ -1,5 +1,5 @@
-This is fassembler, the build system for Openplans.
-Home page: http://www.openplans.org/projects/fassembler/project-home
+This is fassembler, the build system for OpenCore
+Home page: http://www.coactivate.org/projects/fassembler/project-home
 
 
 Overview
@@ -7,13 +7,13 @@ Overview
 
 This could be general-purpose build software a la GNU Make, Buildit,
 et al.  But it's developed specifically for the build and deployment
-needs of the software that runs Openplans.org.
+needs of the software that runs CoActivate.org.
 
 
 How to Use Fassembler
 =====================
 
-See http://www.openplans.org/projects/fassembler/howto
+See http://www.coactivate.org/projects/fassembler/howto
 
 Requirements
 ============

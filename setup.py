@@ -1,18 +1,29 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '0.1'
+version = '0.2'
+
+readme = open("docs/README.txt").read()
+changes = open("docs/CHANGES.txt").read()
+
+desc = """
+%s
+
+Changes
+=======
+
+%s
+""" % (readme, changes)
 
 setup(name='fassembler',
       version=version,
-      description="Builder for TOPP",
-      long_description="""\
-""",
+      description="Builder for OpenCore",
+      long_description=desc,
       classifiers=[], # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
       keywords='',
       author='Ian Bicking',
-      author_email='ianb@openplans.org',
-      url='http://openplans.org/projects/fassembler',
+      author_email='opencore-dev@lists.coactivate.org',
+      url='http://www.coactivate.org/projects/fassembler',
       license='GPL',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       include_package_data=True,
