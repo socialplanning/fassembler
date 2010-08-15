@@ -9,6 +9,7 @@ This setting will then be used to fill in the value of
 ``opencore_remote_uri`` in the Frontend configuration, allowing the
 frontend to proxy to a load-balanced set of Zope instances.
 
+A ``num_extra_zopes`` setting has also been added to the fassembler:topp project, where it is saved to build.ini.
 
 0.4
 ===

@@ -112,6 +112,13 @@ def validate_db_prefix(prefix):
             "db_prefix can only contain letters, numbers, underscores; got %r"
             % prefix)
     
+def validate_num_extra_zopes(num):
+    try:
+        int(num)
+    except:
+        raise ValueError(
+            "num_extra_zopes must be an integer; got %s" % num)
+
 class ToppProject(Project):
     """
     Create the basic layout used at TOPP for a set of applications.
@@ -158,6 +165,10 @@ class ToppProject(Project):
                 inherit_config=('general', 'localbuild'),
                 default='False',
                 help="Specifies whether this is a single developer's build"),
+        Setting('num_extra_zopes',
+                inherit_config=('general', 'num_extra_zopes'),
+                default='0',
+                help="How many additional Zope instances (besides the primary instance) are deployed in this stack"),
         ]
 
     actions = [
@@ -185,9 +196,13 @@ class ToppProject(Project):
                            'projprefs': '{{config.projprefs}}',
                            'etc_svn_subdir': '{{config.etc_svn_subdir}}',
                            'localbuild': '{{config.localbuild}}',
+                           'num_extra_zopes': '{{config.num_extra_zopes}}',
                            },
                           overwrite=True,
-                          validators={'db_prefix': validate_db_prefix},
+                          validators={
+                'db_prefix': validate_db_prefix,
+                'num_extra_zopes': validate_num_extra_zopes
+                },
                           ),
         tasks.SaveSetting(
             'Save google maps API key settings',
