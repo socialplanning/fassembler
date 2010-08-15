@@ -85,6 +85,7 @@ default-zpublisher-encoding utf-8
   topp_secret_filename  {{env.config.get('general', 'topp_secret_filename')}}
 </product-config>
 
+{{if project.run_clockserver()}}
 {{if config.zope_tarball_version.startswith('2.9')}}%import Products.ClockServer{{endif}}
 
 <clock-server>
@@ -132,7 +133,7 @@ default-zpublisher-encoding utf-8
   password {{config.zope_password}}
   host {{config.host}}
 </clock-server>
-
+{{endif}}
 
 {{#FIXME: needs to be more dynamic}}
 {{if env.config.has_option('uris', 'tasktracker_uri'):}}

@@ -631,6 +631,8 @@ class OpenCoreBase(Project):
     def get_req_setting(self, setting):
         return self.req_settings.get(setting, self.interpolate(self.defaults[setting]))
 
+    def run_clockserver(self):
+        return True
 
 class OpenCoreProject(OpenCoreBase):
     """
@@ -1081,10 +1083,23 @@ class SymlinkExtraZopeConfig(ZopeConfigTask):
         self.maker.ensure_symlink(self.source, self.zope_etc_path)
 
 
+from fassembler.util import asbool
 class ExtraZopeProject(OpenCoreProject):
     """
     Install an additional Zope instance
     """
+
+    def run_clockserver(self):
+        """
+        If this is set to True, the generated
+        zope.conf will include opencore's
+        clockserver directives. Since we only
+        need to run them from one Zope instance,
+        the default behavior is to run them on
+        the primary Zope instance and to disable
+        them on additional Zopes that are built.
+        """
+        return asbool(self.interpolate("{{config.run_clockserver}}"))
 
     name = "opencore-zope"
     title = "Install Zope client"
@@ -1100,6 +1115,9 @@ exec {{config.zope_instance}}/bin/runzope -X debug-mode={{if config.debug!='0'}}
 """
 
     settings = [
+        Setting('run_clockserver',
+                default='0',
+                help="Whether to set up OpenCore's ClockServer directives in this Zope instance's zope.conf"),
         Setting('zope_num',
                 default='1',
                 help='Numerical index for this zope (i.e. len(number_of_zopes) -- used by default in calculating other settings, like the directory to install this zope into and what port it should run on'),
@@ -1179,9 +1197,6 @@ exec {{config.zope_instance}}/bin/runzope -X debug-mode={{if config.debug!='0'}}
                       dest='{{env.base_path}}/etc/opencore/{{config.zope_instance_name}}_etc',
                       add_dest_to_svn=True),
 
-        #tasks.EnsureDir('Make sure new Zope configuration exists and is checked in to SVN',
-        #                dest='{{env.base_path}}/etc/opencore/{{config.zope_instance_name}}_etc',
-        #                svn_add=True),
 
         SymlinkExtraZopeConfig('Install Zope configuration symlink',
                                source='{{env.base_path}}/etc/opencore/{{config.zope_instance_name}}_etc'),
