@@ -1,3 +1,15 @@
+0.5
+===
+
+Add ``num_extra_zopes`` property to the environ object, which looks
+for a ``num_extra_zopes`` setting in the [general] section of
+build.ini and returns it as an integer or 0 if no such setting exists.
+
+This setting will then be used to fill in the value of
+``opencore_remote_uri`` in the Frontend configuration, allowing the
+frontend to proxy to a load-balanced set of Zope instances.
+
+
 0.4
 ===
 

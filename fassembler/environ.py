@@ -132,6 +132,13 @@ class Environment(object):
         return self.config.getint('general', 'base_port')
 
     @property
+    def num_extra_zopes(self):
+        try:
+            return self.config.getint("general", "num_extra_zopes")
+        except:
+            return 0
+
+    @property
     def var(self):
         return self.config.get('general', 'var')
 
