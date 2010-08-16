@@ -20,6 +20,14 @@ site.
 The fassembler:maildrop and fassembler:zeo projects now include this
 skip_zopectl_scripts setting, with default 0.
 
+Add a setting ``supervisor_var`` to the supervisor project, which
+defaults to ``{{env.var}}/supervisor``.  This is used to build the
+paths to the Unix socket file and pidfile used by supervisor.  It can
+be useful to set this to a value other than ``{{env.var}}/supervisor``
+if building an upgrade in parallel to a running site, so that both the
+old and the new supervisor processes can run simultaneously without
+interference.
+
 0.5
 ===
 

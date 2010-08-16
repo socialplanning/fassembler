@@ -242,6 +242,12 @@ class SupervisorProject(Project):
         Setting('port_offset',
                 default='10',
                 help='Offset from base_port for HTTP server'),
+        Setting('supervisor_var',
+                default='{{env.var}}/supervisor',
+                help="The path to use for supervisor's socket and pidfile; "
+                "if you are building an instance in parallel to a running site "
+                "you may want to point this elsewhere from env.var so that "
+                "you can run both supervisor processes simultaneously"),
         ]
     
     actions = [
@@ -252,5 +258,5 @@ class SupervisorProject(Project):
         tasks.EnsureDir('Ensure log directory exists',
                         '{{env.var}}/logs/supervisor'),
         tasks.EnsureDir('Ensure pid location exists',
-                        '{{env.var}}/supervisor'),
+                        '{{config.supervisor_var}}'),
         ]
