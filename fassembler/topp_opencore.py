@@ -4,6 +4,7 @@ Installation of the TOPP OpenCore environment.
 
 from fassembler import tasks
 from fassembler.project import Project, Setting
+from fassembler.util import asbool
 from glob import glob
 from time import sleep
 from xml.dom import minidom
@@ -429,10 +430,19 @@ class RunZopectlScript(tasks.Task):
 
 class RunZopeScriptsWithZeo(tasks.Task):
 
-    description = "Start zeo, run all zopectl scripts, stop zeo"
+    description = """
+    {{if task.skip_zopectl_scripts()}}
+    Not trying to start zeo and run zopectl scripts, because skip_zopectl_scripts was set
+    {{else}}
+    Start zeo, run all zopectl scripts, stop zeo
+    {{endif}}
+    """
 
     script_path = interpolated('script_path')
     script_args = interpolated('script_args')
+
+    def skip_zopectl_scripts(self):
+        return asbool(self.interpolate("{{config.skip_zopectl_scripts}}"))
 
     def __init__(self, *subtasks, **kw):
         stacklevel = kw.get('stacklevel', 1)
@@ -463,6 +473,10 @@ class RunZopeScriptsWithZeo(tasks.Task):
             self._bind_tasks(subtask, *args, **kw)
 
     def run(self):
+        if self.skip_zopectl_scripts():
+            self.logger.notify("Not running zopectl scripts because skip_zopectl_scripts was specified")
+            return
+
         self.start_zeo()
         try:
             for task in self.subtasks:
@@ -861,6 +875,12 @@ class ZEOProject(OpenCoreBase):
     spec_filename = 'opencore'  # Re-use opencore-req.txt.
 
     settings = [
+        Setting('skip_zopectl_scripts',
+                default='0',
+                help="If set, will not start ZEO nor run zopectl scripts;"
+                "useful if you already have another ZEO instance running "
+                "and you know your database is fully set up "
+                "(i.e. when building an upgrade in parallel to a running site)")
         Setting('zeo_instance',
                 default='{{project.build_properties["virtualenv_path"]}}/zeo',
                 help='Instance home for ZEO'),
@@ -961,6 +981,12 @@ class MaildropProject(OpenCoreBase):
     title = 'Setup maildrop'
 
     settings = [
+        Setting('skip_zopectl_scripts',
+                default='0',
+                help="If set, will not start ZEO nor run zopectl scripts;"
+                "useful if you already have another ZEO instance running "
+                "and you know your database is fully set up "
+                "(i.e. when building an upgrade in parallel to a running site)")
         Setting('smtp_host',
                 default='localhost',
                 help='Host to send mail to'),
@@ -1083,7 +1109,6 @@ class SymlinkExtraZopeConfig(ZopeConfigTask):
         self.maker.ensure_symlink(self.source, self.zope_etc_path)
 
 
-from fassembler.util import asbool
 class ExtraZopeProject(OpenCoreProject):
     """
     Install an additional Zope instance
