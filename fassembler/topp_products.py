@@ -120,6 +120,9 @@ class CabochonProject(Project):
     name = 'cabochon'
     title = 'Install Cabochon'
     settings = [
+        Setting('use_pip',
+                default='1',
+                help="Whether to install with pip or easy_install"),
         Setting('db_sqlobject',
                 default='mysql://{{config.db_username}}:{{config.db_password}}@{{config.db_host}}/{{config.db_name}}?charset=utf8',
                 help='Full SQLObject connection string for database'),
