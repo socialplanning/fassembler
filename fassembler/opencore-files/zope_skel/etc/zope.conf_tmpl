@@ -63,7 +63,7 @@ default-zpublisher-encoding utf-8
   # ZODB cache, in number of objects, per thread
   cache-size 10000
   <zeoclient>
-    server localhost:$ZEO_PORT
+    server $VAR/zeo/zdsock
     storage 1
     name zeostorage
     var $OPENCORE_VAR

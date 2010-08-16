@@ -1,3 +1,10 @@
+0.6
+===
+
+Add a boolean ``use_pip`` setting to fassembler:cabochon project. Default fassembler:cabochon to use pip instead of easy_install.
+
+Modify zeo skel's configuration to use {{env.var}}/zeo/zdsock (a unix socket) instead of a port for connections.  Modify zope skels' configuration to connect to zeo on {{env.var}}/zeo/zdsock as well.  See http://www.coactivate.org/projects/opencore/lists/opencore-dev/archive/2010/07/1278617074321/forum_view
+
 0.5
 ===
 
