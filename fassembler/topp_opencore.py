@@ -1228,5 +1228,11 @@ exec {{config.zope_instance}}/bin/runzope -X debug-mode={{if config.debug!='0'}}
                          svn_add=True, executable=True, overwrite=True),
 
         tasks.InstallSupervisorConfig(script_name="opencore-{{config.zope_instance_name}}"),
+
+        tasks.Script('zinstall zcmlloader into package-includes',
+                     ['{{config.virtualenv_path}}/bin/python', 'setup.py',
+                      'zinstall', 
+                      '{{env.base_path}}/opencore/{{config.zope_instance_name}}'],
+                     cwd='{{env.base_path}}/opencore/src/zcmlloader'),
         
         ]

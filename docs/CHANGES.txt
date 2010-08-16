@@ -28,6 +28,12 @@ if building an upgrade in parallel to a running site, so that both the
 old and the new supervisor processes can run simultaneously without
 interference.
 
+The extrazope project now runs ``python setup.py zinstall`` in the
+zcmlloader source directory to copy zcmlloader's zcml entrypoint
+into each additional Zope's package-includes.  (At some point soon
+opencore will stop using zcmlloader in favor of z3c.autoinclude,
+at which point these zinstalls won't be needed anymore.)
+
 0.5
 ===
 
