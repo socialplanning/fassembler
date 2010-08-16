@@ -3,7 +3,22 @@
 
 Add a boolean ``use_pip`` setting to fassembler:cabochon project. Default fassembler:cabochon to use pip instead of easy_install.
 
-Modify zeo skel's configuration to use {{env.var}}/zeo/zdsock (a unix socket) instead of a port for connections.  Modify zope skels' configuration to connect to zeo on {{env.var}}/zeo/zdsock as well.  See http://www.coactivate.org/projects/opencore/lists/opencore-dev/archive/2010/07/1278617074321/forum_view
+Modify zeo skel's configuration to use {{env.var}}/zeo/zdsock (a unix
+socket) instead of a port for connections.  Modify zope skels'
+configuration to connect to zeo on {{env.var}}/zeo/zdsock as well.
+See
+http://www.coactivate.org/projects/opencore/lists/opencore-dev/archive/2010/07/1278617074321/forum_view
+
+The RunZopeScriptsWithZeo task now looks for a
+config.skip_zopectl_scripts setting.  If it is set to a True value,
+the task does nothing.  This can be used to prevent the build from
+hanging on this task if another ZEO instance is already running and
+the user knows that the zopectl initialization scripts don't need to
+be run, i.e. when building a code upgrade in parallel to a running
+site.
+
+The fassembler:maildrop and fassembler:zeo projects now include this
+skip_zopectl_scripts setting, with default 0.
 
 0.5
 ===

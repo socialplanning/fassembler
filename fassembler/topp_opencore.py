@@ -431,11 +431,7 @@ class RunZopectlScript(tasks.Task):
 class RunZopeScriptsWithZeo(tasks.Task):
 
     description = """
-    {{if task.skip_zopectl_scripts()}}
-    Not trying to start zeo and run zopectl scripts, because skip_zopectl_scripts was set
-    {{else}}
-    Start zeo, run all zopectl scripts, stop zeo
-    {{endif}}
+    {{if task.skip_zopectl_scripts()}}Not trying to start zeo and run zopectl scripts, because skip_zopectl_scripts was set{{else}}Start zeo, run all zopectl scripts, stop zeo{{endif}}
     """
 
     script_path = interpolated('script_path')
@@ -880,7 +876,7 @@ class ZEOProject(OpenCoreBase):
                 help="If set, will not start ZEO nor run zopectl scripts;"
                 "useful if you already have another ZEO instance running "
                 "and you know your database is fully set up "
-                "(i.e. when building an upgrade in parallel to a running site)")
+                "(i.e. when building an upgrade in parallel to a running site)"),
         Setting('zeo_instance',
                 default='{{project.build_properties["virtualenv_path"]}}/zeo',
                 help='Instance home for ZEO'),
@@ -983,10 +979,10 @@ class MaildropProject(OpenCoreBase):
     settings = [
         Setting('skip_zopectl_scripts',
                 default='0',
-                help="If set, will not start ZEO nor run zopectl scripts;"
+                help="If set, will not start ZEO nor run zopectl scripts; "
                 "useful if you already have another ZEO instance running "
                 "and you know your database is fully set up "
-                "(i.e. when building an upgrade in parallel to a running site)")
+                "(i.e. when building an upgrade in parallel to a running site)"),
         Setting('smtp_host',
                 default='localhost',
                 help='Host to send mail to'),
