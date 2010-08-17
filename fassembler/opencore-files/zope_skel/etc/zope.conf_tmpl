@@ -4,7 +4,7 @@
 %define DEBUG_MODE {{if config.debug!='0'}}on{{else}}off{{endif}}
 %define INSTANCE {{config.zope_instance}}
 %define VAR {{env.var}}
-%define OPENCORE_VAR $VAR/opencore-{{config.zope_instance_name}}
+%define OPENCORE_VAR $VAR/opencore
 %define LOGS $VAR/logs/opencore
 
 instancehome $INSTANCE
