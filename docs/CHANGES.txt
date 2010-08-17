@@ -34,6 +34,10 @@ into each additional Zope's package-includes.  (At some point soon
 opencore will stop using zcmlloader in favor of z3c.autoinclude,
 at which point these zinstalls won't be needed anymore.)
 
+The extrazope project now creates a separate var directory for each
+instance and points to that directory in zope.conf for the instance's
+pidfile, lock file, etc.
+
 0.5
 ===
 

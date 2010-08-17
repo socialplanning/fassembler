@@ -1198,6 +1198,10 @@ exec {{config.zope_instance}}/bin/runzope -X debug-mode={{if config.debug!='0'}}
 
     actions = [
         tasks.VirtualEnv(path='opencore', never_create_virtualenv=True),
+
+        tasks.EnsureDir('Create zope instance var/ directory',
+                        '{{env.var}}/opencore-{{config.zope_instance_name}}'),
+
         tasks.CopyDir('Create custom skel',
                       skel_dir,
                       'opencore/src/Zope/custom_skel_{{config.zope_instance_name}}'),
