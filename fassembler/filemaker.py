@@ -837,6 +837,8 @@ class Maker(object):
             if 'is not a working copy' in e.stderr:
                 # Not really a problem
                 return None
+            if 'no es una copia de trabajo' in e.stderr:
+                return None
             raise
         match = self._repo_url_re.search(stdout)
         if not match:
