@@ -1190,7 +1190,8 @@ class InstallSpec(Task):
             'install', '-r', self.spec_filename,
             '-vvvv',
             log_filter=self.log_explicit_filter,
-            env=env)
+            env=env,
+            extra_path=self.project.build_properties['virtualenv_bin_path'])
 
     _log_explicit_re = re.compile(r'^(\d+)\s+')
     def log_explicit_filter(self, line):
