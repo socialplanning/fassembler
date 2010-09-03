@@ -543,13 +543,17 @@ never_create_virtualenv=False):
             proc = subprocess.Popen(venv_args, stdout=subprocess.PIPE)
             proc.communicate()
         self.logger.notify('virtualenv created in %s' % path)
+        
 
     def iter_subtasks(self):
         if self.environ.config.has_option('general', 'find_links'):
             find_links = self.environ.config.get('general', 'find_links')
             return [SetDistutilsValue('Add custom find_links locations',
-                    'easy_install', 'find_links', find_links)]
-        return []
+                                      'easy_install', 'find_links', find_links),
+                    EasyInstall('Install latest setuptools',
+                                'setuptools==dev06')]
+        return [EasyInstall('Install latest setuptools',
+                            'setuptools==0.6c11')]
 
     def setup_build_properties(self):
         path = self.path_resolved
