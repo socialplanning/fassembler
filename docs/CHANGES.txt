@@ -38,6 +38,16 @@ The extrazope project now creates a separate var directory for each
 instance and points to that directory in zope.conf for the instance's
 pidfile, lock file, etc.
 
+The fassembler:topp project has hardcoded expectations that the user's
+$LANG is English -- an error message from Subversion is parsed with
+the assumption that it is in English.  It now works if the user's $LANG
+is Spanish, as well.  (Of course, this is extremely silly, and should be
+fixed more properly as soon as possible.)
+
+When installing a virtualenv, install setuptools 0.6c11 into the new
+virtualenv, always.  This prevents problems on systems whose virtualenv
+installs the broken setuptools 0.6c8 by default.
+
 0.5
 ===
 
