@@ -488,8 +488,21 @@ class VirtualEnv(Task):
     Because force_virtualenv is not set, the virtualenv (re)creation will be skipped.
     {{endif}}
     {{endif}}
+
+    Also, setuptools 0.6c11 will be installed in the virtualenv.
+
+    {{if task.use_pip()}}
+    Pip will also be installed into the virtualenv.
+    {{endif}}
     """
 
+    def use_pip(self):
+        if self.config.has_option(self.project.name, 'use_pip'):
+            _use_pip = asbool(self.config.get(self.project.name, 'use_pip'))
+        else:
+            _use_pip = asbool(self.config.getdefault('general', 'use_pip'))
+        return _use_pip
+            
     def __init__(self, name='Create virtualenv', path=None, site_packages=False,
                  different_python=False, stacklevel=1,
                  
@@ -546,14 +559,19 @@ never_create_virtualenv=False):
         
 
     def iter_subtasks(self):
+        _tasks = []
         if self.environ.config.has_option('general', 'find_links'):
             find_links = self.environ.config.get('general', 'find_links')
-            return [SetDistutilsValue('Add custom find_links locations',
-                                      'easy_install', 'find_links', find_links),
-                    EasyInstall('Install latest setuptools',
-                                'setuptools==0.6c11')]
-        return [EasyInstall('Install latest setuptools',
-                            'setuptools==0.6c11')]
+            _tasks.append(
+                SetDistutilsValue('Add custom find_links locations',
+                                  'easy_install', 'find_links', find_links))
+        _tasks.append(
+            EasyInstall('Install latest setuptools',
+                        'setuptools==0.6c11'))
+        if self.use_pip():
+            _tasks.append(EasyInstall('Install pip',
+                                      'pip'))
+        return _tasks
 
     def setup_build_properties(self):
         path = self.path_resolved
