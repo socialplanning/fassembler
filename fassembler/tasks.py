@@ -551,7 +551,7 @@ never_create_virtualenv=False):
             return [SetDistutilsValue('Add custom find_links locations',
                                       'easy_install', 'find_links', find_links),
                     EasyInstall('Install latest setuptools',
-                                'setuptools==dev06')]
+                                'setuptools==0.6c11')]
         return [EasyInstall('Install latest setuptools',
                             'setuptools==0.6c11')]
 
