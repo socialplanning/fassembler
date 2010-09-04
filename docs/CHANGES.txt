@@ -25,10 +25,10 @@ Fassembler changes
 
 * Fix sporadic bug in projects where ``use_pip=True``: "The expected
   executable ['pip', '-E', ...] was not found."  When
-  ``use_pip=True``, Fassembler will now `easy_install pip` during
-  virtualenv creation, and will add the virtualenv_bin_path to $PATH
-  before trying to run `pip`. This should guarantee that the
-  executable `pip` can be found.
+  ``use_pip=True``, Fassembler will now ``easy_install pip`` during
+  virtualenv creation, and will add the ``virtualenv_bin_path`` to $PATH
+  before trying to run ``pip``. This should guarantee that the
+  executable ``pip`` can be found.
 
 Project changes
 ---------------
@@ -102,7 +102,7 @@ In this release:
   control whether zope starts in debug mode when running
   ``./opencore/bin/zopectl fg`` (where it previously always ran with
   ``debug-mode=on``) or ``./bin/start-opencore`` (where it previously
-  always ran with ``debug-mode=off`) 
+  always ran with ``debug-mode=off``) 
 
 * Added a setting ``never_create_virtualenv`` for
   fassembler.tasks.VirtualEnv, which, if set, makes that task act as

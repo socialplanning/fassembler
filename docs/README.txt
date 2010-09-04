@@ -41,5 +41,5 @@ To add a project
 * Add an entry point to setup() in setup.py
 
 * Update doc/ports.txt and fassembler.topp:CheckBasePorts.port_range
-if needed.
+  if needed.
 
