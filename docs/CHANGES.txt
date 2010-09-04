@@ -1,6 +1,31 @@
 0.6
 ===
 
+Fassembler changes
+------------------
+
+* Fassembler has hardcoded expectations that the user's $LANG is
+  English -- Maker._get_repo_url parses an error message from
+  Subversion with the assumption that it is in English. This manifests
+  when running fassembler:topp while it runs `svn info` on the etc
+  directory in a new build, which will exist as an unversioned
+  directory.
+
+  It now works if the user's $LANG is Spanish, as well.  But no other
+  languages!
+
+  Of course, this is extremely silly, and should be fixed more
+  properly immediately.
+
+* When installing a virtualenv, install setuptools 0.6c11 into the new
+  virtualenv, always.  This prevents problems on systems whose
+  virtualenv version installs the broken setuptools 0.6c8 by
+  default. Symptoms: errors like "unrecognized format" and "global
+  name 'log' is not defined".
+
+Project changes
+---------------
+
 * Add a boolean ``use_pip`` setting to fassembler:cabochon project. 
   Default fassembler:cabochon to use pip instead of easy_install,
   because it seems to work better here.
@@ -39,20 +64,6 @@
 * The extrazope project now creates a separate var directory for each
   instance and points to that directory in zope.conf for the
   instance's pidfile, lock file, etc.
-
-* The fassembler:topp project has hardcoded expectations that the
-  user's $LANG is English -- Maker._get_repo_url parses an error
-  message from Subversion with the assumption that it is in English.
-
-  It now works if the user's $LANG is Spanish, as well.  But no other
-  languages!
-
-  Of course, this is extremely silly, and should be fixed more
-  properly immediately.
-
-* When installing a virtualenv, install setuptools 0.6c11 into the new
-  virtualenv, always.  This prevents problems on systems whose
-  virtualenv installs the broken setuptools 0.6c8 by default. 
 
 0.5
 ===
