@@ -23,6 +23,13 @@ Fassembler changes
   default. Symptoms: errors like "unrecognized format" and "global
   name 'log' is not defined".
 
+* Fix sporadic bug in projects where ``use_pip=True``: "The expected
+  executable ['pip', '-E', ...] was not found."  When
+  ``use_pip=True``, Fassembler will now `easy_install pip` during
+  virtualenv creation, and will add the virtualenv_bin_path to $PATH
+  before trying to run `pip`. This should guarantee that the
+  executable `pip` can be found.
+
 Project changes
 ---------------
 
