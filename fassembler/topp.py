@@ -169,9 +169,13 @@ class ToppProject(Project):
                 inherit_config=('general', 'num_extra_zopes'),
                 default='0',
                 help="How many additional Zope instances (besides the primary instance) are deployed in this stack"),
+        Setting('spec',
+                default='requirements/fassembler-req.txt',
+                help="Requirements profile for any add-on packages to install in " \
+                    "the Fassembler environment, providing additional build projects"),
         ]
 
-    actions = [
+    actions = [        
         CheckBasePorts(),
         tasks.CopyDir('Create layout', os.path.join(project_base_dir, 'base-layout'), './'),
         DeleteBuildIniIfNecessary(),
@@ -220,6 +224,9 @@ class ToppProject(Project):
                          '{{env.random_string(40)}}',
                          overwrite=False),
         EnsureAdminFile('Write Zope administrator login to var/admin.txt if it does not exist'),
+        tasks.VirtualEnv(path='fassembler', never_create_virtualenv=True),
+        tasks.InstallSpecIfPresent('Install Fassembler add-on packages',
+                                   '{{config.spec}}'),
         ]
 
 

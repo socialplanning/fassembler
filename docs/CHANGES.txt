@@ -1,3 +1,27 @@
+0.7
+===
+
+Fassembler changes
+------------------
+
+* Added a new `tasks.InstallSpecIfPresent` which checks if the path
+  to the requirements spec is present on the filesystem, and does
+  nothing if the file does not exist.
+
+Project changes
+---------------
+
+* fassembler:topp now installs requirements/fassembler-req.txt into 
+  the fassembler virtualenv if that file is present.  This file can
+  specify add-on packages that provide additional fassembler projects
+  to be used in the rest of the build.
+
+  This action was previously done by the `rebuild-opencore-site` script
+  in `opencore-fassembler_boot` and is being moved here for better
+  encapsulation of builds.  (A build *should* be able to be run entirely
+  from fassembler; opencore-fassembler_boot should just be a convenience
+  package that wraps fassembler's more arcane knowledge.)
+
 0.6
 ===
 

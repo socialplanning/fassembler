@@ -1439,7 +1439,27 @@ class InstallSpec(Task):
                 hanging_processing[:] = []
             return (line, level)
         return log_filter
-            
+
+class InstallSpecIfPresent(InstallSpec):
+
+    description = """
+    Install the packages from {{task.spec_filename}} if the file exists:
+    {{if maker.exists(task.spec_filename)}}
+    {{for line in open(maker.path(task.spec_filename)):}}
+    {{py: line = line.strip()}}
+    {{if line.startswith('-e') or line.startswith('--editable'):}}* svn checkout {{line.split(None, 1)[1]}}{{else}}* {{line}}{{endif}}{{endfor}}
+    {{else}}
+    The file does not exist, so nothing to do.
+    {{endif}}
+    """
+
+    def run(self):
+        if not self.maker.exists(self.spec_filename):
+            self.logger.notify("Skipping %s because %s does not exist" % (
+                    self.name, self.spec_filename))
+            return
+        InstallSpec.run(self)
+
 class ConditionalTask(Task):
 
     description = """
