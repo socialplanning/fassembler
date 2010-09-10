@@ -8,6 +8,9 @@ Fassembler changes
   to the requirements spec is present on the filesystem, and does
   nothing if the file does not exist.
 
+* `tasks.VirtualEnv(never_create_virtualenv=True)` no longer runs
+  any subtasks.
+
 Project changes
 ---------------
 

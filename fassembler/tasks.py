@@ -518,9 +518,15 @@ never_create_virtualenv=False):
     def path_resolved(self):
         return self.maker.path(self.path or self.project.name)
 
-    def run(self):
+    def virtualenv_exists(self):
         path = self.path_resolved
         if os.path.exists(path) and os.path.exists(os.path.join(path, 'lib')):
+            return True
+        return False
+
+    def run(self):
+        path = self.path_resolved
+        if self.virtualenv_exists():
             if self.never_create_virtualenv:
                 self.logger.notify('Skipping virtualenv creation as directory %s exists' % path)
                 return
@@ -559,6 +565,9 @@ never_create_virtualenv=False):
         
 
     def iter_subtasks(self):
+        if self.virtualenv_exists() and self.never_create_virtualenv:
+            return []
+
         _tasks = []
         if self.environ.config.has_option('general', 'find_links'):
             find_links = self.environ.config.get('general', 'find_links')
