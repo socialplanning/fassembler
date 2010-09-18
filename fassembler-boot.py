@@ -672,7 +672,7 @@ def create_bootstrap_script(extra_text, python_version=''):
 FASS_SVN_LOCATION = '/'.join('$HeadURL$'[len('HeadURL')+2:-1].strip().split('/')[:-1])
 if not FASS_SVN_LOCATION:
     # Happens when this is trunk
-    FASS_SVN_LOCATION = 'https://svn.openplans.org/svn/fassembler/trunk'
+    FASS_SVN_LOCATION = 'https://svn.socialplanning.org/svn/fassembler/trunk'
 
 import shutil
 
