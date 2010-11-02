@@ -84,7 +84,7 @@ def split_file(path):
         except IndexError:
             pass
     log.msg("Not sure what to do with file %s, ignoring it" % path)
-    return None
+    return 'main'
 
 c['change_source'] = [
     SVNPoller(svnurl=url,
@@ -256,14 +256,14 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
                       "run "
                       "%s/opencore/src/opencore/opencore/scripts/configure_mailhost.py" % (
             OCBASEDIR, OCBASEDIR))
-    fac.addStep(ToppShellScript, source=mailhostscript,
+    fac.addStep(ToppShellScript, sourcetext=mailhostscript,
                 description=["Configure basic MailHost"],
                 haltOnFailure=False, flunkOnFailure=False)
 
     #ocbin = '%s/opencore/bin' % OCBASEDIR
     #monkeyscript = ("%s/easy_install "
     #               "Products.PrintingMailHost" % ocbin)
-    #fac.addStep(ToppShellScript, source=monkeyscript,
+    #fac.addStep(ToppShellScript, sourcetext=monkeyscript,
     #            description=["Install PrintingMailHost",
     #                         "to prevent real mail sending"],
     #            haltOnFailure=False, flunkOnFailure=False)
