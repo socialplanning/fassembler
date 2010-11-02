@@ -159,6 +159,7 @@ _db_prefixes = []
 def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
                  zopectl_suites=['opencore'],
                  ftestsdir=None, flunc_suite='all',
+                 email_from=None,
                  fassembler_targets=[],
                  ports=[]):
     """
@@ -230,6 +231,8 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
         buildcmd.append('requirements_svn_repo=%s' % requirements_repo)
     if ftestsdir:
         buildcmd.append('ftests_path=%s' % ftestsdir)
+    if email_from:
+        buildcmd.append('email_from_address=%s' % email_from)
 
     buildcmd.append('etc_svn_repo=%s' % "file:///tmp/etcsvn/")
 
@@ -250,14 +253,6 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
                    " && %s/poacheggs --freeze=-" % (ocbin, ocbin))
     fac.addStep(ToppShellScript, sourcetext=poachscript,
                 description=["What got built", "for opencore?"],
-                haltOnFailure=False, flunkOnFailure=False)
-
-    mailhostscript = ("%s/opencore/zope/bin/zopectl "
-                      "run "
-                      "%s/opencore/src/opencore/opencore/scripts/configure_mailhost.py" % (
-            OCBASEDIR, OCBASEDIR))
-    fac.addStep(ToppShellScript, sourcetext=mailhostscript,
-                description=["Configure basic MailHost"],
                 haltOnFailure=False, flunkOnFailure=False)
 
     #ocbin = '%s/opencore/bin' % OCBASEDIR
@@ -298,6 +293,14 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
                     description=['start services', 'for functional tests'],
                     haltOnFailure=True)
 
+        mailhostscript = ("%s/opencore/zope/bin/zopectl "
+                          "run "
+                          "%s/opencore/src/opencore/opencore/scripts/configure_mailhost.py" % (
+                OCBASEDIR, OCBASEDIR))
+        fac.addStep(ToppShellScript, sourcetext=mailhostscript,
+                    description=["Configure basic MailHost"],
+                    haltOnFailure=False, flunkOnFailure=False)
+        
         # Don't halt on failure for any of these! We need shutdown to run.
         fac.addStep(ToppShellCommand, 
                     command=['%s/opencore/bin/flunc' % OCBASEDIR,
@@ -334,6 +337,7 @@ oc_factory = make_factory(
     ftestsdir='opencore/src/opencore/ftests/',
     ports=octrunk_ports,
     zopectl_suites=['opencore', 'Products.listen'],
+    email_from='greetings@buildbot.socialplanning.org',
     )
 
 oc_18_factory = make_factory(
@@ -345,6 +349,7 @@ oc_18_factory = make_factory(
     ftestsdir='opencore/src/opencore/ftests/',
     ports=octrunk_ports,
     zopectl_suites=['opencore', ], #'Products.listen'],
+    email_from='greetings@buildbot.socialplanning.org',
     )
 
 full_op_factory = make_factory(
@@ -356,6 +361,7 @@ full_op_factory = make_factory(
     ftestsdir='opencore/src/opencore/ftests/',
     flunc_suite='all',
     zopectl_suites=['opencore', 'Products.listen'],
+    email_from='greetings@buildbot.socialplanning.org',
     )
 
 full_ls_factory = make_factory(
@@ -369,6 +375,7 @@ full_ls_factory = make_factory(
         ],
     flunc_suite='all',
     zopectl_suites=['opencore'],
+    email_from='greetings@buildbot.socialplanning.org',
     )
     
 ############################################################################
@@ -469,10 +476,8 @@ listMailer = mail.MailNotifier(
     fromaddr='buildbot@socialplanning.org',
     mode='failing',  # People got annoyed by all the successes.
     subject='%(builder)s FAILURE',
-    relayhost='mail.openplans.org',
-    lookup='openplans.org',
     sendToInterestedUsers=False,
-    extraRecipients=['opencore-builds@lists.openplans.org'],
+    extraRecipients=['opencore-dev@lists.coactivate.org'],
     )
 
 
@@ -482,8 +487,7 @@ breakMailer = mail.MailNotifier(
     fromaddr='buildbot@socialplanning.org', 
     mode='failing',
     subject='%(builder)s FAILURE, and sadly, you are on the blamelist',
-    relayhost='mail.openplans.org', 
-    lookup='openplans.org',
+    lookup='socialplanning.org',
     sendToInterestedUsers=True,
     )
 
