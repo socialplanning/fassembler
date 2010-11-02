@@ -443,7 +443,7 @@ buildFullLSNightly  = scheduler.Nightly(
 
 c['schedulers'] = [buildOnChange,
                    buildOpencoreNightly,
-                   buildOpencoreNightly18,
+                   buildOpencoreNightly018,
                    buildOpenplansNightly,
 #                   buildFullLSNightly
                    ]
