@@ -41,28 +41,15 @@ c = BuildmasterConfig = {}
 # (from http://buildbot.net/repos/release/docs/buildbot.html#Configuration)
 				   
 c['projectName'] = 'OpenCore'
-c['projectURL']  = 'http://www.openplans.org/projects/opencore'
+c['projectURL']  = 'http://www.coactivate.org/projects/opencore'
 c['buildbotURL'] = '{{config.buildbot_url}}'
 
 c['slavePortnum'] = int('{{config.buildslave_port}}')
 
 svnurls = [
-    'https://svn.openplans.org/svn/CabochonClient',
-    'https://svn.openplans.org/svn/StreetsWiki',
-    'https://svn.openplans.org/svn/WSSEAuth',
-    'https://svn.openplans.org/svn/ZCMLLoader',
-    'https://svn.openplans.org/svn/bundles',
-    'https://svn.openplans.org/svn/fassembler',
-    'https://svn.openplans.org/svn/oc-js',
-    'https://svn.openplans.org/svn/opencore',
-    'https://svn.openplans.org/svn/opencore/plugins',
-    'https://svn.openplans.org/svn/sputnik',
-    'https://svn.openplans.org/svn/topp.featurelets',
-    'https://svn.openplans.org/svn/topp.utils',
-    'https://svn.openplans.org/svn/transcluder',
-    'https://svn.openplans.org/svn/build/requirements/opencore-maximal',
-#    'https://svn.openplans.org/svn/build/requirements/livablestreets',
-    'https://svn.openplans.org/svn/build/requirements/opencore-minimal',
+    'https://svn.socialplanning.org/svn',
+    'https://codespeak.net/svn/z3/deliverance',
+    'http://svn.plone.org/svn/collective/Products.listen/',
 ]
 
 def split_file(path):
@@ -227,7 +214,7 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
     # Bootstrap the topp build tools (fassembler).
     fac.addStep(ToppShellCommand,
                 # string instead of list causes it to be run via sh.
-                command='svn cat https://svn.openplans.org/svn/fassembler/trunk/fassembler-boot.py | python - %s' % OCBASEDIR,
+                command='svn cat https://svn.socialplanning.org/svn/fassembler/trunk/fassembler-boot.py | python - %s' % OCBASEDIR,
                 description='bootstrap fassembler',
                 haltOnFailure=True)
 
@@ -243,6 +230,9 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
         buildcmd.append('requirements_svn_repo=%s' % requirements_repo)
     if ftestsdir:
         buildcmd.append('ftests_path=%s' % ftestsdir)
+
+    buildcmd.append('etc_svn_repo=%s' % "file:///tmp/etcsvn/")
+
     # We have to run fassembler:topp separately iff we're doing an 'all' build.
     fac.addStep(ToppShellCommand,
                 command=buildcmd + ['fassembler:topp'],
@@ -256,11 +246,27 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
     # What got built? Useful for forensics.
     ocbin = '%s/opencore/bin' % OCBASEDIR
     poachscript = ("%s/easy_install "
-                   "https://svn.openplans.org/svn/PoachEggs/trunk/"
+                   "https://svn.socialplanning.org/svn/PoachEggs/trunk/"
                    " && %s/poacheggs --freeze=-" % (ocbin, ocbin))
     fac.addStep(ToppShellScript, sourcetext=poachscript,
                 description=["What got built", "for opencore?"],
                 haltOnFailure=False, flunkOnFailure=False)
+
+    mailhostscript = ("%s/opencore/zope/bin/zopectl "
+                      "run "
+                      "%s/opencore/src/opencore/opencore/scripts/configure_mailhost.py" % (
+            OCBASEDIR, OCBASEDIR))
+    fac.addStep(ToppShellScript, source=mailhostscript,
+                description=["Configure basic MailHost"],
+                haltOnFailure=False, flunkOnFailure=False)
+
+    #ocbin = '%s/opencore/bin' % OCBASEDIR
+    #monkeyscript = ("%s/easy_install "
+    #               "Products.PrintingMailHost" % ocbin)
+    #fac.addStep(ToppShellScript, source=monkeyscript,
+    #            description=["Install PrintingMailHost",
+    #                         "to prevent real mail sending"],
+    #            haltOnFailure=False, flunkOnFailure=False)
 
     # Run the zopectl unit tests.
     for suite in zopectl_suites:
@@ -272,6 +278,8 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
                     haltOnFailure=False, flunkOnFailure=True)
 
     if flunc_suite:
+        site_root = "http://localhost:%d/openplans" % (baseport + 1)
+
         # Before we run the flunc tests, wait a bit for services to come up,
         # to avoid errors from deliverance.
         # After we've waited for a little while, ping the stack to check if
@@ -283,8 +291,8 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
         startscript = """
         %s/bin/supervisord || exit 1
         sleep 20
-        wget --retry-connrefused --inet4-only --tries=10 -T 100 http://localhost:%d -O - || (%s/bin/supervisorctl status && exit 1)
-        """ % (OCBASEDIR, ports[0], OCBASEDIR)
+        wget --retry-connrefused --inet4-only --tries=10 -T 100 %s -O - || (%s/bin/supervisorctl status && exit 1)
+        """ % (OCBASEDIR, site_root, OCBASEDIR)
         fac.addStep(ToppShellScript,
                     sourcetext=startscript,
                     description=['start services', 'for functional tests'],
@@ -294,7 +302,7 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
         fac.addStep(ToppShellCommand, 
                     command=['%s/opencore/bin/flunc' % OCBASEDIR,
                              '-p', '%s/%s' % (OCBASEDIR, ftestsdir),
-                             '-t', 'http://localhost:%d' % baseport,
+                             '-t', site_root,
                              '--verbose',
                              # Put err.html on stdout as a temporary hack for
                              # http://trac.openplans.org/openplans/ticket/2561
@@ -320,29 +328,40 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
 oc_factory = make_factory(
     'Opencore (plone 3, no flunc)',
     prefix="oc_p3",
-    requirements_repo='https://svn.openplans.org/svn/build/requirements/opencore-minimal/trunk',
+    requirements_repo='https://svn.socialplanning.org/svn/build/requirements/opencore-minimal/trunk',
     fassembler_targets=['all'],
-    flunc_suite=None,
+    flunc_suite='all',
+    ftestsdir='opencore/src/opencore/ftests/',
+    ports=octrunk_ports,
+    zopectl_suites=['opencore', 'Products.listen'],
+    )
+
+oc_18_factory = make_factory(
+    'Opencore 0.18 branch (plone 3, no flunc)',
+    prefix="oc_18_p3",
+    requirements_repo='https://svn.openplans.org/svn/build/requirements/opencore-minimal/branches/opencore-0.18.0/',
+    fassembler_targets=['all'],
+    flunc_suite='all',
+    ftestsdir='opencore/src/opencore/ftests/',
     ports=octrunk_ports,
     zopectl_suites=['opencore', ], #'Products.listen'],
     )
 
-
 full_op_factory = make_factory(
     'Opencore Maximal (full stack)',
     prefix="op_full_p3",
-    requirements_repo='https://svn.openplans.org/svn/build/requirements/opencore-maximal/trunk/',
+    requirements_repo='https://svn.socialplanning.org/svn/build/requirements/opencore-maximal/trunk/',
     ports=opfull_ports,
     fassembler_targets=['all'],
     ftestsdir='opencore/src/opencore/ftests/',
     flunc_suite='all',
-    zopectl_suites=['opencore'],
+    zopectl_suites=['opencore', 'Products.listen'],
     )
 
 full_ls_factory = make_factory(
     'Livable Streets (full stack)',
     prefix="ls_full_p25",
-    requirements_repo='https://svn.openplans.org/svn/build/requirements/livablestreets/branches/0.9.8/',
+    requirements_repo='https://svn.socialplanning.org/svn/build/requirements/livablestreets/branches/0.9.8/',
     ports=lsfull_ports,
     ftestsdir='opencore/src/sputnik/ftests/',
     fassembler_targets=[
@@ -364,6 +383,12 @@ opencore_builders = [
      'factory': oc_factory}
     for name in slavenames]
 
+opencore_18_builders = [
+    {'name': 'opencore-minimal-0.18',
+     'slavename': name,
+     'builddir': 'opencore-minimal-0.18',
+     'factory': oc_18_factory}
+    for name in slavenames]
 
 full_op_builders = [
     {'name': 'openplans-full',
@@ -381,8 +406,8 @@ full_livablestreets_builders = [
 
 
 c['builders'] = opencore_builders + \
-                full_op_builders #+ \
-                #full_livablestreets_builders
+    opencore_18_builders + \
+    full_op_builders
 
 ###########################################################################
 # SCHEDULERS - control when the master decides to fire off a build.
@@ -400,6 +425,11 @@ buildOpencoreNightly  = scheduler.Nightly(
     builderNames=[b['name'] for b in opencore_builders],
     hour=3, minute=0)
 
+buildOpencoreNightly018  = scheduler.Nightly(
+    'Opencore 0.18 Nightly Build', 
+    builderNames=[b['name'] for b in opencore_18_builders],
+    hour=2, minute=30)
+
 buildOpenplansNightly  = scheduler.Nightly(
     'Openplans (Full) Nightly Build', 
     builderNames=[b['name'] for b in full_op_builders],
@@ -413,6 +443,7 @@ buildFullLSNightly  = scheduler.Nightly(
 
 c['schedulers'] = [buildOnChange,
                    buildOpencoreNightly,
+                   buildOpencoreNightly18,
                    buildOpenplansNightly,
 #                   buildFullLSNightly
                    ]
@@ -435,7 +466,7 @@ developerWebStatus = html.WebStatus(http_port='{{config.buildmaster_private_port
 
 # Mails only to the status list.
 listMailer = mail.MailNotifier(
-    fromaddr='buildbot@openplans.org',
+    fromaddr='buildbot@socialplanning.org',
     mode='failing',  # People got annoyed by all the successes.
     subject='%(builder)s FAILURE',
     relayhost='mail.openplans.org',
@@ -448,7 +479,7 @@ listMailer = mail.MailNotifier(
 # Notify by email anyone who has made changes to a build that
 # breaks.
 breakMailer = mail.MailNotifier(
-    fromaddr='buildbot@openplans.org', 
+    fromaddr='buildbot@socialplanning.org', 
     mode='failing',
     subject='%(builder)s FAILURE, and sadly, you are on the blamelist',
     relayhost='mail.openplans.org', 
@@ -460,8 +491,8 @@ breakMailer = mail.MailNotifier(
 # failures?
 # Apparently not, short of giving the bot the 'notify' command in channel.
 ircbot = words.IRC(host='irc.freenode.net',
-                   nick='buildbot-topp',
-                   channels=['#socialplanning'],
+                   nick='buildbot',
+                   channels=['#socialplanning', '#opencore'],
                    allowForce=False,
                    )
 
