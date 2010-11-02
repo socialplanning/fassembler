@@ -53,7 +53,7 @@ class BuildBotProject(Project):
     settings = [
         Setting('buildbot_url',
                 inherit_config=('general', 'buildbot_url'),
-                default='http://buildbot.socialplanning.org:{{config.buildmaster_public_port}}/',
+                default='http://buildbot.socialplanning.org',
                 help='Public URL of the buildbot web page',
                 ),
         Setting('spec',
@@ -74,7 +74,7 @@ class BuildBotProject(Project):
                 help="Port to run the private buildmaster on (force build allowed)"),
         Setting('buildmaster_private_offset',
                 default='20',
-                help="Offset from base_port for the public build master."),
+                help="Offset from base_port for the private build master."),
 
         Setting('buildmaster_public_port',
                 default='{{env.base_port+int(config.buildmaster_public_offset)}}',
