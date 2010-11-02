@@ -53,7 +53,7 @@ class BuildBotProject(Project):
     settings = [
         Setting('buildbot_url',
                 inherit_config=('general', 'buildbot_url'),
-                default='http://{{project.hostname}}.openplans.org:{{config.buildmaster_private_port}}/',
+                default='http://buildbot.socialplanning.org:{{config.buildmaster_public_port}}/',
                 help='Public URL of the buildbot web page',
                 ),
         Setting('spec',
@@ -181,7 +181,7 @@ class BuildSlaveProject(BuildBotProject):
             force_overwrite=True, svn_add=False, executable=True),
         tasks.SourceInstall(
             'Install the port killer script',
-            'https://svn.openplans.org/svn/standalone/portutils/trunk/',
+            'https://svn.socialplanning.org/svn/standalone/portutils/trunk/',
             'portutils'
             ),
         tasks.Script(
