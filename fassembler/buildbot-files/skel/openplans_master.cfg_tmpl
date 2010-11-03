@@ -25,12 +25,14 @@ OCBASEDIR='{{config.basedir}}'
 octrunk_ports =  range(BASEPORT, BASEPORT + 11)  # for the opencore trunk build.
 lsfull_ports = range(BASEPORT + 100, BASEPORT + 111)  # for the full LS build.
 opfull_ports = range(BASEPORT + 200, BASEPORT + 211)  # for the OP full stack.
+octrunk18_ports =  range(BASEPORT + 300, BASEPORT + 311)  # for the opencore trunk@0.18 build.
 
 # Port ranges should not overlap!!  verify that, in case i have
 # another brain-fart like r21674.
 assert not set(octrunk_ports).intersection(lsfull_ports)
 assert not set(octrunk_ports).intersection(opfull_ports)
 assert not set(lsfull_ports).intersection(opfull_ports)
+assert not set(octrunk_ports).intersection(octrunk18_ports)
 
 slavenames = ['slave1']
 slaves = [BuildSlave(name, '{{config.buildbot_passwd}}') for name in slavenames]
@@ -352,7 +354,7 @@ oc_18_factory = make_factory(
     fassembler_targets=['all'],
     flunc_suite='all',
     ftestsdir='opencore/src/opencore/ftests/',
-    ports=octrunk_ports,
+    ports=octrunk18_ports,
     zopectl_suites=['opencore', ], #'Products.listen'],
     email_from='greetings@buildbot.socialplanning.org',
     )
