@@ -265,10 +265,15 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
 
     # Run the zopectl unit tests.
     for suite in zopectl_suites:
+        command = ['%s/opencore/zope/bin/zopectl' % OCBASEDIR,
+                   'test', '-s',
+                   suite]
+        if suite == "Products.listen":  
+            # otherwise tests fail with weird import errors like
+            # ``ImportError: No module named build.opencore.zope.Products.listen.content.tests.test_content``
+            command.append("--test-path=%s/opencore/src/opencore-bundle/listen" % OCBASEDIR)
         fac.addStep(ToppShellCommand, 
-                    command=['%s/opencore/zope/bin/zopectl' % OCBASEDIR,
-                             'test', '-s',
-                             suite],
+                    command=command,
                     description=['run', suite, 'unit tests'],
                     haltOnFailure=False, flunkOnFailure=True)
 
