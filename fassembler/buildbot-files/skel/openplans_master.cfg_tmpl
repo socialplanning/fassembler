@@ -163,7 +163,8 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
                  ftestsdir=None, flunc_suite='all',
                  email_from=None,
                  fassembler_targets=[],
-                 ports=[]):
+                 ports=[],
+                 full_stack=False):
     """
     We have multiple very similar builds that just use different
     requirements_svn_repo. Hence, this factory function.
@@ -280,7 +281,11 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
                     haltOnFailure=False, flunkOnFailure=True)
 
     if flunc_suite:
-        site_root = "http://localhost:%d/openplans" % (baseport + 1)
+        if full_stack:
+            site_root = "http://localhost:%d" % baseport
+        else:
+            site_root = "http://localhost:%d/openplans" % (baseport + 1)
+
 
         # Before we run the flunc tests, wait a bit for services to come up,
         # to avoid errors from deliverance.
@@ -369,6 +374,7 @@ full_op_factory = make_factory(
     flunc_suite='all',
     zopectl_suites=['opencore', 'Products.listen'],
     email_from='greetings@buildbot.socialplanning.org',
+    full_stack=True,
     )
 
 full_ls_factory = make_factory(
