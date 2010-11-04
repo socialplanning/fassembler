@@ -26,6 +26,14 @@ class Project(object):
     Subclasses may set depends_on_projects to a list of strings that
     give projects that must be installed before installing this
     project.
+
+    Subclasses may set depends_on_executables to a list of executables
+    that must be found on $PATH in order for thisproject to be installed
+    successfully. Each item in the list can be either a string or a list
+    of strings; for example,
+      depends_on_executables = ['wget', ('httpd', 'apache2')]
+    will confirm that ``wget`` is found on $PATH, and that EITHER ``httpd``
+    or ``apache2`` is found.
     """
 
     name = None
