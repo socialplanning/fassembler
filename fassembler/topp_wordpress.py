@@ -7,7 +7,7 @@ import os
 from fassembler.project import Project, Setting
 from fassembler import tasks
 from subprocess import Popen, PIPE
-from fassembler.apache import ApacheMixin
+from fassembler.apache import ApacheMixin, CheckApache
 
 class CheckPHP(tasks.Task):
     """Makes sure PHP was built with required modules"""
@@ -121,6 +121,7 @@ class WordPressProject(Project, ApacheMixin):
                           {'topp_wordpress_theme': '{{config.topp_wordpress_theme}}'},
                           section='applications'),
         CheckPHP('{{config.php_cgi_exec}}'),
+        CheckApache(),
         tasks.CopyDir('Create layout',
                       skel_dir, './'),
         tasks.SvnCheckout('Checkout wordpress-mu',
