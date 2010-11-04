@@ -63,7 +63,7 @@ class WordPressProject(Project, ApacheMixin):
     name = 'wordpress'
     title = 'Install WordPress'
 
-    required_modules = ('mime', 'dir', 'rewrite', 'php')
+    required_modules = ('mime', 'dir', 'rewrite')
 
     settings = [
         Setting('port',
@@ -121,7 +121,7 @@ class WordPressProject(Project, ApacheMixin):
                           {'topp_wordpress_theme': '{{config.topp_wordpress_theme}}'},
                           section='applications'),
         CheckPHP('{{config.php_cgi_exec}}'),
-        CheckApache(),
+        CheckApache(('mime', 'dir', 'rewrite', 'php')),
         tasks.CopyDir('Create layout',
                       skel_dir, './'),
         tasks.SvnCheckout('Checkout wordpress-mu',

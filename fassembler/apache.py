@@ -5,20 +5,25 @@ from fassembler.tasks import Task
 class CheckApache(Task):
     """Makes sure Apache was built with required modules"""
 
-    def __init__(self, name=None, stacklevel=1):
+    def __init__(self, required_modules, name=None, stacklevel=1):
         if name is None:
             name = "Check Apache"
         Task.__init__(self, name, stacklevel=stacklevel)
+        self.required_modules = required_modules
 
     def run(self):
-        required_modules = self.project.get_modules()
+        required_modules = self.required_modules
         compiled_in_modules = self.project.compiled_in_modules()
         modules_to_load = []
 
 
         for r in required_modules:
-            rc = 'mod_%s.c' % r
-            mod = 'mod_%s.so' % r
+            if r == 'php':  # FIXME: at least on my version of ubuntu - is this always true?
+                rc = 'libphp5.c'
+                mod = 'libphp5.so'
+            else:
+                rc = 'mod_%s.c' % r
+                mod = 'mod_%s.so' % r
             if rc not in compiled_in_modules:
                 modules_to_load.append(
                     (r, "{{config.apache_module_dir}}/%s" % mod))
