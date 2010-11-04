@@ -63,7 +63,7 @@ class WordPressProject(Project, ApacheMixin):
     name = 'wordpress'
     title = 'Install WordPress'
 
-    required_modules = ('mime', 'dir', 'rewrite')
+    required_modules = ('mime', 'dir', 'rewrite', 'php')
 
     settings = [
         Setting('port',

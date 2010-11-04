@@ -1,19 +1,27 @@
 import os
 from subprocess import Popen, PIPE
+from fassembler.tasks import Task
 
-class CheckApache(tasks.Task):
+class CheckApache(Task):
     """Makes sure Apache was built with required modules"""
+
+    def __init__(self, name=None, stacklevel=1):
+        if name is None:
+            name = "Check Apache"
+        Task.__init__(self, name, stacklevel=stacklevel)
 
     def run(self):
         required_modules = self.project.get_modules()
         compiled_in_modules = self.project.compiled_in_modules()
         modules_to_load = []
 
+
         for r in required_modules:
             rc = 'mod_%s.c' % r
+            mod = 'mod_%s.so' % r
             if rc not in compiled_in_modules:
                 modules_to_load.append(
-                    (r, "{{config.apache_module_dir}}/mod_%s.so" % r))
+                    (r, "{{config.apache_module_dir}}/%s" % mod))
         
         # config_log_module changed to log_config_module somewhere between Apache 1.x and 2.x
         # but its .so is called mod_log_config.so in both, which is annoying
