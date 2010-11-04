@@ -16,6 +16,7 @@ class CheckApache(Task):
         compiled_in_modules = self.project.compiled_in_modules()
         modules_to_load = []
 
+        major, minor = self.project.apache_version()
 
         for r in required_modules:
             if r == 'php':  # FIXME: at least on my version of ubuntu - is this always true?
