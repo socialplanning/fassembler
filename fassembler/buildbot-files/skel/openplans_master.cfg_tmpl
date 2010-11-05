@@ -355,7 +355,7 @@ oc_factory = make_factory(
 oc_18_factory = make_factory(
     'Opencore 0.18 branch (plone 3, no flunc)',
     prefix="oc_18_p3",
-    requirements_repo='https://svn.openplans.org/svn/build/requirements/opencore-minimal/branches/opencore-0.18.0/',
+    requirements_repo='https://svn.socialplanning.org/svn/build/requirements/opencore-minimal/branches/opencore-0.18.0/',
     fassembler_targets=['all'],
     flunc_suite='all',
     ftestsdir='opencore/src/opencore/ftests/',
@@ -411,9 +411,9 @@ opencore_18_builders = [
     for name in slavenames]
 
 full_op_builders = [
-    {'name': 'openplans-full',
+    {'name': 'opencore-maximal',
      'slavename': name,
-     'builddir': 'openplans-full',
+     'builddir': 'opencore-maximal',
      'factory': full_op_factory}
     for name in slavenames]
 
@@ -451,7 +451,7 @@ buildOpencoreNightly018  = scheduler.Nightly(
     hour=2, minute=30)
 
 buildOpenplansNightly  = scheduler.Nightly(
-    'Openplans (Full) Nightly Build', 
+    'Opencore (Full) Nightly Build', 
     builderNames=[b['name'] for b in full_op_builders],
     hour=3, minute=30)
 
