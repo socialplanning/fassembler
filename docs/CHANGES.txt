@@ -11,6 +11,10 @@ Fassembler changes
 * `tasks.VirtualEnv(never_create_virtualenv=True)` no longer runs
   any subtasks.
 
+* Added a new Task `fassembler.apache.CheckApache` which will check
+  the presence a list of required Apache modules.  It must be called
+  from a Project that subclasses `fassembler.apache.ApacheMixin`.
+
 Project changes
 ---------------
 
@@ -24,6 +28,11 @@ Project changes
   encapsulation of builds.  (A build *should* be able to be run entirely
   from fassembler; opencore-fassembler_boot should just be a convenience
   package that wraps fassembler's more arcane knowledge.)
+
+* Various configuration changes in fassembler:buildmaster and buildslave.
+
+* fassembler:wordpress now checks for the presence of its required Apache
+  modules, including the Apache PHP module.
 
 0.6
 ===
