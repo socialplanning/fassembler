@@ -801,6 +801,12 @@ setglobal projprefs    '{{env.config.get("general", "projprefs")}}'
                               (True,
                                GetBundleTarball())),
 
+        tasks.ForEach('Remove Products from opencore bundle',
+                      'product_name',
+                      '{{project.req_settings.get("remove_products")}}',
+                      tasks.Script('rm Product {{task.product_name}}',
+                                   ['rm', '-rf', '{{env.base_path}}/opencore/src/opencore-bundle/{{task.product_name}}'])),
+                                   
         SymlinkProducts('Symlink Products',
                         '{{env.base_path}}/opencore/src/opencore-bundle/*',
                         '{{config.zope_instance}}/Products',
