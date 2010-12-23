@@ -51,9 +51,11 @@ class DeleteExtraWPSiteRows(tasks.Task):
 
     def run(self):
         db = MySQLdb.connect(db=self.db, user=self.user, passwd=self.passwd)
-        c = db.cursor()
-        c.execute('delete from wp_site where id > 1')
-
+        cur = db.cursor()
+        rows = cur.execute('delete from wp_site where id > 1')
+        self.logger.warn("delete from wp_site where id > 1; %s rows affected" % rows)
+        db.commit()
+        return
 
 class WordPressProject(Project, ApacheMixin):
     """
