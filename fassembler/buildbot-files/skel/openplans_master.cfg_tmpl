@@ -311,7 +311,7 @@ def make_factory(name, prefix, baseport=BASEPORT, requirements_repo=None,
 
         mailhostscript = ("%s/opencore/zope/bin/zopectl "
                           "run "
-                          "%s/opencore/src/opencore/opencore/scripts/configure_mailhost.py" % (
+                          "%s/opencore/src/opencore/opencore/scripts/configure_mailhost.py 8125" % (
                 OCBASEDIR, OCBASEDIR))
         fac.addStep(ToppShellScript, sourcetext=mailhostscript,
                     description=["Configure basic MailHost"],
@@ -375,7 +375,7 @@ full_op_factory = make_factory(
     ports=opfull_ports,
     fassembler_targets=['all'],
     ftestsdir='opencore/src/opencore/ftests/',
-    flunc_suite='all',
+    flunc_suite='maximal',
     zopectl_suites=['opencore', 'Products.listen'],
     email_from='greetings@buildbot.socialplanning.org',
     full_stack=True,
