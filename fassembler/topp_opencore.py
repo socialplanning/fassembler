@@ -756,7 +756,7 @@ exec {{config.zope_instance}}/bin/runzope -X debug-mode={{if config.debug!='0'}}
 #!/bin/sh
 cd {{env.base_path}}
 . ./opencore/bin/activate
-exec {{config.zope_instance}}/opencore/bin/zopectl test -s opencore
+exec {{config.zope_instance}}/bin/zopectl test -s opencore
 """
 
     flunc_globals_template = """\
