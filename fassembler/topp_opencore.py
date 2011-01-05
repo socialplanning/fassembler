@@ -752,6 +752,13 @@ cd {{env.base_path}}
 exec {{config.zope_instance}}/bin/runzope -X debug-mode={{if config.debug!='0'}}on{{else}}off{{endif}}
 """
 
+    test_script_template = """\
+#!/bin/sh
+cd {{env.base_path}}
+. ./opencore/bin/activate
+exec {{config.zope_instance}}/opencore/bin/zopectl test -s opencore
+"""
+
     flunc_globals_template = """\
 setglobal admin      '{{config.zope_user}}'
 setglobal adminpw    '{{config.zope_password}}'
@@ -833,6 +840,10 @@ setglobal projprefs    '{{env.config.get("general", "projprefs")}}'
                          '{{env.base_path}}/bin/start-{{project.name}}',
                          content=start_script_template,
                          svn_add=True, executable=True, overwrite=True),
+        tasks.EnsureFile('Write the test-running script',
+                         '{{env.base_path}}/bin/test-opencore',
+                         content=test_script_template,
+                         svn_add=False, executable=True, overwrite=True),
         tasks.SaveURI(uri='http://{{config.host}}:{{config.port}}/openplans',
                       uri_template='http://{{config.host}}:{{config.port}}/VirtualHostBase/{wsgi.url_scheme}/{HTTP_HOST}/openplans/projects/{project}/VirtualHostRoot{vh_SCRIPT_NAME}',
                       uri_template_main_site='http://{{config.host}}:{{config.port}}/VirtualHostBase/{wsgi.url_scheme}/{HTTP_HOST}/openplans/VirtualHostRoot/projects/{project}',
