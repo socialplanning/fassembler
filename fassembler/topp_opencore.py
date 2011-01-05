@@ -748,7 +748,7 @@ class OpenCoreProject(OpenCoreBase):
     start_script_template = """\
 #!/bin/sh
 cd {{env.base_path}}
-source ./opencore/bin/activate
+. ./opencore/bin/activate
 exec {{config.zope_instance}}/bin/runzope -X debug-mode={{if config.debug!='0'}}on{{else}}off{{endif}}
 """
 
@@ -1137,7 +1137,7 @@ class ExtraZopeProject(OpenCoreProject):
     start_script_template = """\
 #!/bin/sh
 cd {{env.base_path}}
-source ./opencore/bin/activate
+. ./opencore/bin/activate
 exec {{config.zope_instance}}/bin/runzope -X debug-mode={{if config.debug!='0'}}on{{else}}off{{endif}}
 """
 
