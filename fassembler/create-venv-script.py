@@ -16,7 +16,7 @@ EXTRA_TEXT = """
 FASS_SVN_LOCATION = '/'.join('$HeadURL: $'[len('HeadURL')+2:-1].strip().split('/')[:-1])
 if not FASS_SVN_LOCATION:
     # Happens when this is trunk
-    FASS_SVN_LOCATION = 'https://svn.openplans.org/svn/fassembler/trunk'
+    FASS_SVN_LOCATION = 'https://svn.socialplanning.org/svn/fassembler/trunk'
 
 import shutil
 
@@ -53,7 +53,7 @@ def after_install(options, home_dir):
                         show_stdout=True)
     logger.indent += 2
     try:
-        call_subprocess([os.path.abspath(join(home_dir, 'bin', 'easy_install')), '-f', 'https://svn.openplans.org/eggs', 'mysql-python'],
+        call_subprocess([os.path.abspath(join(home_dir, 'bin', 'easy_install')), 'mysql-python'],
                         cwd=os.path.abspath(fassembler_dir),
                         filter_stdout=filter_python_develop,
                         show_stdout=False)
