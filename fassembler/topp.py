@@ -153,7 +153,7 @@ class ToppProject(Project):
                 inherit_config=('general', 'db_prefix'),
                 help='The prefix to use for all database names'),
         Setting('find_links',
-                default='https://svn.openplans.org/eggs',
+                default='http://dist.socialplanning.org/eggs',
                 help='Custom locations for distutils and easy_install to look in'),
         Setting('projtxt',
                 default='{{project.req_settings.get("projtxt", "project")}}',
@@ -219,7 +219,7 @@ class ToppProject(Project):
              section='google_maps_keys', overwrite=False),
         
         tasks.EnsureDir('Make sure var directory exists', '{{env.var}}', svn_add=False),
-        tasks.EnsureFile('Write OpenPlans shared secret to var/secret.txt if it does not exist',
+        tasks.EnsureFile('Write OpenCore shared secret to var/secret.txt if it does not exist',
                          '{{env.var}}/secret.txt',
                          '{{env.random_string(40)}}',
                          overwrite=False),
