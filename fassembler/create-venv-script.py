@@ -13,20 +13,16 @@ script_name = os.path.join(base_dir, 'fassembler-boot.py')
 import virtualenv
 
 EXTRA_TEXT = """
-FASS_SVN_LOCATION = '/'.join('$HeadURL: $'[len('HeadURL')+2:-1].strip().split('/')[:-1])
-if not FASS_SVN_LOCATION:
-    # Happens when this is trunk
-    FASS_SVN_LOCATION = 'https://svn.socialplanning.org/svn/fassembler/trunk'
+FASS_GIT_LOCATION = "git://github.com/socialplanning/fassembler.git"
 
 import shutil
 
 def extend_parser(parser):
     parser.add_option(
-        '--svn',
-        metavar='DIR_OR_URL',
-        dest='fassembler_svn',
-        default=FASS_SVN_LOCATION,
-        help='Location of a svn directory or URL to use for the installation of fassembler')
+        '--git',
+        dest='fassembler_git',
+        default=FASS_GIT_LOCATION,
+        help='Location of a git repository to use for the installation of fassembler')
 
 def adjust_options(options, args):
     if not args:
@@ -39,18 +35,15 @@ def adjust_options(options, args):
 def after_install(options, home_dir):
     base_dir = os.path.dirname(home_dir)
     src_dir = join(home_dir, 'src')
-    fassembler_svn = options.fassembler_svn
-    if os.path.exists(fassembler_svn):
-        # A directory
-        logger.debug('Using svn checkout in directory %s' % fassembler_svn)
-        fassembler_dir = os.path.abspath(fassembler_svn)
-        logger.info('Using existing svn checkout at %s' % fassembler_dir)
-    else:
-        fassembler_dir = join(src_dir, 'fassembler')
-        logger.notify('Installing fassembler from %s to %s' % (fassembler_svn, fassembler_dir))
-        fs_ensure_dir(src_dir)
-        call_subprocess(['svn', 'checkout', '--quiet', fassembler_svn, fassembler_dir],
-                        show_stdout=True)
+    fassembler_git = options.fassembler_git
+
+    fassembler_dir = join(src_dir, 'fassembler')
+    call_subprocess(['rm', '-rf', fassembler_dir])
+
+    logger.notify('Installing fassembler from %s to %s' % (fassembler_git, fassembler_dir))
+    fs_ensure_dir(src_dir)
+    call_subprocess(['git', 'clone', fassembler_git, fassembler_dir],
+                    show_stdout=True)
     logger.indent += 2
     try:
         call_subprocess([os.path.abspath(join(home_dir, 'bin', 'easy_install')), 'mysql-python'],
@@ -67,6 +60,8 @@ def after_install(options, home_dir):
     script_dest = join(script_dir, 'fassembler')
     logger.notify('Copying fassembler to %s' % script_dest)
     fs_ensure_dir(script_dir)
+    if os.path.exists(script_dest):
+        os.unlink(script_dest)
     os.symlink('../fassembler/bin/fassembler', script_dest)
     etc_dir = join(base_dir, 'etc')
     build_ini = join(etc_dir, 'build.ini')
