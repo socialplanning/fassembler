@@ -468,7 +468,6 @@ class SvnCheckout(Task):
             self.logger.debug('repository directory %s exists' % repo)
             return False
 
-
 class VirtualEnv(Task):
     """
     Create a virtualenv environment
@@ -1746,3 +1745,31 @@ class Log(Task):
         text = self.interpolate(self.message)
         self.logger.log(self.level, text)
 
+class WGetDirectory(Task):
+    def __init__(self, name, repository, dest, stacklevel=1):
+        super(WGetDirectory, self).__init__(name, stacklevel=stacklevel+1)
+        self.repository = repository
+        self.dest = dest
+
+    def run(self):
+        base = self.repository
+        self.maker.run_command(['wget', '--no-check-certificate', '-i', base],
+                               cwd=self.maker.path(dest))
+
+class FetchRequirements(ConditionalTask):
+
+    @property
+    def requirements_use_svn(self):
+        if self.config.has_option(self.project.name, 'requirements_use_svn'):
+            _use_svn = asbool(self.config.get(self.project.name, 'requirements_use_svn'))
+        else:
+            _use_svn = asbool(self.config.getdefault('general', 'requirements_use_svn'))
+        return _use_svn
+
+    def __init__(self, name, *args, **kw):
+        conditions = (('{{task.requirements_use_svn}}',
+                       tasks.SvnCheckout(name, *args, **kw)),
+                      ('{{not task.requirements_use_svn}}',
+                       tasks.WGetDirectory(name, *args, **kw)),
+                      )
+        super(FetchRequirements, self).__init__(name, *conditions)
