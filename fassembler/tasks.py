@@ -1758,19 +1758,10 @@ class WGetDirectory(Task):
 
 class FetchRequirements(ConditionalTask):
 
-    @property
-    def requirements_use_wget(self):
-        import pdb; pdb.set_trace()
-        if self.config.has_option(self.project.name, 'requirements_use_wget'):
-            _use_wget = asbool(self.config.get(self.project.name, 'requirements_use_wget'))
-        else:
-            _use_wget = asbool(self.config.getdefault('general', 'requirements_use_wget'))
-        return _use_wget
-
     def __init__(self, name, *args, **kw):
-        conditions = (('{{not task.requirements_use_wget}}',
+        conditions = (('{{not asbool(config.requirements_use_wget)}}',
                        SvnCheckout("%s (using svn checkout)" % name, *args, **kw)),
-                      ('{{task.requirements_use_wget}}',
+                      ('{{asbool(config.requirements_use_wget)}}',
                        WGetDirectory("%s (using wget -i)" % name, *args, **kw)),
                       )
         super(FetchRequirements, self).__init__(name, *conditions)
