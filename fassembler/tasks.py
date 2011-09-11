@@ -1768,8 +1768,8 @@ class FetchRequirements(ConditionalTask):
 
     def __init__(self, name, *args, **kw):
         conditions = (('{{task.requirements_use_svn}}',
-                       SvnCheckout(name, *args, **kw)),
+                       SvnCheckout("%s (using svn checkout)" % name, *args, **kw)),
                       ('{{not task.requirements_use_svn}}',
-                       WGetDirectory(name, *args, **kw)),
+                       WGetDirectory("%s (using wget -i)" % name, *args, **kw)),
                       )
         super(FetchRequirements, self).__init__(name, *conditions)
