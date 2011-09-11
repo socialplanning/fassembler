@@ -1759,17 +1759,17 @@ class WGetDirectory(Task):
 class FetchRequirements(ConditionalTask):
 
     @property
-    def requirements_use_svn(self):
-        if self.config.has_option(self.project.name, 'requirements_use_svn'):
-            _use_svn = asbool(self.config.get(self.project.name, 'requirements_use_svn'))
+    def requirements_use_wget(self):
+        if self.config.has_option(self.project.name, 'requirements_use_wget'):
+            _use_wget = asbool(self.config.get(self.project.name, 'requirements_use_wget'))
         else:
-            _use_svn = asbool(self.config.getdefault('general', 'requirements_use_svn'))
-        return _use_svn
+            _use_wget = asbool(self.config.getdefault('general', 'requirements_use_wget'))
+        return _use_wget
 
     def __init__(self, name, *args, **kw):
-        conditions = (('{{task.requirements_use_svn}}',
+        conditions = (('{{not task.requirements_use_wget}}',
                        SvnCheckout("%s (using svn checkout)" % name, *args, **kw)),
-                      ('{{not task.requirements_use_svn}}',
+                      ('{{task.requirements_use_wget}}',
                        WGetDirectory("%s (using wget -i)" % name, *args, **kw)),
                       )
         super(FetchRequirements, self).__init__(name, *conditions)
