@@ -1754,7 +1754,9 @@ class WGetDirectory(Task):
     def run(self):
         base = self.repository
         self.maker.ensure_dir(self.maker.path(self.dest))
-        self.maker.run_command(['wget', '--no-check-certificate', '-i', base],
+        cmd = ['wget', '--no-check-certificate', '-i', base]
+        self.logger.info("Running %s" % ' '.join(cmd))
+        self.maker.run_command(cmd,
                                cwd=self.maker.path(self.dest))
 
 class FetchRequirements(ConditionalTask):
