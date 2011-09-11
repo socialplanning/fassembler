@@ -1760,6 +1760,7 @@ class FetchRequirements(ConditionalTask):
 
     @property
     def requirements_use_wget(self):
+        import pdb; pdb.set_trace()
         if self.config.has_option(self.project.name, 'requirements_use_wget'):
             _use_wget = asbool(self.config.get(self.project.name, 'requirements_use_wget'))
         else:
