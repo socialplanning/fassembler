@@ -1753,6 +1753,7 @@ class WGetDirectory(Task):
 
     def run(self):
         base = self.repository
+        self.maker.ensure_dir(self.maker.path(self.dest))
         self.maker.run_command(['wget', '--no-check-certificate', '-i', base],
                                cwd=self.maker.path(self.dest))
 
