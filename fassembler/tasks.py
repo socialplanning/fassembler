@@ -1746,6 +1746,9 @@ class Log(Task):
         self.logger.log(self.level, text)
 
 class WGetDirectory(Task):
+
+    repository = interpolated('repository')
+
     def __init__(self, name, repository, dest, stacklevel=1):
         super(WGetDirectory, self).__init__(name, stacklevel=stacklevel+1)
         self.repository = repository
@@ -1755,7 +1758,7 @@ class WGetDirectory(Task):
         base = self.repository
         self.maker.ensure_dir(self.maker.path(self.dest))
         cmd = ['wget', '--no-check-certificate', '-i', base]
-        self.logger.info("Running %s" % ' '.join(cmd))
+        self.logger.notify("Running %s" % ' '.join(cmd))
         self.maker.run_command(cmd,
                                cwd=self.maker.path(self.dest))
 
