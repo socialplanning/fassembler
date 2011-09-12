@@ -739,6 +739,8 @@ class OpenCoreProject(OpenCoreBase):
                 inherit_config=('general', 'opencore_embed_whitelist'),
                 default='www.youtube.com,video.google.com,www.streetsblog.org,streetsblog.org,p.streetsblog.org,www.streetfilms.org,streetfilms.org,p.streetfilms.org,www.vimeo.com,static.slideshare.net,widget-57.slide.com,www.mindmeister.com,mindmeister.com',
                 help='whitelist of safe sites to embed objects, embed, param, iframe, and layer tags'),
+        Setting("use_pip",
+                default="True"),
         ]
 
     files_dir = os.path.join(os.path.dirname(__file__), 'opencore-files')
@@ -822,6 +824,8 @@ setglobal projprefs    '{{env.config.get("general", "projprefs")}}'
         InstallZopeFakeEggs('Install fake egg stubs for Zope packages'),
         tasks.InstallSpec('Install OpenCore',
                           '{{config.spec}}'),
+        tasks.EasyInstall('Install GeoPY egg',
+                          "http://dist.socialplanning.org/eggs/geopy-0.93_20071130-py2.4.egg"),
         ## FIXME: linkzope and linkzopebinaries?
         PlaceZopeConfig('Copy Zope etc into build etc'),
         PatchFive(name='Patch Five viewlet security acquisition (see http://trac.openplans.org/openplans/ticket/2026)',
