@@ -79,10 +79,10 @@ class WordPressProject(Project, ApacheMixin):
                 help='Interface/host to serve Apache/WordPress on'),
         Setting('wordpress_repo',
                 default='{{project.req_settings.get("wordpress_repo", \
-                    "https://svn.openplans.org/svn/vendor/wordpress-mu/openplans/trunk")}}',
+                    "https://svn.github.com/svn/socialplanning/opencore-wordpress-mu")}}',
                 help='Location of WordPress MU repository'),
         Setting('wordpress_scripts_repo',
-                default='https://svn.openplans.org/svn/build/wordpress/trunk/scripts',
+                default='https://svn.github.com/svn/socialplanning/opencore-wordpress-mu-scripts',
                 help='Location of scripts for WordPress'),
         Setting('apache_exec',
                 default='{{project.apache_exec()}}',
