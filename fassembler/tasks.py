@@ -1186,15 +1186,12 @@ class InstallSpec(Task):
             command(context, arg)
 
     def run_pip(self):
-        ## FIXME: it would save a tiny bit of effort to do the -E
-        ## stuff directly, instead of starting and then replacing the
-        ## subprocess like it'll do with this:
         env = os.environ.copy()
         env['PIP_LOG_EXPLICIT_LEVELS'] = '1'
         env['PIP_DEFAULT_VCS'] = 'svn'
         env['PIP_SKIP_REQUIREMENTS_REGEX'] = '^\w+\s*=[^=]'
         self.maker.run_command(
-            'pip', '-E', self.venv_property('path'),
+            "%s/bin/pip" % self.venv_property('path'),
             'install', '-r', self.spec_filename,
             '-vvvv',
             log_filter=self.log_explicit_filter,
