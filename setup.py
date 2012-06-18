@@ -21,7 +21,7 @@ setup(name='fassembler',
       long_description=desc,
       classifiers=[], # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
       keywords='',
-      author='Ian Bicking',
+      author='Ian Bicking, Paul Winkler, Josh Bronson, Ethan Jucovy',
       author_email='opencore-dev@lists.coactivate.org',
       url='http://www.coactivate.org/projects/fassembler',
       license='GPL',

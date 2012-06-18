@@ -34,6 +34,8 @@ Project changes
 * fassembler:wordpress now checks for the presence of its required Apache
   modules, including the Apache PHP module.
 
+* Bake in pinned requirements for opencore's i18ndude sub-project.
+
 0.6
 ===
 
