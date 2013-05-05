@@ -614,31 +614,32 @@ class I18nDude(Project):
                 ]
 
     install_requires = [
+        "six==1.1.0",
+        "https://pypi.python.org/packages/source/p/pytz/pytz-2011n.tar.gz",
         "zope.interface==3.8.0",
         "zope.component==3.12.0",
+        "zope.i18nmessageid==3.6.1",
+        "zope.proxy==3.6.1",
+        "zope.schema==4.0.1",
+        "zope.security==3.8.3",
         "zope.configuration==3.7.4",
         "zope.event==3.5.1",
-        "zope.proxy==3.6.1",
         "zope.location==3.9.1",
         "zope.exceptions==3.6.1",
         "zope.i18n==3.7.4",
         "zope.browser==1.3",
         "zope.contenttype==3.5.5",
-        "zope.i18nmessageid==3.6.1",
         "zope.publisher==3.13.0",
-        "zope.schema==4.0.1",
-        "zope.security==3.8.3",
         "zope.tal==3.6.0",
         "Unidecode==0.04.9",
         "ordereddict==1.1",
         "plone.i18n==2.0",
-        "six==1.1.0",
         "i18ndude==3.2.2",
         ]
 
     actions = [
         tasks.VirtualEnv(path='opencore/i18ndude'),
-        tasks.EasyInstall('Install i18ndude', *install_requires),
+        tasks.EasyInstall('Install i18ndude', use_pip=True, *install_requires),
         tasks.EnsureSymlink('symlink i18ndude script',
                             '{{config.binpath}}', '{{config.linkpath}}'),
         tasks.Log('i18ndude usage instructions follow.',

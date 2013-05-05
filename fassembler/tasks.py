@@ -622,7 +622,10 @@ class EasyInstall(Script):
             if find_links:
                 self.reqs[:0] = ['-f', ' '.join(find_links)]
         kw['stacklevel'] = kw.get('stacklevel', 1)+1
-        super(EasyInstall, self).__init__(name, ['easy_install'] + list(self.reqs), use_virtualenv=True, **kw)
+        if kw.pop('use_pip', False):
+            super(EasyInstall, self).__init__(name, ['pip', 'install'] + list(self.reqs), use_virtualenv=True, **kw)
+        else:
+            super(EasyInstall, self).__init__(name, ['easy_install'] + list(self.reqs), use_virtualenv=True, **kw)
 
 class SourceInstall(SvnCheckout):
     """
