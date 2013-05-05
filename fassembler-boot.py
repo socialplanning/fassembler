@@ -650,12 +650,12 @@ def create_environment(home_dir, site_packages=True, clear=False,
 
     install_distutils(home_dir)
 
-    if use_distribute or os.environ.get('VIRTUALENV_USE_DISTRIBUTE'):
-        install_distribute(py_executable, unzip=unzip_setuptools)
-    else:
-        install_setuptools(py_executable, unzip=unzip_setuptools)
-
-    install_pip(py_executable)
+#    if use_distribute or os.environ.get('VIRTUALENV_USE_DISTRIBUTE'):
+#        install_distribute(py_executable, unzip=unzip_setuptools)
+#    else:
+#        install_setuptools(py_executable, unzip=unzip_setuptools)
+#
+#    install_pip(py_executable)
 
     install_activate(home_dir, bin_dir, prompt)
 
