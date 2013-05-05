@@ -398,14 +398,14 @@ def install_pip(py_executable):
     filenames.sort()
     filenames = [filename for basename, i, filename in filenames]
     if not filenames:
-        filename = 'pip'
+        filename = 'pip==1.1'
     else:
         filename = filenames[-1]
     easy_install_script = 'easy_install'
     if sys.platform == 'win32':
         easy_install_script = 'easy_install-script.py'
     cmd = [py_executable, join(os.path.dirname(py_executable), easy_install_script), filename]
-    if filename == 'pip':
+    if filename == 'pip==1.1':
         logger.info('Installing pip from network...')
     else:
         logger.info('Installing %s' % os.path.basename(filename))
@@ -655,7 +655,7 @@ def create_environment(home_dir, site_packages=True, clear=False,
     else:
         install_setuptools(py_executable, unzip=unzip_setuptools)
 
-    #install_pip(py_executable)
+    install_pip(py_executable)
 
     install_activate(home_dir, bin_dir, prompt)
 
