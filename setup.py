@@ -35,7 +35,7 @@ setup(name='fassembler',
           'INITools>=0.3',
           'virtualenv',
           'Pygments',
-          'MySQL-python', # At least, some projects require MySQL access
+          'MySQL-python==1.2.2', # At least, some projects require MySQL access
           'pip',
       ],
       ## FIXME: release all of these once fassembler stabilizes:
