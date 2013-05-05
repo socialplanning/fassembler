@@ -1272,7 +1272,7 @@ def after_install(options, home_dir):
                     show_stdout=True)
     logger.indent += 2
     try:
-        call_subprocess([os.path.abspath(join(home_dir, 'bin', 'easy_install')), 'mysql-python==1.2.2'],
+        call_subprocess([os.path.abspath(join(home_dir, 'bin', 'easy_install')), 'mysql-python==1.2.3'],
                         cwd=os.path.abspath(fassembler_dir),
                         filter_stdout=filter_python_develop,
                         show_stdout=False)
