@@ -615,6 +615,7 @@ class I18nDude(Project):
 
     install_requires = [
         "six==1.1.0",
+        "http://effbot.org/media/downloads/elementtree-1.2.6-20050316.tar.gz",
         "https://pypi.python.org/packages/source/p/pytz/pytz-2011n.tar.gz",
         "zope.interface==3.8.0",
         "zope.component==3.12.0",
