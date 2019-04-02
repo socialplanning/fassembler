@@ -42,6 +42,7 @@ setup(name='fassembler',
       dependency_links=[
           'http://svn.pythonpaste.org/CmdUtils/trunk#egg=CmdUtils-dev',
           'http://svn.pythonpaste.org/Tempita/trunk#egg=Tempita-dev',
+          'https://dist.socialplanning.org/eggs/virtualenv-1.5.2.tar.gz#egg=virtualenv-1.5.2',  
       ],
       entry_points="""
       [console_scripts]
