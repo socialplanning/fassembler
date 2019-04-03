@@ -1276,7 +1276,7 @@ def after_install(options, home_dir):
                         cwd=os.path.abspath(fassembler_dir),
                         filter_stdout=filter_python_develop,
                         show_stdout=False)
-        call_subprocess([os.path.abspath(join(home_dir, 'bin', 'easy_install')), 'mysql-python==1.2.3'],
+        call_subprocess([os.path.abspath(join(home_dir, 'bin', 'easy_install')), 'https://dist.socialplanning.org/eggs/MySQL-python-1.2.3.tar.gz#egg=MySQL-python-1.2.3'],
                         cwd=os.path.abspath(fassembler_dir),
                         filter_stdout=filter_python_develop,
                         show_stdout=False)
