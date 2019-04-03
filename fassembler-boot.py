@@ -1280,10 +1280,10 @@ def after_install(options, home_dir):
             'https://files.pythonhosted.org/packages/ff/08/755b5dd7d003e95380a0375f8430a5696ce3063201cf1f6f10d8dd0a40eb/INITools-0.3.1.tar.gz#sha256=ba59589403b388ff9eb860d33534ad1824a2a17c5ad2f16593aa8f0cdddbbec0',
             'https://files.pythonhosted.org/packages/e8/90/992eb125901873d81440480a7cf40a40aa5f8b2e41a67fbc568db6c21595/Pygments-1.6.tar.gz#sha256=799ed4caf77516e54440806d8d9cd82a7607dfdf4e4fb643815171a4b5c921c0',
         ]:
-        call_subprocess([os.path.abspath(join(home_dir, 'bin', 'easy_install')), _egg],
-                        cwd=os.path.abspath(fassembler_dir),
-                        filter_stdout=filter_python_develop,
-                        show_stdout=True)
+            call_subprocess([os.path.abspath(join(home_dir, 'bin', 'easy_install')), _egg],
+                            cwd=os.path.abspath(fassembler_dir),
+                            filter_stdout=filter_python_develop,
+                            show_stdout=True)
     finally:
         logger.indent -= 2
     script_dir = join(base_dir, 'bin')
