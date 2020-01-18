@@ -46,12 +46,19 @@ Python >= 2.4
 Installation
 ============
 
-For install this package execute the following command:
+For install the latest released for this package, execute the following command:
+
+::
+
+  $ pip-2.4 install fassembler
+
+For install this package from development branch, execute the following command:
 
 ::
 
   $ pip-2.4 install -f https://dist.socialplanning.org/eggs/ \
                     -r requirements.txt
+  $ pip-2.4 install git+https://github.com/socialplanning/fassembler#egg=fassembler
 
 
 Contribute
