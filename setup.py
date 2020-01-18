@@ -34,8 +34,8 @@ setup(name='fassembler',
           #'ScriptTest',
           'Tempita==dev,>=0.1.1dev',
           'INITools>=0.3',
-          'virtualenv',
-          'Pygments',
+          'virtualenv==1.5.2',
+          'Pygments==1.6',
           'MySQL-python==1.2.3', # At least, some projects require MySQL access
           'pip==1.1',
       ],
@@ -43,6 +43,8 @@ setup(name='fassembler',
       dependency_links=[
           'http://svn.pythonpaste.org/CmdUtils/trunk#egg=CmdUtils-dev',
           'http://svn.pythonpaste.org/Tempita/trunk#egg=Tempita-dev',
+          'https://dist.socialplanning.org/eggs/virtualenv-1.5.2.tar.gz#egg=virtualenv-1.5.2', 
+          'https://dist.socialplanning.org/eggs/MySQL-python-1.2.3.tar.gz#egg=MySQL-python-1.2.3',
       ],
       entry_points="""
       [console_scripts]

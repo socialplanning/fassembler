@@ -1272,18 +1272,18 @@ def after_install(options, home_dir):
                     show_stdout=True)
     logger.indent += 2
     try:
-        call_subprocess([os.path.abspath(join(home_dir, 'bin', 'easy_install')), 'virtualenv==1.5.2'],
-                        cwd=os.path.abspath(fassembler_dir),
-                        filter_stdout=filter_python_develop,
-                        show_stdout=False)
-        call_subprocess([os.path.abspath(join(home_dir, 'bin', 'easy_install')), 'mysql-python==1.2.3'],
-                        cwd=os.path.abspath(fassembler_dir),
-                        filter_stdout=filter_python_develop,
-                        show_stdout=False)
-        call_subprocess([os.path.abspath(join(home_dir, 'bin', 'python')), 'setup.py', 'develop'],
-                        cwd=os.path.abspath(fassembler_dir),
-                        filter_stdout=filter_python_develop,
-                        show_stdout=False)
+        for _egg in [
+                'https://dist.socialplanning.org/eggs/virtualenv-1.5.2.tar.gz#egg=virtualenv-1.5.2',
+                'https://dist.socialplanning.org/eggs/MySQL-python-1.2.3.tar.gz#egg=MySQL-python-1.2.3',
+                'https://files.pythonhosted.org/packages/2c/c6/e6c8d88697226b35d8b8c2d82686acdb8605d47d6b7fb50559234c323d5c/CmdUtils-0.1.tar.gz#sha256=8553dfceef5ccfbfee556f67f253a729354e56d7a9a58b818daee15b4d50fd98',
+                'https://files.pythonhosted.org/packages/b0/d9/736ee2b825ff601151676ce30889de2f7df2bac59a2451f069a8a15af19e/Tempita-0.5.3dev.tar.gz#sha256=38392bb708a10128419f75fa9120a6d2c8d137013b353968e5008a77a5c7a2ca',
+                'https://files.pythonhosted.org/packages/ff/08/755b5dd7d003e95380a0375f8430a5696ce3063201cf1f6f10d8dd0a40eb/INITools-0.3.1.tar.gz#sha256=ba59589403b388ff9eb860d33534ad1824a2a17c5ad2f16593aa8f0cdddbbec0',
+                'https://files.pythonhosted.org/packages/e8/90/992eb125901873d81440480a7cf40a40aa5f8b2e41a67fbc568db6c21595/Pygments-1.6.tar.gz#sha256=799ed4caf77516e54440806d8d9cd82a7607dfdf4e4fb643815171a4b5c921c0',
+        ]:
+            call_subprocess([os.path.abspath(join(home_dir, 'bin', 'easy_install')), _egg],
+                            cwd=os.path.abspath(fassembler_dir),
+                            filter_stdout=filter_python_develop,
+                            show_stdout=True)
     finally:
         logger.indent -= 2
     script_dir = join(base_dir, 'bin')
