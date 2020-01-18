@@ -3,7 +3,7 @@ import sys, os
 
 version = '0.7'
 
-readme = open("docs/README.txt").read()
+readme = open("README.rst").read()
 changes = open("docs/CHANGES.txt").read()
 
 desc = """
