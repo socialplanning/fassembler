@@ -83,11 +83,11 @@ venv
 # Buildout generated folders #
 ##############################
 bin
-parts
+build
+dist
 develop-eggs
+downloads
+eggs
+fake-eggs
+parts
 var
-
-# openplans test suites #
-#########################
-ftests/globals.conf
-
