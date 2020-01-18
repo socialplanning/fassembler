@@ -3,7 +3,7 @@ fassembler
 ==========
 
 This is fassembler, the build system for OpenCore
-Home page: http://www.coactivate.org/projects/fassembler/project-home
+Home page: https://www.coactivate.org/projects/fassembler/project-home
 
 
 Overview
@@ -17,20 +17,7 @@ needs of the software that runs CoActivate.org.
 How to Use Fassembler
 =====================
 
-See http://www.coactivate.org/projects/fassembler/howto
-
-Requirements
-============
-
-Python >= 2.4
-
-... and?
-
-
-License
-=======
-
-The project is licensed under the GPLv2, more details see docs/LICENSE.txt file.
+See https://www.coactivate.org/projects/fassembler/howto
 
 
 Hacking Fassembler
@@ -47,3 +34,24 @@ To add a project
 * Update doc/ports.txt and fassembler.topp:CheckBasePorts.port_range
   if needed.
 
+
+Requirements
+============
+
+Python >= 2.4
+
+... and?
+
+
+Contribute
+==========
+
+- Issue Tracker: https://github.com/socialplanning/fassembler/issues
+- Source Code: https://github.com/socialplanning/fassembler
+- Documentation: https://www.coactivate.org/projects/fassembler
+
+
+License
+=======
+
+The project is licensed under the GPLv2, more details see docs/LICENSE.txt file.
