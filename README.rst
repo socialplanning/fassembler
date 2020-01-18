@@ -28,9 +28,9 @@ Python >= 2.4
 
 
 License
-========
+=======
 
-See doc/license.txt
+The project is licensed under the GPLv2, more details see docs/LICENSE.txt file.
 
 
 Hacking Fassembler
