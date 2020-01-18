@@ -19,8 +19,9 @@ setup(name='fassembler',
       version=version,
       description="Builder for OpenCore",
       long_description=desc,
-      classifiers=[], # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
-      keywords='',
+      # Get strings from https://pypi.org/pypi?:action=list_classifiers
+      classifiers=[],
+      keywords='builder opencore site deployments socialplanning fassembler bootstrap console scripts setup',
       author='Ian Bicking, Paul Winkler, Josh Bronson, Ethan Jucovy',
       author_email='opencore-dev@lists.coactivate.org',
       url='http://www.coactivate.org/projects/fassembler',
