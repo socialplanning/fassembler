@@ -65,4 +65,4 @@ Contribute
 License
 =======
 
-The project is licensed under the GPLv2, more details see docs/LICENSE.txt file.
+The project is licensed under the **GPLv2**, more details see ``docs/LICENSE.txt`` file.
