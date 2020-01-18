@@ -1,0 +1,7 @@
+CmdUtils==0.1
+Tempita==dev,>=0.1.1dev
+INITools>=0.3
+virtualenv==1.5.1
+Pygments==1.6
+MySQL-python==1.2.3 # At least, some projects require MySQL access
+pip==1.1

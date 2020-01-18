@@ -43,6 +43,17 @@ Python >= 2.4
 ... and?
 
 
+Installation
+============
+
+For install this package execute the following command:
+
+::
+
+  $ pip-2.4 install -f https://dist.socialplanning.org/eggs/ \
+                    -r requirements.txt
+
+
 Contribute
 ==========
 
