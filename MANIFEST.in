@@ -1,0 +1,10 @@
+include README.rst
+include docs/*.txt docs/*.rst docs/*.GPL
+include *.txt *.in
+include *.py
+include *.sh *.diff *.patch
+include *.conf *.zcml *_tmpl
+recursive-include fassembler *
+global-exclude *.pyc *.pyo *~
+prune build
+prune dist

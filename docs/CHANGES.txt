@@ -4,6 +4,9 @@
 Fassembler changes
 ------------------
 
+* Added the MANIFEST.in file for this package
+  [macagua]
+
 * Updated metadata classifiers strings for this package
   [macagua]
 
