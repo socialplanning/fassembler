@@ -3,17 +3,20 @@ import sys, os
 
 version = '0.7'
 
-readme = open("README.rst").read()
-changes = open("docs/CHANGES.txt").read()
+long_description = (
+    open("README.rst").read()
+    + '\n' +
+    'Changes\n'
+    '=======\n'
+    + '\n' +
+    open("docs/CHANGES.txt").read()
+    + '\n' +
+    'Contributors\n'
+    '************\n'
+    + '\n' +
+    open("docs/CONTRIBUTORS.rst").read()
+    + '\n')
 
-long_description = """
-%s
-
-Changes
-=======
-
-%s
-""" % (readme, changes)
 
 setup(name='fassembler',
       version=version,

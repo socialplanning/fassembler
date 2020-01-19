@@ -1,0 +1,11 @@
+- "Ethan Jucovy", 2007 - 2019, Owner, Python Developer
+- "Leonardo J. Caballero G.", 2020, Maintainer/Contributor, Python Developer
+- "Paul Winkler", 2007 - 2010, Contributor, Python Developer
+- "David Turner", 2008 - 2009, Contributor, Python Developer
+- "Douglas Mayle", 2008, Contributor, Python Developer
+- "Sebastian Benthall", 2008, Contributor, Python Developer
+- "Jeff Hammel", 2008, Contributor, Python Developer
+- "Rob Miller", 2007 - 2009, Contributor, Python Developer
+- "Joshua Bronson", 2007 - 2008, Contributor, Python Developer
+- "Rob Marianski", 2007 - 2009, Contributor, Python Developer
+- "Ian Bicking", 2007 - 2009, Contributor, Python Developer
