@@ -1,3 +1,18 @@
+0.7.1
+=====
+
+Fassembler changes
+------------------
+
+* Updated metadata classifiers strings for this package
+  [macagua]
+
+* Added the package structure files missing
+  [macagua]
+
+* Updated documentation files
+  [macagua]
+
 0.7
 ===
 
