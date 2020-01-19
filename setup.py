@@ -6,7 +6,7 @@ version = '0.7'
 readme = open("README.rst").read()
 changes = open("docs/CHANGES.txt").read()
 
-desc = """
+long_description = """
 %s
 
 Changes
@@ -18,9 +18,24 @@ Changes
 setup(name='fassembler',
       version=version,
       description="Builder for OpenCore",
-      long_description=desc,
+      long_description=long_description,
       # Get strings from https://pypi.org/pypi?:action=list_classifiers
-      classifiers=[],
+      classifiers=[
+        "Development Status :: 3 - Alpha",
+        "Environment :: Console",
+        "Environment :: Plugins",
+        "Intended Audience :: Developers",
+        "Intended Audience :: System Administrators",
+        "License :: OSI Approved :: GNU General Public License (GPL)",
+        "Natural Language :: English",
+        "Operating System :: Unix",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 2.4",
+        "Programming Language :: Python :: 2 :: Only",
+        "Topic :: Desktop Environment :: File Managers",
+        "Topic :: Software Development :: Assemblers",
+        "Topic :: System :: Systems Administration",
+      ],
       keywords='builder opencore site deployments socialplanning fassembler bootstrap console scripts setup',
       author='Ian Bicking, Paul Winkler, Josh Bronson, Ethan Jucovy',
       author_email='opencore-dev@lists.coactivate.org',
