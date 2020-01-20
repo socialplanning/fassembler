@@ -59,9 +59,9 @@ setup(name='fassembler',
       ],
       ## FIXME: release all of these once fassembler stabilizes:
       dependency_links=[
-          'http://svn.pythonpaste.org/CmdUtils/trunk#egg=CmdUtils-dev',
-          'http://svn.pythonpaste.org/Tempita/trunk#egg=Tempita-dev',
-          'https://dist.socialplanning.org/eggs/virtualenv-1.5.2.tar.gz#egg=virtualenv-1.5.2', 
+          #'http://svn.pythonpaste.org/CmdUtils/trunk#egg=CmdUtils-dev',
+          #'http://svn.pythonpaste.org/Tempita/trunk#egg=Tempita-dev',
+          'https://dist.socialplanning.org/eggs/virtualenv-1.5.2.tar.gz#egg=virtualenv-1.5.2',
           'https://dist.socialplanning.org/eggs/MySQL-python-1.2.3.tar.gz#egg=MySQL-python-1.2.3',
       ],
       entry_points="""
