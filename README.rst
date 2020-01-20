@@ -56,9 +56,11 @@ For install this package from development branch, execute the following command:
 
 ::
 
+  $ git clone https://github.com/socialplanning/fassembler.git
+  $ cd ./fassembler
   $ pip-2.4 install -f https://dist.socialplanning.org/eggs/ \
                     -r requirements.txt
-  $ pip-2.4 install git+https://github.com/socialplanning/fassembler#egg=fassembler
+  $ python2.4 setup.py install
 
 
 Contribute
